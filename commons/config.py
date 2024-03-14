@@ -1,5 +1,6 @@
-import os
 import argparse
+import os
+
 import bittensor as bt
 
 
@@ -22,25 +23,7 @@ def check_config(config: bt.config):
 
 
 def add_args(parser):
-    """
-    Adds relevant arguments to the parser for operation.
-    """
-    # Netuid Arg: The netuid of the subnet to connect to.
-    parser.add_argument("--netuid", type=int, help="Subnet netuid", default=1)
-
-    parser.add_argument(
-        "--neuron.events_retention_size",
-        type=str,
-        help="Events retention size.",
-        default="2 GB",
-    )
-
-    parser.add_argument(
-        "--api.port",
-        type=int,
-        help="FastAPI port for uvicorn to run on, should be different from axon.port as these will serve external requests.",
-        default=1888,
-    )
+    parser.add_argument("--netuid", type=int, help="Subnet netuid", default=98)
 
 
 def get_config():
