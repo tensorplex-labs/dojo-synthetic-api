@@ -87,3 +87,6 @@ uvicorn==0.22.0
 websocket-client==1.7.0
 xxhash==3.4.1
 yarl==1.9.4
+python-dotenv==1.0.1
+aiobotocore==2.12.3
+bokeh==3.4.1
