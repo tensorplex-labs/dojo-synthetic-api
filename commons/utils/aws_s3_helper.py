@@ -77,26 +77,14 @@ class S3Helper:
             except Exception as e:
                 print(f"An error occurred while deleting file from S3: {e}")
 
+    async def get_s3_file_url(self, s3_key):
+        """
+        Constructs the S3 URL for the given key.
+        """
+        return f"https://{AWS_S3_BUCKET_NAME}.s3.{REGION_NAME}.amazonaws.com/{s3_key}"
+
 
 if __name__ == "__main__":
     s3_helper = S3Helper()
-    # Example usage:
-    # To download a file from S3
-    # asyncio.run(
-    #     s3_helper.download_file_from_s3(
-    #         "high_q/augmented_wikipedia.txt",
-    #         "data/formatted_data/augmented_wikipedia.txt",
-    #     )
-    # )
-
-    # asyncio.run(
-    #     s3_helper.upload_file_to_s3(
-    #         "data/scraped_data/scraped_project_docs.txt",
-    #         "high_q/scraped_project_docs.txt",
-    #     )
-    # )
-
     # To list out the files in the S3 bucket
     asyncio.run(s3_helper.list_files_in_s3_bucket())
-
-    # asyncio.run(delete_file_from_s3("scraped_TOA_articles_labeled.txt"))

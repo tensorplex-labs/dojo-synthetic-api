@@ -1,14 +1,14 @@
 import os
 import sys
-import uuid
-import json
-from fastapi import APIRouter, HTTPException
+import asyncio
+from aiofiles.os import remove as aio_remove
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Optional
 
 sys.path.append("./")
 from commons.utils.aws_s3_helper import S3Helper
-
+from commons.utils.sandbox import execute_code_sandboxed
 
 code_gen_router = APIRouter(prefix="/api")
 
@@ -25,25 +25,23 @@ class PythonCodeGenResponse(BaseModel):
 
 @code_gen_router.post("/codegen-python", response_model=PythonCodeGenResponse)
 async def execute_python_code(request: PythonCodeGenRequest):
-    output_dir = "./temp/data"
-    os.makedirs(output_dir, exist_ok=True)
-    unique_file_name = f"{uuid.uuid4()}.html"
-    file_path = os.path.join(output_dir, unique_file_name)
+    file_path = None
+    unique_file_name = None
 
     try:
-        modified_code = request.code.replace(
-            "output_file(filename=output_file,", f"output_file(filename='{file_path}',"
-        )
-        exec(modified_code, globals())
+        file_path, unique_file_name = await execute_code_sandboxed(request.code)
+        unique_file_name = f"code-gen/python/{unique_file_name}"
 
-        if os.path.exists(file_path):
-            print(f"File {file_path} exists.")
+        if await asyncio.get_event_loop().run_in_executor(
+            None, os.path.exists, file_path
+        ):
             s3_helper = S3Helper()
             await s3_helper.upload_file_to_s3(file_path, unique_file_name)
-            os.remove(file_path)
+            s3_url = await s3_helper.get_s3_file_url(unique_file_name)
+            await aio_remove(file_path)
             return {
                 "success": True,
-                "body": {"file_name": unique_file_name},
+                "body": {"url_to_file": s3_url},
                 "error": None,
             }
         else:
@@ -53,6 +51,8 @@ async def execute_python_code(request: PythonCodeGenRequest):
                 "error": "Failed to generate HTML file.",
             }
     except Exception as e:
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        if await asyncio.get_event_loop().run_in_executor(
+            None, os.path.exists, file_path
+        ):
+            await aio_remove(file_path)
         return {"success": False, "body": None, "error": str(e)}

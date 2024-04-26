@@ -90,3 +90,5 @@ yarl==1.9.4
 python-dotenv==1.0.1
 aiobotocore==2.12.3
 bokeh==3.4.1
+aiofiles==23.2.1
+RestrictedPython==7.1
