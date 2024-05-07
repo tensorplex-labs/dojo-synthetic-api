@@ -43,7 +43,7 @@ class CodeAnswer(BaseModel):
 
 async def generate_question(client: AsyncOpenAI, model: str) -> Optional[str]:
     print(f"Generating question with model: {model}")
-    MAX_RETRIES = 10
+    # MAX_RETRIES = 10
     kwargs = {
         "response_model": CodingQuestion,
         "model": model,
@@ -60,27 +60,35 @@ async def generate_question(client: AsyncOpenAI, model: str) -> Optional[str]:
         "top_p": random.uniform(0.9, 1.0),
         "seed": random.randint(0, 1e9),  # needed for OpenAI
     }
-
     try:
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(MAX_RETRIES),
-            wait=wait_fixed(0.10),
-            # before_sleep=log_retry_info,
-        ):
-            with attempt:
-                completion = await client.chat.completions.create(**kwargs)
-                coding_question = completion.question
-                coding_question = additional_notes_for_question_prompt(coding_question)
-                print(f"Generated question: {coding_question}")
-                # attempt.retry_state.attempt_number
-                return coding_question
-    except RetryError:
-        print(
-            f"Failed to generate completion after {MAX_RETRIES} attempts while generating question.",
-        )
-        return None
+        completion = await client.chat.completions.create(**kwargs)
+        coding_question = completion.question
+        coding_question = additional_notes_for_question_prompt(coding_question)
+        print(f"Generated question: {coding_question}")
+        return coding_question
+    except Exception as e:
+        print(f"Error occurred while generating question: {e}")
+        pass
 
-    return None
+    # try:
+    #     async for attempt in AsyncRetrying(
+    #         stop=stop_after_attempt(MAX_RETRIES),
+    #         wait=wait_fixed(0.10),
+    #         # before_sleep=log_retry_info,
+    #     ):
+    #         with attempt:
+    #             completion = await client.chat.completions.create(**kwargs)
+    #             coding_question = completion.question
+    #             coding_question = additional_notes_for_question_prompt(coding_question)
+    #             print(f"Generated question: {coding_question}")
+    #             return coding_question
+    # except RetryError:
+    #     print(
+    #         f"Failed to generate completion after {MAX_RETRIES} attempts while generating question.",
+    #     )
+    #     return None
+
+    # return None
 
 
 def build_code_generation_question_prompt(num_requirements: int) -> str:
@@ -117,10 +125,10 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
 
 async def generate_answer(client: AsyncOpenAI, model: str, question: str):
     """Generates a coding question answer for a given coding question."""
+    print(f"Generating code answer with model: {model}")
     MAX_RETRIES = 3
     print("hello")
     print(CodeAnswer.model_json_schema())
-    print(build_code_answer_prompt(question))
     kwargs = {
         "response_model": CodeAnswer,
         "model": model,
@@ -139,38 +147,36 @@ async def generate_answer(client: AsyncOpenAI, model: str, question: str):
         "top_p": random.uniform(0.9, 1.0),
         "seed": random.randint(0, 1e9),  # needed for OpenAI
     }
-
     try:
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(MAX_RETRIES),
-            wait=wait_fixed(0.10),
-            # before_sleep=log_retry_info,
-        ):
-            with attempt:
-                completion = await client.chat.completions.create(**kwargs)
-                print(f"Generated completion: {completion}")
-
-                # TODO parse the response because of weird triple backticks or quotes
-                # try:
-                #     parsed = parse_code_response(completion)
-                #     return model, parsed
-                # except Exception as e:
-                #     bt.logging.warning(
-                #         "Failed to parse & extract code between triple backticks, naively returning original completion."
-                #     )
-                #     pass
-
-                return model, completion
-    except RetryError:
-        print(
-            f"Failed to generate completion after {MAX_RETRIES} attempts for generating code answer for {model}"
-        )
-        pass
+        completion = await client.chat.completions.create(**kwargs)
+        print(f"Generated completion: {completion}")
+        return model, completion
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
         pass
 
     return model, None
+
+    # try:
+    #     async for attempt in AsyncRetrying(
+    #         stop=stop_after_attempt(MAX_RETRIES),
+    #         wait=wait_fixed(0.10),
+    #         # before_sleep=log_retry_info,
+    #     ):
+    #         with attempt:
+    #             completion = await client.chat.completions.create(**kwargs)
+    #             print(f"Generated completion: {completion}")
+    #             return model, completion
+    # except RetryError:
+    #     print(
+    #         f"Failed to generate completion after {MAX_RETRIES} attempts for generating code answer for {model}"
+    #     )
+    #     pass
+    # except Exception as e:
+    #     print(f"Error occurred while generating code answer: {e}")
+    #     pass
+
+    # return model, None
 
 
 def build_code_answer_prompt(question) -> str:
@@ -215,14 +221,14 @@ def few_shot_example_outputs():
     {
         "files": [
             {
-            "filename": "index.js",
-            "content": "const canvas = document.getElementById(\"solarSystemCanvas\");\nconst ctx = canvas.getContext(\"2d\");\nconst infoPanel = document.getElementById(\"infoPanel\");\nconst speedSlider = document.getElementById(\"speedSlider\");\n\nconst planets = [\n  { name: \"Mercury\", orbitRadius: 50, orbitSpeed: 0.39, distanceFromSun: 39 },\n  { name: \"Venus\", orbitRadius: 100, orbitSpeed: 0.72, distanceFromSun: 72 },\n  { name: \"Earth\", orbitRadius: 150, orbitSpeed: 1, distanceFromSun: 100 },\n  { name: \"Mars\", orbitRadius: 200, orbitSpeed: 1.52, distanceFromSun: 152 },\n  {\n    name: \"Jupiter\",\n    orbitRadius: 300,\n    orbitSpeed: 11.86,\n    distanceFromSun: 520,\n  },\n  { name: \"Saturn\", orbitRadius: 400, orbitSpeed: 29.46, distanceFromSun: 958 },\n];\n\nlet currentTime = 0;\nlet simulationSpeed = 1;\n\nfunction drawPlanet(planet, angle) {\n  ctx.beginPath();\n  ctx.arc(\n    canvas.width / 2 + planet.orbitRadius * Math.cos(angle),\n    canvas.height / 2 + planet.orbitRadius * Math.sin(angle),\n    5,\n    0,\n    2 * Math.PI\n  );\n  ctx.fillStyle = \"blue\";\n  ctx.fill();\n  ctx.closePath();\n}\n\nfunction drawOrbit(planet) {\n  ctx.beginPath();\n  ctx.arc(\n    canvas.width / 2,\n    canvas.height / 2,\n    planet.orbitRadius,\n    0,\n    2 * Math.PI\n  );\n  ctx.strokeStyle = \"gray\";\n  ctx.stroke();\n  ctx.closePath();\n}\n\nfunction drawSun() {\n  ctx.beginPath();\n  ctx.arc(canvas.width / 2, canvas.height / 2, 10, 0, 2 * Math.PI);\n  ctx.fillStyle = \"yellow\";\n  ctx.fill();\n  ctx.closePath();\n}\n\nfunction updateInfoPanel(planet) {\n  infoPanel.innerHTML = `\n    <h2>${planet.name}</h2>\n    <p>Average Orbital Speed: ${planet.orbitSpeed} AU/year</p>\n    <p>Distance from Sun: ${planet.distanceFromSun} million km</p>\n  `;\n}\n\nfunction draw() {\n  ctx.clearRect(0, 0, canvas.width, canvas.height);\n  drawSun();\n\n  planets.forEach((planet, index) => {\n    const angle =\n      (currentTime * planet.orbitSpeed * simulationSpeed) % (2 * Math.PI);\n    drawOrbit(planet);\n    drawPlanet(planet, angle);\n\n    if (\n      ctx.isPointInPath(\n        canvas.width / 2,\n        canvas.height / 2 - planet.orbitRadius\n      )\n    ) {\n      updateInfoPanel(planet);\n    }\n  });\n\n  currentTime += 1 / 60;\n  requestAnimationFrame(draw);\n}\n\nspeedSlider.addEventListener(\"input\", (event) => {\n  simulationSpeed = event.target.value / 50;\n});\n\ndraw();\n",
-            "language": "javascript"
+                "filename": "index.js",
+                "content": "const canvas = document.getElementById(\"solarSystemCanvas\");\nconst ctx = canvas.getContext(\"2d\");\nconst infoPanel = document.getElementById(\"infoPanel\");\nconst speedSlider = document.getElementById(\"speedSlider\");\n\nconst planets = [\n  { name: \"Mercury\", orbitRadius: 50, orbitSpeed: 0.39, distanceFromSun: 39 },\n  { name: \"Venus\", orbitRadius: 100, orbitSpeed: 0.72, distanceFromSun: 72 },\n  { name: \"Earth\", orbitRadius: 150, orbitSpeed: 1, distanceFromSun: 100 },\n  { name: \"Mars\", orbitRadius: 200, orbitSpeed: 1.52, distanceFromSun: 152 },\n  {\n    name: \"Jupiter\",\n    orbitRadius: 300,\n    orbitSpeed: 11.86,\n    distanceFromSun: 520,\n  },\n  { name: \"Saturn\", orbitRadius: 400, orbitSpeed: 29.46, distanceFromSun: 958 },\n];\n\nlet currentTime = 0;\nlet simulationSpeed = 1;\n\nfunction drawPlanet(planet, angle) {\n  ctx.beginPath();\n  ctx.arc(\n    canvas.width / 2 + planet.orbitRadius * Math.cos(angle),\n    canvas.height / 2 + planet.orbitRadius * Math.sin(angle),\n    5,\n    0,\n    2 * Math.PI\n  );\n  ctx.fillStyle = \"blue\";\n  ctx.fill();\n  ctx.closePath();\n}\n\nfunction drawOrbit(planet) {\n  ctx.beginPath();\n  ctx.arc(\n    canvas.width / 2,\n    canvas.height / 2,\n    planet.orbitRadius,\n    0,\n    2 * Math.PI\n  );\n  ctx.strokeStyle = \"gray\";\n  ctx.stroke();\n  ctx.closePath();\n}\n\nfunction drawSun() {\n  ctx.beginPath();\n  ctx.arc(canvas.width / 2, canvas.height / 2, 10, 0, 2 * Math.PI);\n  ctx.fillStyle = \"yellow\";\n  ctx.fill();\n  ctx.closePath();\n}\n\nfunction updateInfoPanel(planet) {\n  infoPanel.innerHTML = `\n    <h2>${planet.name}</h2>\n    <p>Average Orbital Speed: ${planet.orbitSpeed} AU/year</p>\n    <p>Distance from Sun: ${planet.distanceFromSun} million km</p>\n  `;\n}\n\nfunction draw() {\n  ctx.clearRect(0, 0, canvas.width, canvas.height);\n  drawSun();\n\n  planets.forEach((planet, index) => {\n    const angle =\n      (currentTime * planet.orbitSpeed * simulationSpeed) % (2 * Math.PI);\n    drawOrbit(planet);\n    drawPlanet(planet, angle);\n\n    if (\n      ctx.isPointInPath(\n        canvas.width / 2,\n        canvas.height / 2 - planet.orbitRadius\n      )\n    ) {\n      updateInfoPanel(planet);\n    }\n  });\n\n  currentTime += 1 / 60;\n  requestAnimationFrame(draw);\n}\n\nspeedSlider.addEventListener(\"input\", (event) => {\n  simulationSpeed = event.target.value / 50;\n});\n\ndraw();\n",
+                "language": "javascript"
             },
             {
-            "filename": "index.html",
-            "content": "<!DOCTYPE html>\n<html>\n<head>\n<title>Page Title</title>\n</head>\n<body>\n<h1>Welcome</h1>\n<p>Hello world</p>\n<script src='index.js'></script>\n</body>\n</html>",
-            "language": "html"
+                "filename": "index.html",
+                "content": "<!DOCTYPE html>\n<html>\n<head>\n<title>Page Title</title>\n</head>\n<body>\n<h1>Welcome</h1>\n<p>Hello world</p>\n<script src='index.js'></script>\n</body>\n</html>",
+                "language": "html"
             }
         ],
         "installation_commands": "null",
@@ -240,9 +246,9 @@ def few_shot_example_outputs():
     {
         "files": [
             {
-            "filename": "index.html",
-            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width,\n        initial-scale=1.0\">\n    <title>3D Cube Visualization</title>\n    <style>\n        body { margin: 0; }\n        canvas { display: block; }\n    </style>\n</head>\n<body>\n    <script src=\"https: //threejs.org/build/three.js\"></script>\n    <script>\n        // Setup scene, camera, and renderer\n        const scene = new THREE.Scene();\n        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\n        const renderer = new THREE.WebGLRenderer();\n        renderer.setSize(window.innerWidth, window.innerHeight);\n        document.body.appendChild(renderer.domElement);\n         // Create a cube\n        const geometry = new THREE.BoxGeometry();\n        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });\n        const cube = new THREE.Mesh(geometry, material);\n        scene.add(cube);\n         // Position the camera\n        camera.position.z = 5;\n         // Function to animate the scene\n        function animate() {\n            requestAnimationFrame(animate);\n            renderer.render(scene, camera);\n        }\n         // Mouse drag controls\n        let isDragging = false;\n        let previousMousePosition = { x: 0, y: 0 };\n         renderer.domElement.addEventListener('mousedown', (event) => {\n            isDragging = true;\n            previousMousePosition = { x: event.clientX, y: event.clientY };\n        });\n         renderer.domElement.addEventListener('mouseup', () => {\n            isDragging = false;\n        });\n         renderer.domElement.addEventListener('mousemove', (event) => {\n            if (isDragging) {\n                const deltaX = event.clientX - previousMousePosition.x;\n                const deltaY = event.clientY - previousMousePosition.y;\n                cube.rotation.y += deltaX * 0.01;\n                cube.rotation.x += deltaY * 0.01;\n                previousMousePosition = { x: event.clientX, y: event.clientY };\n            }\n        });\n         // Hover effect\n        renderer.domElement.addEventListener('mouseover', () => {\n            cube.material.color.set(0xff0000);\n        });\n         renderer.domElement.addEventListener('mouseout', () => {\n            cube.material.color.set(0x00ff00);\n        });\n         // Arrow key controls\n        document.addEventListener('keydown', (event) => {\n            switch (event.key) {\n                case 'ArrowUp':\n                    cube.rotation.x += Math.PI / 2;\n                    break;\n                case 'ArrowDown':\n                    cube.rotation.x -= Math.PI / 2;\n                    break;\n                case 'ArrowLeft':\n                    cube.rotation.y += Math.PI / 2;\n                    break;\n                case 'ArrowRight':\n                    cube.rotation.y -= Math.PI / 2;\n                    break;\n            }\n        });\n         // Start animation\n        animate();\n    </script>\n<script src=\"https: //threejs.org/build/three.js\"></script>\n</body>\n</html>>",
-            "language": "html"
+                "filename": "index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width,\n        initial-scale=1.0\">\n    <title>3D Cube Visualization</title>\n    <style>\n        body { margin: 0; }\n        canvas { display: block; }\n    </style>\n</head>\n<body>\n    <script src=\"https: //threejs.org/build/three.js\"></script>\n    <script>\n        // Setup scene, camera, and renderer\n        const scene = new THREE.Scene();\n        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\n        const renderer = new THREE.WebGLRenderer();\n        renderer.setSize(window.innerWidth, window.innerHeight);\n        document.body.appendChild(renderer.domElement);\n         // Create a cube\n        const geometry = new THREE.BoxGeometry();\n        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });\n        const cube = new THREE.Mesh(geometry, material);\n        scene.add(cube);\n         // Position the camera\n        camera.position.z = 5;\n         // Function to animate the scene\n        function animate() {\n            requestAnimationFrame(animate);\n            renderer.render(scene, camera);\n        }\n         // Mouse drag controls\n        let isDragging = false;\n        let previousMousePosition = { x: 0, y: 0 };\n         renderer.domElement.addEventListener('mousedown', (event) => {\n            isDragging = true;\n            previousMousePosition = { x: event.clientX, y: event.clientY };\n        });\n         renderer.domElement.addEventListener('mouseup', () => {\n            isDragging = false;\n        });\n         renderer.domElement.addEventListener('mousemove', (event) => {\n            if (isDragging) {\n                const deltaX = event.clientX - previousMousePosition.x;\n                const deltaY = event.clientY - previousMousePosition.y;\n                cube.rotation.y += deltaX * 0.01;\n                cube.rotation.x += deltaY * 0.01;\n                previousMousePosition = { x: event.clientX, y: event.clientY };\n            }\n        });\n         // Hover effect\n        renderer.domElement.addEventListener('mouseover', () => {\n            cube.material.color.set(0xff0000);\n        });\n         renderer.domElement.addEventListener('mouseout', () => {\n            cube.material.color.set(0x00ff00);\n        });\n         // Arrow key controls\n        document.addEventListener('keydown', (event) => {\n            switch (event.key) {\n                case 'ArrowUp':\n                    cube.rotation.x += Math.PI / 2;\n                    break;\n                case 'ArrowDown':\n                    cube.rotation.x -= Math.PI / 2;\n                    break;\n                case 'ArrowLeft':\n                    cube.rotation.y += Math.PI / 2;\n                    break;\n                case 'ArrowRight':\n                    cube.rotation.y -= Math.PI / 2;\n                    break;\n            }\n        });\n         // Start animation\n        animate();\n    </script>\n<script src=\"https: //threejs.org/build/three.js\"></script>\n</body>\n</html>>",
+                "language": "html"
             }
         ],
         "installation_commands": "null",
@@ -261,9 +267,9 @@ def few_shot_example_outputs():
     {
         "files": [
             {
-            "filename": "main.py",
-            "content": "import mpld3\r\nimport matplotlib.pyplot as plt\r\nimport numpy as np\r\n\r\n# Generate some data\r\nx = np.linspace(0, 10, 100)\r\ny = np.sin(x)\r\n\r\n# Create a plot\r\nplt.figure()\r\nplt.plot(x, y)\r\nplt.title('Simple Plot')\r\nplt.xlabel('x')\r\nplt.ylabel('y')\r\n\r\n# Convert the plot to an interactive HTML plot\r\n# html_plot = mpld3.fig_to_html(plt.gcf())\r\nmpld3.display()",
-            "language": "python"
+                "filename": "main.py",
+                "content": "import mpld3\r\nimport matplotlib.pyplot as plt\r\nimport numpy as np\r\n\r\n# Generate some data\r\nx = np.linspace(0, 10, 100)\r\ny = np.sin(x)\r\n\r\n# Create a plot\r\nplt.figure()\r\nplt.plot(x, y)\r\nplt.title('Simple Plot')\r\nplt.xlabel('x')\r\nplt.ylabel('y')\r\n\r\n# Convert the plot to an interactive HTML plot\r\n# html_plot = mpld3.fig_to_html(plt.gcf())\r\nmpld3.display()",
+                "language": "python"
             },
             {
                 "filename": ".devcontainer/devcontainer.json",
@@ -293,8 +299,13 @@ async def build_prompt_responses_pair():
 
     client = get_openai_client(Provider.OPENROUTER)
     # use these models because we can specify seed
-    prompt = await generate_question(client, random.choice(dataset.GENERATOR_MODELS))
-    if prompt is None:
+    MAX_RETRIES = 3
+    for _ in range(MAX_RETRIES):
+        model_choice = random.choice(dataset.GENERATOR_MODELS)
+        prompt = await generate_question(client, model_choice)
+        if prompt is not None:
+            break
+    else:
         return None
 
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
@@ -308,21 +319,22 @@ async def build_prompt_responses_pair():
         *[generate_answer(client, ans_model, prompt) for ans_model in sel_ans_models]
     )
 
-    res = {"prompt": prompt, "responses": []}
-    for model, result in results:
-        if not result:
-            continue
-        # result = parse_code_response(result)
-        res["responses"].append(
-            {
-                "model": model,
-                "completion": {
-                    "files": result["files"],
-                    "installation_commands": result["installation_commands"],
-                    "additional_notes": result["additional_notes"],
-                },
-            }
-        )
+    # res = {"prompt": prompt, "responses": []}
+    res = {"prompt": prompt, "responses": results}
+    # for model, result in results:
+    #     if not result:
+    #         continue
+    #     # result = parse_code_response(result)
+    #     res["responses"].append(
+    #         {
+    #             "model": model,
+    #             "completion": {
+    #                 "files": result["files"],
+    #                 "installation_commands": result["installation_commands"],
+    #                 "additional_notes": result["additional_notes"],
+    #             },
+    #         }
+    #     )
     return res
 
 
