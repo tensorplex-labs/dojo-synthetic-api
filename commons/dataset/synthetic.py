@@ -97,7 +97,7 @@ async def generate_question(
                 ),
             }
         ],
-        "temperature": 0.2,
+        "temperature": random.uniform(0.0, 0.5),
         "max_tokens": 8192,
         "top_p": random.uniform(0.9, 1.0),
         "seed": random.randint(0, 1e9),  # needed for OpenAI
