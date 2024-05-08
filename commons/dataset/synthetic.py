@@ -115,7 +115,7 @@ async def generate_question(
 
 def build_code_generation_question_prompt(num_requirements: int) -> str:
     print(f"Generating question with {num_requirements} requirements")
-    coding_question_json = CodingQuestion.model_json_schema()
+    # coding_question_json = CodingQuestion.model_json_schema()
     CODE_GEN_PROMPT = """
     System:
     - Generate a short, self-contained, challenging coding problem that requires the programmer to output an visualization from the piece of code with {num_requirements} requirements on the functionality of the interactions.
@@ -129,7 +129,7 @@ def build_code_generation_question_prompt(num_requirements: int) -> str:
     return textwrap.dedent(
         CODE_GEN_PROMPT.format(
             num_requirements=num_requirements,
-            coding_question_json=coding_question_json,
+            # coding_question_json=coding_question_json,
         )
     )
 
