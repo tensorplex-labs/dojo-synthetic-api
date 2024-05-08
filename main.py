@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Assuming code_gen is a FastAPI router imported from your project's module
 from commons.routes.code_gen import code_gen_router
+from commons.routes.synthetic_gen import synthetic_gen_router
 
 app = FastAPI()
 
@@ -17,6 +18,7 @@ app.add_middleware(
 
 # Include the code_gen router
 app.include_router(code_gen_router)
+app.include_router(synthetic_gen_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
