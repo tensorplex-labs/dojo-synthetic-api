@@ -7,10 +7,6 @@ from commons.dataset.synthetic import build_prompt_responses_pair
 synthetic_gen_router = APIRouter(prefix="/api")
 
 
-class SyntheticGenRequest(BaseModel):
-    code: str = Field(..., example="coding example")
-
-
 class SyntheticGenResponse(BaseModel):
     success: bool
     body: Optional[dict] = None
@@ -20,10 +16,10 @@ class SyntheticGenResponse(BaseModel):
 @synthetic_gen_router.get("/synthetic-gen", response_model=SyntheticGenResponse)
 async def execute_python_code():
     try:
-        res = await build_prompt_responses_pair()
+        result = await build_prompt_responses_pair()
         return {
             "success": True,
-            "body": res,
+            "body": result,
             "error": None,
         }
     except Exception as e:

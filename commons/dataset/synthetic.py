@@ -257,26 +257,29 @@ async def build_prompt_responses_pair():
     client = get_openai_client(Provider.OPENROUTER)
     # use these models because we can specify seed
     MAX_RETRIES = 3
+    prompt = None
     for _ in range(MAX_RETRIES):
         model_choice = random.choice(dataset.GENERATOR_MODELS)
         prompt = await generate_question(client, model_choice)
-        if prompt is not None:
+        if prompt:
             break
-    else:
+
+    if not prompt:
         return None
 
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
     # randomly sampled from pool of models
     answer_models = dataset.ANSWER_MODELS
-    NUM_ANSWER_MODELS = os.getenv("NUM_ANSWER_MODELS", False)
-    num_samples = len(dataset.answer_models) if NUM_ANSWER_MODELS else 4
-    sel_ans_models = random.sample(answer_models, num_samples)
-
-    results = await asyncio.gather(
-        *[generate_answer(client, ans_model, prompt) for ans_model in sel_ans_models]
+    num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
+    selected_models = random.sample(
+        answer_models, min(num_answer_models, len(answer_models))
     )
 
-    res = {"prompt": prompt, "responses": []}
+    results = await asyncio.gather(
+        *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
+    )
+
+    responses = []
     for model, result in results:
         if not result:
             continue
@@ -289,7 +292,7 @@ async def build_prompt_responses_pair():
             }
             for file in result.files
         ]
-        res["responses"].append(
+        responses.append(
             {
                 "model": model,
                 "completion": {
@@ -299,7 +302,7 @@ async def build_prompt_responses_pair():
                 },
             }
         )
-    return res
+    return {"prompt": prompt, "responses": responses}
 
 
 async def main():
