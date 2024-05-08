@@ -1,0 +1,95 @@
+@url = http://localhost:5003
+
+###
+POST {{url}}/api/synthetic-gen
+Content-Type: application/json
+
+Request body:
+No request body needed
+
+Sample response body:
+{
+    "success": true,
+    "body": {
+        "prompt": "Create a simple interactive visualization of a bouncing ball using HTML, CSS, and JavaScript. The ball should bounce off the walls of the container and change color each time it hits a wall. Additionally, the user should be able to control the speed of the ball using a slider.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "responses": [
+            {
+                "model": "openai/gpt-4-turbo-2024-04-09",
+                "completion": {
+                    "files": [
+                        {
+                            "filename": "index.js",
+                            "content": "const ball = document.getElementById('ball');\nconst container = document.getElementById('container');\nconst speedSlider = document.getElementById('speedSlider');\nlet dx = 2;\nlet dy = 2;\nfunction updateBallPosition() {\n  let x = parseInt(ball.style.left) || 0;\n  let y = parseInt(ball.style.top) || 0;\n  if (x + dx > container.clientWidth - ball.clientWidth || x + dx < 0) {\n    dx = -dx;\n    ball.style.backgroundColor = '#' + Math.floor(Math.random()*16777215).toString(16);\n  }\n  if (y + dy > container.clientHeight - ball.clientHeight || y + dy < 0) {\n    dy = -dy;\n    ball.style.backgroundColor = '#' + Math.floor(Math.random()*16777215).toString(16);\n  }\n  ball.style.left = x + dx + 'px';\n  ball.style.top = y + dy + 'px';\n  requestAnimationFrame(updateBallPosition);\n}\nspeedSlider.oninput = function() {\n  const speed = parseInt(this.value);\n  dx = speed;\n  dy = speed;\n};\nupdateBallPosition();",
+                            "language": "javascript"
+                        },
+                        {
+                            "filename": "index.html",
+                            "content": "<!DOCTYPE html>\n<html lang='en'>\n<head>\n<meta charset='UTF-8'>\n<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n<title>Bouncing Ball</title>\n<style>\n  #container { width: 300px; height: 300px; position: relative; background-color: #f0f0f0; overflow: hidden; }\n  #ball { width: 50px; height: 50px; position: absolute; top: 0; left: 0; border-radius: 50%; background-color: red; }\n  #speedSlider { width: 100%; }\n</style>\n</head>\n<body>\n<div id='container'>\n  <div id='ball'></div>\n</div>\n<input type='range' id='speedSlider' min='1' max='10' value='2'>\n<script src='index.js'></script>\n</body>\n</html>",
+                            "language": "html"
+                        }
+                    ],
+                    "installation_commands": "null",
+                    "additional_notes": "The code uses built-in browser APIs and does not require any external libraries or installation commands."
+                }
+            },
+            {
+                "model": "anthropic/claude-3-opus-20240229",
+                "completion": {
+                    "files": [
+                        {
+                            "filename": "index.html",
+                            "content": "<!DOCTYPE html>\n<html>\n<head>\n  <title>Bouncing Ball Visualization</title>\n  <style>\n    #container {\n      width: 400px;\n      height: 400px;\n      border: 1px solid black;\n      position: relative;\n    }\n\n    #ball {\n      width: 50px;\n      height: 50px;\n      border-radius: 50%;\n      background-color: red;\n      position: absolute;\n    }\n\n    #speedSlider {\n      width: 200px;\n      margin-top: 20px;\n    }\n  </style>\n</head>\n<body>\n  <div id=\"container\">\n    <div id=\"ball\"></div>\n  </div>\n\n  <input type=\"range\" id=\"speedSlider\" min=\"1\" max=\"10\" value=\"5\">\n\n  <script src=\"index.js\"></script>\n</body>\n</html>",
+                            "language": "html"
+                        },
+                        {
+                            "filename": "index.js",
+                            "content": "const ball = document.getElementById('ball');\nconst container = document.getElementById('container');\nconst speedSlider = document.getElementById('speedSlider');\n\nlet x = 0;\nlet y = 0;\nlet xSpeed = 5;\nlet ySpeed = 5;\nlet colors = ['red', 'blue', 'green', 'orange', 'purple'];\nlet currentColorIndex = 0;\n\nfunction moveBall() {\n  x += xSpeed;\n  y += ySpeed;\n\n  if (x + ball.offsetWidth >= container.offsetWidth || x <= 0) {\n    xSpeed = -xSpeed;\n    changeColor();\n  }\n\n  if (y + ball.offsetHeight >= container.offsetHeight || y <= 0) {\n    ySpeed = -ySpeed;\n    changeColor();\n  }\n\n  ball.style.left = x + 'px';\n  ball.style.top = y + 'px';\n}\n\nfunction changeColor() {\n  currentColorIndex = (currentColorIndex + 1) % colors.length;\n  ball.style.backgroundColor = colors[currentColorIndex];\n}\n\nfunction updateSpeed() {\n  const speed = parseInt(speedSlider.value);\n  xSpeed = speed;\n  ySpeed = speed;\n}\n\nspeedSlider.addEventListener('input', updateSpeed);\n\nsetInterval(moveBall, 30);",
+                            "language": "javascript"
+                        }
+                    ],
+                    "installation_commands": "",
+                    "additional_notes": "The code uses built-in JavaScript functions and does not require any external libraries or installation commands. The visualization is implemented using HTML, CSS, and JavaScript, with the ball bouncing off the walls of the container and changing color each time it hits a wall. The user can control the speed of the ball using the provided slider."
+                }
+            },
+            {
+                "model": "anthropic/claude-3-haiku-20240307",
+                "completion": {
+                    "files": [
+                        {
+                            "filename": "index.html",
+                            "content": "<!DOCTYPE html>\n<html>\n<head>\n    <title>Bouncing Ball</title>\n    <style>\n        #container {\n            width: 500px;\n            height: 500px;\n            border: 1px solid black;\n            position: relative;\n            overflow: hidden;\n        }\n        #ball {\n            width: 50px;\n            height: 50px;\n            background-color: red;\n            border-radius: 50%;\n            position: absolute;\n        }\n    </style>\n</head>\n<body>\n    <div id=\"container\">\n        <div id=\"ball\"></div>\n    </div>\n    <input type=\"range\" id=\"speedSlider\" min=\"1\" max=\"10\" value=\"5\">\n    <script src=\"index.js\"></script>\n</body>\n</html>",
+                            "language": "html"
+                        },
+                        {
+                            "filename": "index.js",
+                            "content": "const ball = document.getElementById('ball');\nconst container = document.getElementById('container');\nconst speedSlider = document.getElementById('speedSlider');\n\nlet ballX = 0;\nlet ballY = 0;\nlet ballSpeedX = 5;\nlet ballSpeedY = 5;\nlet ballColor = 'red';\n\nfunction moveBall() {\n    ballX += ballSpeedX;\n    ballY += ballSpeedY;\n\n    if (ballX <= 0 || ballX >= container.offsetWidth - ball.offsetWidth) {\n        ballSpeedX *= -1;\n        ballColor = getRandomColor();\n    }\n\n    if (ballY <= 0 || ballY >= container.offsetHeight - ball.offsetHeight) {\n        ballSpeedY *= -1;\n        ballColor = getRandomColor();\n    }\n\n    ball.style.left = ballX + 'px';\n    ball.style.top = ballY + 'px';\n    ball.style.backgroundColor = ballColor;\n\n    requestAnimationFrame(moveBall);\n}\n\nfunction getRandomColor() {\n    const letters = '0123456789ABCDEF';\n    let color = '#';\n    for (let i = 0; i < 6; i++) {\n        color += letters[Math.floor(Math.random() * 16)];\n    }\n    return color;\n}\n\nspeedSlider.addEventListener('input', () => {\n    const speed = speedSlider.value;\n    ballSpeedX = speed;\n    ballSpeedY = speed;\n});\n\nmoveBall();",
+                            "language": "javascript"
+                        }
+                    ],
+                    "installation_commands": "null",
+                    "additional_notes": "The code uses built-in browser APIs and does not require any additional dependencies to run."
+                }
+            },
+            {
+                "model": "mistralai/mixtral-8x22b-instruct",
+                "completion": {
+                    "files": [
+                        {
+                            "filename": "index.html",
+                            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Bouncing Ball</title>\n  <style>\n    #container {\n      position: relative;\n      width: 500px;\n      height: 500px;\n      border: 1px solid black;\n    }\n    #ball {\n      position: absolute;\n      width: 50px;\n      height: 50px;\n      border-radius: 50%;\n    }\n  </style>\n</head>\n<body>\n  <div id=\"container\">\n    <div id=\"ball\"></div>\n  </div>\n  <input type=\"range\" id=\"speedSlider\" min=\"1\" max=\"10\" value=\"5\">\n  <script src=\"index.js\"></script>\n</body>\n</html>",
+                            "language": "html"
+                        },
+                        {
+                            "filename": "index.js",
+                            "content": "const ball = document.getElementById('ball');\nconst container = document.getElementById('container');\nconst speedSlider = document.getElementById('speedSlider');\n\nlet x = 0;\nlet y = 0;\nlet dx = 2;\nlet dy = 2;\n\nfunction updateBallPosition() {\n  ball.style.left = x + 'px';\n  ball.style.top = y + 'px';\n}\n\nfunction checkCollision() {\n  if (x + ball.offsetWidth > container.offsetWidth || x < 0) {\n    dx = -dx;\n    ball.style.backgroundColor = getRandomColor();\n  }\n  if (y + ball.offsetHeight > container.offsetHeight || y < 0) {\n    dy = -dy;\n    ball.style.backgroundColor = getRandomColor();\n  }\n}\n\nfunction getRandomColor() {\n  const letters = '0123456789ABCDEF';\n  let color = '#';\n  for (let i = 0; i < 6; i++) {\n    color += letters[Math.floor(Math.random() * 16)];\n  }\n  return color;\n}\n\nfunction updateBallSpeed() {\n  const speed = speedSlider.value;\n  dx = speed;\n  dy = speed;\n}\n\nfunction animate() {\n  x += dx;\n  y += dy;\n  updateBallPosition();\n  checkCollision();\n  requestAnimationFrame(animate);\n}\n\nspeedSlider.addEventListener('input', updateBallSpeed);\n\nanimate();",
+                            "language": "javascript"
+                        }
+                    ],
+                    "installation_commands": "null",
+                    "additional_notes": "No additional commands are required as the code uses built-in libraries."
+                }
+            }
+        ]
+    },
+    "error": null
+}
