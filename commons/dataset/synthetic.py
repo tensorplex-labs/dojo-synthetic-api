@@ -46,8 +46,8 @@ class CodeAnswer(BaseModel):
 
 def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
     """Ensure that necessary files appended for python"""
-    # result_object = append_codesandbox_files(result_object)
-    result_object = escape_double_quotes_in_files(result_object)
+    result_object = append_codesandbox_files(result_object)
+    # result_object = escape_double_quotes_in_files(result_object)
     return result_object
 
 
@@ -57,6 +57,28 @@ def escape_double_quotes_in_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
         if "content" in file.model_dump():
             file.content = re.sub(r'(?<!\\)"', r"\"", file.content)
             file.content = file.content.replace(r"\'", r"'")
+    return codeanswer_object
+
+
+def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
+    javascript_file_detected = False
+    for file in codeanswer_object.files:
+        if file.language == "javascript":
+            javascript_file_detected = True
+            break
+
+    if javascript_file_detected:
+        package_json_content = json.dumps(
+            {"dependencies": {"three": "latest"}}, indent=4
+        )
+
+        package_json_file = FileObject(
+            filename="package.json",
+            content=package_json_content,
+            language="json",
+        )
+        codeanswer_object.files.append(package_json_file)
+
     return codeanswer_object
 
 
@@ -247,7 +269,7 @@ async def build_prompt_responses_pair():
     # randomly sampled from pool of models
     answer_models = dataset.ANSWER_MODELS
     NUM_ANSWER_MODELS = os.getenv("NUM_ANSWER_MODELS", False)
-    num_samples = len(dataset.answer_models) if NUM_ANSWER_MODELS else 3
+    num_samples = len(dataset.answer_models) if NUM_ANSWER_MODELS else 4
     sel_ans_models = random.sample(answer_models, num_samples)
 
     results = await asyncio.gather(
@@ -258,7 +280,7 @@ async def build_prompt_responses_pair():
     for model, result in results:
         if not result:
             continue
-        result = parse_code_response(result)
+        # result = parse_code_response(result)
         formatted_files = [
             {
                 "filename": file.filename,

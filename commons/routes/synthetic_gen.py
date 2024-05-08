@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from commons.dataset.synthetic_test import CodingQuestion, build_prompt_responses_pair
+from commons.dataset.synthetic import build_prompt_responses_pair
 
 synthetic_gen_router = APIRouter(prefix="/api")
 

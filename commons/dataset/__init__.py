@@ -57,14 +57,15 @@ ANSWER_MODELS = [
     "openai/gpt-4-turbo-2024-04-09",
     "openai/gpt-4-1106-preview",
     "openai/gpt-3.5-turbo-1106",
-    # "meta-llama/llama-3-70b-instruct",
     "anthropic/claude-3-opus-20240229",
     "anthropic/claude-3-sonnet-20240229",
     "anthropic/claude-3-haiku-20240307",
+    "google/gemini-pro-1.0",
+    "meta-llama/llama-3-8b-instruct",
+    # Models that do not with instructor currently
+    # "meta-llama/llama-3-70b-instruct",
     # "mistralai/mistral-large",
     # "google/gemini-pro-1.5",
     # "cognitivecomputations/dolphin-mixtral-8x7b",
     # "cohere/command-r-plus",
-    "google/gemini-pro-1.0",
-    "meta-llama/llama-3-8b-instruct",
 ]
