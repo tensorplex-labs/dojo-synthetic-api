@@ -6,7 +6,7 @@ from typing import Optional
 from commons.dataset.synthetic import build_prompt_responses_pair
 
 synthetic_gen_router = APIRouter(prefix="/api")
-cache = asyncio.Queue(maxsize=2)
+cache = asyncio.Queue(maxsize=10)
 
 
 class SyntheticGenResponse(BaseModel):
