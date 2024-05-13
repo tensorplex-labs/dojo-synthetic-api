@@ -36,6 +36,8 @@ async def replenish_cache():
     while cache.qsize() < cache.maxsize:
         try:
             result = await build_prompt_responses_pair()
+            if not result:
+                continue
             await cache.put(result)
         except Exception as e:
             print(f"Error replenishing cache: {e}")

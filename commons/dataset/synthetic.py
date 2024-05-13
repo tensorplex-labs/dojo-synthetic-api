@@ -6,7 +6,7 @@ import asyncio
 import random
 import textwrap
 import instructor
-from typing import List, Optional
+from typing import Dict, List, Optional
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -191,7 +191,7 @@ def build_code_answer_prompt(question) -> str:
 
     Few-shot Example Outputs:
     {few_shot_examples}
-    
+
     Question:
     {question}
 
@@ -251,7 +251,7 @@ def few_shot_example_outputs():
     return EXAMPLE_OUTPUTS
 
 
-async def build_prompt_responses_pair():
+async def build_prompt_responses_pair() -> Optional[Dict]:
     import commons.dataset as dataset
 
     client = get_openai_client(Provider.OPENROUTER)
