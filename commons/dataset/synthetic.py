@@ -361,8 +361,9 @@ async def build_prompt_responses_pair(generator_model=None):
 
 async def main():
     log_data = []
+    client = get_instructor_client(provider=Provider.OPENROUTER)
     for model in GENERATOR_MODELS:
-        result = await generate_question(model)
+        result = await generate_question(client, model)
         if result is None:
             continue
         # unstructure tuple
