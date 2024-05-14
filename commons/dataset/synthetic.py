@@ -5,18 +5,34 @@ import json
 import asyncio
 import random
 import textwrap
+import traceback
 import instructor
 from typing import Dict, List, Optional
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
+from tenacity import (
+    AsyncRetrying,
+    RetryError,
+    before_log,
+    stop_after_attempt,
+    wait_fixed,
+)
+from loguru import logger
 
 sys.path.append("./")
 from commons.llm.openai_proxy import Provider, get_openai_client
 from commons.utils.utils import generate_simple_json
 
 load_dotenv()
+
+
+def log_retry_info(retry_state):
+    """Meant to be used with tenacity's before_sleep callback"""
+    logger.warning(
+        f"Retry attempt {retry_state.attempt_number} failed with exception: {retry_state.outcome.exception()}",
+    )
+    logger.warning(f"Traceback: {traceback.format_exc()}")
 
 
 class CodingQuestion(BaseModel):
@@ -82,43 +98,81 @@ def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     return codeanswer_object
 
 
-async def generate_question(
+async def _generate_objects_to_visualize(
     client: instructor.AsyncInstructor, model: str
-) -> Optional[str]:
-    print(f"Generating question with model: {model}")
+):
+    class PossibleObjects(BaseModel):
+        objects: List[str]
+
+    print(f"Generating objects to use for question with model: {model}")
     kwargs = {
-        "response_model": CodingQuestion,
+        "response_model": PossibleObjects,
         "model": model,
         "messages": [
             {
                 "role": "system",
-                "content": build_code_generation_question_prompt(
-                    random.choices([3, 4, 5], weights=[0.5, 0.3, 0.2])[0]
-                ),
+                "content": "Please output an array containing 30 types of animated objects commonly used for animation coding questions",
             }
         ],
-        "temperature": random.uniform(0.0, 0.5),
-        "max_tokens": 8192,
+        "temperature": random.uniform(0.0, 1.0),
+        "max_tokens": 256,
         "top_p": random.uniform(0.9, 1.0),
         "seed": random.randint(0, 1e9),  # needed for OpenAI
     }
+    completion = await client.chat.completions.create(**kwargs)
+    return completion.objects
+
+
+async def generate_question(
+    client: instructor.AsyncInstructor, model: str
+) -> Optional[str]:
+    logger.info(f"Generating question with model: {model}")
+
+    MAX_RETRIES = 10
+
     try:
-        completion = await client.chat.completions.create(**kwargs)
-        coding_question = completion.question
-        coding_question = additional_notes_for_question_prompt(coding_question)
-        print(f"Generated question: {coding_question}")
-        return coding_question
-    except Exception as e:
-        print(f"Error occurred while generating question: {e}")
-        pass
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
+        ):
+            with attempt:
+                possible_objects = await _generate_objects_to_visualize(client, model)
+
+                kwargs = {
+                    "response_model": CodingQuestion,
+                    "model": model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": build_code_generation_question_prompt(
+                                random.choices([3, 4, 5], weights=[0.5, 0.3, 0.2])[0],
+                                random.sample(possible_objects, random.randint(3, 5)),
+                            ),
+                        }
+                    ],
+                    "temperature": random.uniform(0.0, 0.5),
+                    "max_tokens": 8192,
+                    "top_p": random.uniform(0.9, 1.0),
+                    "seed": random.randint(0, 1e9),  # needed for OpenAI
+                }
+                completion = await client.chat.completions.create(**kwargs)
+                coding_question = completion.question
+                coding_question = additional_notes_for_question_prompt(coding_question)
+                logger.success(f"Generated question: {coding_question}")
+                return coding_question
+    except RetryError:
+        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts")
+
+    return None
 
 
-def build_code_generation_question_prompt(num_requirements: int) -> str:
+def build_code_generation_question_prompt(
+    num_requirements: int, sampled_objects: list[str]
+) -> str:
     print(f"Generating question with {num_requirements} requirements")
     # coding_question_json = CodingQuestion.model_json_schema()
     CODE_GEN_PROMPT = """
     System:
-    - Generate a short, self-contained, challenging coding problem that requires the programmer to output an visualization from the piece of code with {num_requirements} requirements on the functionality of the interactions.
+    - Generate a short, self-contained, challenging coding problem that requires the programmer to output visualization of one or more of the following objects: {objects}, through the piece of code with {num_requirements} requirements on the functionality of the interactions.
     - The interactions must require the programmer to have a mental model of any objects being visualized.
     - The question generated must require the programmer to code using only Javascript with HTML and CSS.
     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
@@ -130,6 +184,7 @@ def build_code_generation_question_prompt(num_requirements: int) -> str:
         CODE_GEN_PROMPT.format(
             num_requirements=num_requirements,
             # coding_question_json=coding_question_json,
+            objects=", ".join(sampled_objects),
         )
     )
 
@@ -256,14 +311,8 @@ async def build_prompt_responses_pair() -> Optional[Dict]:
 
     client = get_openai_client(Provider.OPENROUTER)
     # use these models because we can specify seed
-    MAX_RETRIES = 3
-    prompt = None
-    for _ in range(MAX_RETRIES):
-        model_choice = random.choice(dataset.GENERATOR_MODELS)
-        prompt = await generate_question(client, model_choice)
-        if prompt:
-            break
-
+    model_choice = random.choice(dataset.GENERATOR_MODELS)
+    prompt = await generate_question(client, model_choice)
     if not prompt:
         return None
 
