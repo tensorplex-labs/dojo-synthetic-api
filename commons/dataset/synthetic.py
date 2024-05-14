@@ -14,14 +14,17 @@ from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
     RetryError,
-    before_log,
     stop_after_attempt,
-    wait_fixed,
 )
 from loguru import logger
+from commons.dataset import GENERATOR_MODELS
 
 sys.path.append("./")
-from commons.llm.openai_proxy import Provider, get_openai_client
+from commons.llm.openai_proxy import (
+    Provider,
+    get_async_openai_client,
+    get_instructor_client,
+)
 from commons.utils.utils import generate_simple_json
 
 load_dotenv()
@@ -41,7 +44,6 @@ class CodingQuestion(BaseModel):
     )
 
 
-# Schema for the generated coding answer from LLM
 class FileObject(BaseModel):
     filename: str = Field(description="Name of the file")
     content: str = Field(description="Content of the file which can be code or json")
@@ -102,33 +104,35 @@ async def _generate_objects_to_visualize(
     client: instructor.AsyncInstructor, model: str
 ):
     class PossibleObjects(BaseModel):
-        objects: List[str]
+        objects: List[str] = Field(description="List of objects to visualize")
 
-    print(f"Generating objects to use for question with model: {model}")
+    logger.info(f"Generating objects to use for question with model: {model}")
     kwargs = {
         "response_model": PossibleObjects,
         "model": model,
         "messages": [
             {
                 "role": "system",
-                "content": "Please output an array containing 30 types of animated objects commonly used for animation coding questions",
+                "content": "Please output a valid JSON array containing 30 types of animated objects commonly used for animation coding questions.",
             }
         ],
         "temperature": random.uniform(0.0, 1.0),
-        "max_tokens": 256,
+        "max_tokens": 1024,
         "top_p": random.uniform(0.9, 1.0),
-        "seed": random.randint(0, 1e9),  # needed for OpenAI
     }
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
     completion = await client.chat.completions.create(**kwargs)
+    logger.success(f"Got objects to visualize, completion={completion=}")
     return completion.objects
 
 
 async def generate_question(
     client: instructor.AsyncInstructor, model: str
-) -> Optional[str]:
+) -> tuple[Optional[str], Optional[Dict]]:
     logger.info(f"Generating question with model: {model}")
 
-    MAX_RETRIES = 10
+    MAX_RETRIES = 5
 
     try:
         async for attempt in AsyncRetrying(
@@ -158,11 +162,11 @@ async def generate_question(
                 coding_question = completion.question
                 coding_question = additional_notes_for_question_prompt(coding_question)
                 logger.success(f"Generated question: {coding_question}")
-                return coding_question
+                return coding_question, kwargs
     except RetryError:
         logger.error(f"Failed to generate question after {MAX_RETRIES} attempts")
 
-    return None
+    return None, None
 
 
 def build_code_generation_question_prompt(
@@ -306,14 +310,15 @@ def few_shot_example_outputs():
     return EXAMPLE_OUTPUTS
 
 
-async def build_prompt_responses_pair() -> Optional[Dict]:
+async def build_prompt_responses_pair(generator_model=None):
     import commons.dataset as dataset
 
-    client = get_openai_client(Provider.OPENROUTER)
+    client = get_instructor_client(Provider.OPENROUTER)
     # use these models because we can specify seed
-    model_choice = random.choice(dataset.GENERATOR_MODELS)
-    prompt = await generate_question(client, model_choice)
-    if not prompt:
+    model_choice = generator_model or random.choice(dataset.GENERATOR_MODELS)
+    prompt, kwargs = await generate_question(client, model_choice)
+    if not prompt or not kwargs:
+        logger.info("Failed to generate question...")
         return None
 
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
@@ -355,8 +360,19 @@ async def build_prompt_responses_pair() -> Optional[Dict]:
 
 
 async def main():
-    res = await build_prompt_responses_pair()
-    print(f"{res=}")
+    log_data = []
+    for model in GENERATOR_MODELS:
+        result = await generate_question(model)
+        if result is None:
+            continue
+        # unstructure tuple
+        question, kwargs = result
+        log_data.append({"model": model, "question": question, "kwargs": kwargs})
+
+    import json
+
+    with open("questions_data_14052024.json", "w") as f:
+        json.dump(log_data, f)
 
 
 if __name__ == "__main__":

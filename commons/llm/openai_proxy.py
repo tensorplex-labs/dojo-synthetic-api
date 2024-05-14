@@ -21,6 +21,7 @@ class Provider(StrEnum):
     TOGETHER_AI = "togetherai"
     OPENAI = "openai"
     OPENROUTER = "openrouter"
+    DEEPSEEK = "deepseek"
 
 
 def get_openai_kwargs(provider: Provider):
@@ -33,11 +34,16 @@ def get_openai_kwargs(provider: Provider):
     raise ValueError(f"Unknown provider specified , provider: {provider}")
 
 
-def get_openai_client(provider: Provider):
+def get_async_openai_client(provider: Provider):
+    kwargs = get_openai_kwargs(provider)
+    return AsyncOpenAI(api_key=kwargs["api_key"], base_url=kwargs["base_url"])
+
+
+def get_instructor_client(provider: Provider):
     kwargs = get_openai_kwargs(provider)
     return instructor.from_openai(
         AsyncOpenAI(api_key=kwargs["api_key"], base_url=kwargs["base_url"]),
-        mode=Mode.JSON,
+        mode=Mode.MD_JSON,
     )
 
 
