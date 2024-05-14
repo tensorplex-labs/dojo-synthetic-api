@@ -359,7 +359,7 @@ async def build_prompt_responses_pair(generator_model=None):
     return {"prompt": prompt, "responses": responses}
 
 
-async def main():
+async def test_generate_questions():
     log_data = []
     client = get_instructor_client(provider=Provider.OPENROUTER)
     for model in GENERATOR_MODELS:
@@ -370,10 +370,19 @@ async def main():
         question, kwargs = result
         log_data.append({"model": model, "question": question, "kwargs": kwargs})
 
-    import json
+    print(f"{log_data}")
+    # Convert the list of dictionaries to a JSON string
+    for data in log_data:
+        data["kwargs"].pop("response_model")
+    json_data = json.dumps(log_data, indent=4)
 
-    with open("questions_data_14052024.json", "w") as f:
-        json.dump(log_data, f)
+    # Write the JSON string to a file
+    with open("output.json", "w") as file:
+        file.write(json_data)
+
+
+async def main():
+    await test_generate_questions()
 
 
 if __name__ == "__main__":
