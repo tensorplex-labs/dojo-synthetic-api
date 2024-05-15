@@ -1,10 +1,11 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 # Assuming code_gen is a FastAPI router imported from your project's module
 from commons.routes.code_gen import code_gen_router
-from commons.routes.synthetic_gen import synthetic_gen_router
+from commons.routes.synthetic_gen import synthetic_gen_router, cache, replenish_cache
 
 import time
 from ipaddress import ip_address, ip_network
@@ -62,7 +63,14 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         return Response("Forbidden", status_code=403)
 
 
-app = FastAPI()
+@asynccontextmanager
+async def startup_lifespan(app: FastAPI):
+    await replenish_cache()
+    yield
+
+
+app = FastAPI(lifespan=startup_lifespan)
+
 
 # Add CORS middleware to allow cross-origin requests
 app.add_middleware(
