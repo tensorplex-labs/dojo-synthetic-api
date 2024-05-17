@@ -5,6 +5,7 @@ import time
 from typing import Annotated
 
 from loguru import logger
+import uuid
 
 
 class CodeDiagnostics:
@@ -63,7 +64,8 @@ def tsserver_diagnostics(code: str):
     read_response(process)
 
     # Simulated file path
-    file_path = "/path/to/nonexistent/file.js"
+    filename = uuid.uuid4().replace("-", "")
+    file_path = f"/path/to/nonexistent/{filename}.js"
 
     # Open a fake file in tsserver
     send_command(
@@ -178,5 +180,6 @@ def parse_diagnostics(response):
                         diagnostics.append(item)
     except json.JSONDecodeError:
         logger.error("Error decoding JSON")
-
+        return diagnostics
+    logger.success(f"Successfully parsed diagnostics\n{diagnostics=}")
     return diagnostics
