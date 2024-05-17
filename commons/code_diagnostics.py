@@ -4,6 +4,8 @@ import json
 import time
 from typing import Annotated
 
+from loguru import logger
+
 
 class CodeDiagnostics:
     @staticmethod
@@ -161,17 +163,20 @@ def parse_diagnostics(response):
             if event in ["semanticDiag", "syntaxDiag", "suggestionDiag"]:
                 diagnostics = messages.get("body", {}).get("diagnostics", [])
                 for item in diagnostics:
-                    category = item["category"]
-                    text = item["text"]
-                    if category == "error":
-                        diagnostics.append(
-                            f"Error {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
-                        )
-                    elif event == "suggestionDiag":
-                        diagnostics.append(
-                            f"Suggestion {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
-                        )
+                    if isinstance(item, dict):
+                        category = item["category"]
+                        text = item["text"]
+                        if category == "error":
+                            diagnostics.append(
+                                f"Error {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
+                            )
+                        elif event == "suggestionDiag":
+                            diagnostics.append(
+                                f"Suggestion {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
+                            )
+                    elif isinstance(item, str):
+                        diagnostics.append(item)
     except json.JSONDecodeError:
-        print("Error decoding JSON")
+        logger.error("Error decoding JSON")
 
     return diagnostics
