@@ -27,11 +27,12 @@ def build_autogen_llm_config(
     model_name: str = "meta-llama/llama-3-8b-instruct",
     provider: Provider = Provider.OPENROUTER,
 ) -> dict:
+    """NOTE you must ensure that the model name goes according to the API Provider"""
     llm_config = {
         "config_list": [
             {
-                "model": "meta-llama/llama-3-8b-instruct",
-                **get_openai_kwargs(provider=Provider.OPENROUTER),
+                "model": model_name,
+                **get_openai_kwargs(provider=provider),
             }
         ],
     }
@@ -137,7 +138,8 @@ async def fix_code(code: str):
             updated_code = extract_code(message["content"])
             if updated_code:
                 logger.success("Successfully parsed code")
-                return updated_code
+                lang, fixed_code = updated_code[0]
+                return lang, fixed_code
     return None, None
 
 
@@ -239,4 +241,5 @@ simulationSpeed = event.target.value / 50;
 
 draw();
     """
+
     asyncio.run(fix_code(js_code))
