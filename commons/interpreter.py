@@ -130,6 +130,7 @@ async def fix_code(code: str):
         coder,
         message=f"Evaluate and fix the code provided:\n{code}",
         # cache=cache,
+        max_turns=12,
     )
     logger.info("Conversation ENDED")
 

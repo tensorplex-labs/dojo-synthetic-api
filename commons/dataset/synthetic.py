@@ -374,7 +374,7 @@ async def build_2_prompt_responses_pairs():
                 continue
             # result = parse_code_response(result)
             if enable_agent_code_fix:
-                supported_languages = ["javascript", "html"]
+                supported_languages = ["javascript"]
                 for i, file in enumerate(result.files):
                     if file.language.lower() not in supported_languages:
                         continue
@@ -400,8 +400,14 @@ async def build_2_prompt_responses_pairs():
                     },
                 }
             )
-        prompt += "[DEBUGGING] Is agent code fix enabled? " + str(enable_agent_code_fix)
-        prompt_responses_pairs.append({"prompt": prompt, "responses": responses})
+        prompt_responses_pairs.append(
+            {
+                "prompt": prompt
+                + "\n[DEBUGGING] Is agent code fix enabled? "
+                + str(enable_agent_code_fix),
+                "responses": responses,
+            }
+        )
     return prompt_responses_pairs
 
 
