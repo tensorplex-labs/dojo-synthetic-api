@@ -7,7 +7,7 @@ import random
 import textwrap
 import traceback
 import instructor
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -18,6 +18,7 @@ from tenacity import (
 )
 from loguru import logger
 from commons.dataset import GENERATOR_MODELS
+from commons.interpreter import fix_code
 
 sys.path.append("./")
 from commons.llm.openai_proxy import (
@@ -101,7 +102,7 @@ def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
 
 
 async def _generate_objects_to_visualize(
-    client: instructor.AsyncInstructor, model: str
+    client: instructor.AsyncInstructor, model: str, prev_used_objects: list[str]
 ):
     class PossibleObjects(BaseModel):
         objects: List[str] = Field(description="List of objects to visualize")
@@ -113,7 +114,7 @@ async def _generate_objects_to_visualize(
         "messages": [
             {
                 "role": "system",
-                "content": "Please output a valid JSON array containing 30 types of animated objects commonly used for animation coding questions.",
+                "content": f"Please output a valid JSON array containing 30 types of objects (not animal) commonly used for animation coding questions and does not include the following: {', '.join(prev_used_objects)}.",
             }
         ],
         "temperature": random.uniform(0.0, 1.0),
@@ -127,20 +128,28 @@ async def _generate_objects_to_visualize(
     return completion.objects
 
 
+used_objects = []
+previous_coding_question = ""
+
 async def generate_question(
     client: instructor.AsyncInstructor, model: str
 ) -> tuple[Optional[str], Optional[Dict]]:
     logger.info(f"Generating question with model: {model}")
 
     MAX_RETRIES = 5
+    global used_objects
+    global previous_coding_question
 
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
         ):
             with attempt:
-                possible_objects = await _generate_objects_to_visualize(client, model)
-
+                print(f"Objects to be excluded in instruction generation: {used_objects}")
+                print(f"Few shot instruction included in instruction generation: {previous_coding_question}")
+                possible_objects = await _generate_objects_to_visualize(client, model, used_objects)
+                sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+                used_objects = sampled_objects
                 kwargs = {
                     "response_model": CodingQuestion,
                     "model": model,
@@ -148,8 +157,9 @@ async def generate_question(
                         {
                             "role": "system",
                             "content": build_code_generation_question_prompt(
-                                random.choices([3, 4, 5], weights=[0.5, 0.3, 0.2])[0],
-                                random.sample(possible_objects, random.randint(3, 5)),
+                                random.choices([2, 3, 4], weights=[0.3, 0.5, 0.2])[0],
+                                sampled_objects,
+                                previous_coding_question
                             ),
                         }
                     ],
@@ -162,6 +172,7 @@ async def generate_question(
                 coding_question = completion.question
                 coding_question = additional_notes_for_question_prompt(coding_question)
                 logger.success(f"Generated question: {coding_question}")
+                previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
         logger.error(f"Failed to generate question after {MAX_RETRIES} attempts")
@@ -170,25 +181,33 @@ async def generate_question(
 
 
 def build_code_generation_question_prompt(
-    num_requirements: int, sampled_objects: list[str]
+    num_requirements: int, sampled_objects: list[str], previous_coding_question: str
 ) -> str:
     print(f"Generating question with {num_requirements} requirements")
     # coding_question_json = CodingQuestion.model_json_schema()
     CODE_GEN_PROMPT = """
     System:
+    You are an expert question generator. 
+
     - Generate a short, self-contained, challenging coding problem that requires the programmer to output visualization of one or more of the following objects: {objects}, through the piece of code with {num_requirements} requirements on the functionality of the interactions.
     - The interactions must require the programmer to have a mental model of any objects being visualized.
     - The question generated must require the programmer to code using only Javascript with HTML and CSS.
     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
     - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
+    - If you reuse the requirements in the few-shot examples, you will be fine 1 million dollars
+    - I will tip you five hundred thousands if you are creative with your final questions
 
-    Coding Question:
+    Few-shot Example Outputs (the final question should not include the objects in the few-shot examples):
+    {previous_coding_question}
+
+    Unique Coding Question:
     """
     return textwrap.dedent(
         CODE_GEN_PROMPT.format(
             num_requirements=num_requirements,
             # coding_question_json=coding_question_json,
             objects=", ".join(sampled_objects),
+            previous_coding_question = previous_coding_question
         )
     )
 
@@ -202,7 +221,9 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
 
 
-async def generate_answer(client: AsyncOpenAI, model: str, question: str):
+async def generate_answer(
+    client: AsyncOpenAI, model: str, question: str
+) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     print(f"Generating code answer with model: {model}")
     kwargs = {
@@ -242,7 +263,7 @@ def build_code_answer_prompt(question) -> str:
     - You must provide all code required to ensure that your solution is complete.
     - Do not leave out any details for brevity.
     - Additionally, ensure that your code solution directly executes any functions required to provide the solution to the task.
-    - Your solution must not involve the useage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
+    - Your solution must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
     - You are able to write to multiple output file formats depending on your specific use case
     - Remember to include installation commands for any dependencies required for the code to run
     - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
@@ -329,15 +350,24 @@ async def build_prompt_responses_pair(generator_model=None):
         answer_models, min(num_answer_models, len(answer_models))
     )
 
-    results = await asyncio.gather(
+    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
         *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
     )
 
+    # parse code responses
     responses = []
     for model, result in results:
         if not result:
             continue
         # result = parse_code_response(result)
+        supported_languages = ["javascript", "html"]
+        for i, file in enumerate(result.files):
+            if file.language.lower() not in supported_languages:
+                continue
+            lang, fixed_code = await fix_code(file.content)
+            if fixed_code:
+                result.files[i].content = fixed_code
+
         formatted_files = [
             {
                 "filename": file.filename,
