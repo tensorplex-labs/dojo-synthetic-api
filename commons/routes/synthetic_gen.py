@@ -64,6 +64,7 @@ class SyntheticGenerator:
     # point it to the shared cache between the generator and the router
     done = cache
     todo = asyncio.Queue()
+    semaphore = asyncio.Semaphore(TARGET_SIZE)
 
     def __new__(cls):
         if cls._instance is None:
@@ -100,19 +101,16 @@ class SyntheticGenerator:
     async def process_one(self):
         await self.todo.get()
         try:
-            response = await build_prompt_responses_pair()
-            if response:
-                # unique_id = await cache.redis.incr(COUNTER_KEY)
-                # await cache.redis.set(
-                #     f"{REDIS_PREFIX}:{unique_id}", json.dumps(response)
-                # )
-                await cache.redis.rpush(QUEUE_KEY, json.dumps(response))
-            else:
-                # we need to get 1 more response bruh
-                self.on_found_work(1)
-
+            async with self.semaphore:
+                num_keys = await cache.redis.llen(QUEUE_KEY)
+                if num_keys < TARGET_SIZE:
+                    response = await build_prompt_responses_pair()
+                    if response:
+                        await cache.redis.rpush(QUEUE_KEY, json.dumps(response))
+                    else:
+                        # If no response, signal that we still need to add one
+                        self.on_found_work(1)
         except Exception as exc:
-            # retry handling here...
             logger.error(f"ERROR: {exc}")
         finally:
             self.todo.task_done()

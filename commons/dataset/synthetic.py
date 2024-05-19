@@ -7,7 +7,7 @@ import random
 import textwrap
 import traceback
 import instructor
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -18,6 +18,7 @@ from tenacity import (
 )
 from loguru import logger
 from commons.dataset import GENERATOR_MODELS
+from commons.interpreter import fix_code
 
 sys.path.append("./")
 from commons.llm.openai_proxy import (
@@ -202,7 +203,9 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
 
 
-async def generate_answer(client: AsyncOpenAI, model: str, question: str):
+async def generate_answer(
+    client: AsyncOpenAI, model: str, question: str
+) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     print(f"Generating code answer with model: {model}")
     kwargs = {
@@ -329,15 +332,24 @@ async def build_prompt_responses_pair(generator_model=None):
         answer_models, min(num_answer_models, len(answer_models))
     )
 
-    results = await asyncio.gather(
+    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
         *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
     )
 
+    # parse code responses
     responses = []
     for model, result in results:
         if not result:
             continue
         # result = parse_code_response(result)
+        supported_languages = ["javascript", "html"]
+        for i, file in enumerate(result.files):
+            if file.language.lower() not in supported_languages:
+                continue
+            lang, fixed_code = await fix_code(file.content)
+            if fixed_code:
+                result.files[i].content = fixed_code
+
         formatted_files = [
             {
                 "filename": file.filename,
