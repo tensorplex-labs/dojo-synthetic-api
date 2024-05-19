@@ -2,10 +2,13 @@ import asyncio
 import json
 from fastapi import APIRouter, BackgroundTasks
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from loguru import logger
 from commons.cache import RedisCache
-from commons.dataset.synthetic import build_prompt_responses_pair
+from commons.dataset.synthetic import (
+    build_2_prompt_responses_pairs,
+    build_prompt_responses_pair,
+)
 
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
@@ -16,7 +19,7 @@ QUEUE_KEY = "synthetic:queue"
 
 class SyntheticGenResponse(BaseModel):
     success: bool
-    body: Optional[dict] = None
+    body: Optional[List[dict]] = None
     error: Optional[str] = None
 
 
@@ -31,7 +34,7 @@ async def execute_python_code(background_tasks: BackgroundTasks):
             except json.JSONDecodeError:
                 result = {}
         else:
-            result = await build_prompt_responses_pair()
+            result = await build_2_prompt_responses_pairs()
 
         background_tasks.add_task(generator.arun)
 
@@ -41,21 +44,7 @@ async def execute_python_code(background_tasks: BackgroundTasks):
             "error": None,
         }
     except Exception as e:
-        return {"success": False, "body": None, "error": str(e)}
-
-
-async def replenish_cache():
-    # while cache.qsize() < cache.maxsize:
-    while await cache.redis.llen(QUEUE_KEY) < TARGET_SIZE:
-        try:
-            result = await build_prompt_responses_pair()
-            if not result:
-                continue
-            # unique_id = await cache.redis.incr(COUNTER_KEY)
-            # await cache.redis.set(f"{REDIS_PREFIX}:{unique_id}", json.dumps(result))
-            await cache.redis.rpush(QUEUE_KEY, json.dumps(result))
-        except Exception as e:
-            print(f"Error replenishing cache: {e}")
+        return {"success": False, "body": [], "error": str(e)}
 
 
 class SyntheticGenerator:
@@ -104,12 +93,10 @@ class SyntheticGenerator:
             async with self.semaphore:
                 num_keys = await cache.redis.llen(QUEUE_KEY)
                 if num_keys < TARGET_SIZE:
-                    response = await build_prompt_responses_pair()
-                    if response:
-                        await cache.redis.rpush(QUEUE_KEY, json.dumps(response))
-                    else:
-                        # If no response, signal that we still need to add one
-                        self.on_found_work(1)
+                    # TODO restore once done with testing agent
+                    # response = await build_prompt_responses_pair()
+                    responses = await build_2_prompt_responses_pairs()
+                    await cache.redis.rpush(QUEUE_KEY, json.dumps(responses))
         except Exception as exc:
             logger.error(f"ERROR: {exc}")
         finally:
