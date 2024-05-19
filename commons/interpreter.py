@@ -208,12 +208,13 @@ def has_code(message):
     return False
 
 
-# TODO use model as param
-async def fix_code(code: str):
+async def fix_code(
+    code: str, model_name: str, provider: Provider = Provider.OPENROUTER
+):
     coder = AssistantAgent(
         AGENT_CODER_NAME,
         system_message=CODING_PROMPT,
-        llm_config=build_autogen_llm_config(),
+        llm_config=build_autogen_llm_config(model_name=model_name, provider=provider),
     )
 
     reviewer = AssistantAgent(
@@ -227,7 +228,7 @@ async def fix_code(code: str):
         You will be able to get the code diagnostics from the functions provided.
         You must not do any coding, and must instead delegate the coding tasks to the {AGENT_CODER_NAME}.
         """,
-        llm_config=build_autogen_llm_config(),
+        llm_config=build_autogen_llm_config(model_name=model_name, provider=provider),
     )
     reviewer.register_for_execution(name="code_diagnostics")(
         CodeDiagnostics.diagnostics
@@ -430,5 +431,5 @@ Note:
 - The visualization should be implemented in JavaScript with HTML and CSS.
 - Ensure that the output has both index.js and index.html files
     """
-    asyncio.run(fix_code(js_code))
+    # asyncio.run(fix_code(js_code, "openai/gpt-4-turbo"))
     asyncio.run(agent_code(problem))
