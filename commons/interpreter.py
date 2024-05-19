@@ -173,6 +173,7 @@ Your task is to fix the code based on the diagnostics, which will show you error
 When the code has no errors, reply with {CODE_DONE_TOKEN}.
 You must maintain the original functionality and structure of the code.
 You must not omit any details for brevity.
+Whenever you apply changes to the code, you must provide the full, corrected code, not only the part that was changed.
 """
 AGENT_CODER_NAME = "coding expert"
 # this seems to make the agent worse
