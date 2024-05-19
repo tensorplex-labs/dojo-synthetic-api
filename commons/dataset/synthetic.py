@@ -378,7 +378,7 @@ async def build_2_prompt_responses_pairs():
                 for i, file in enumerate(result.files):
                     if file.language.lower() not in supported_languages:
                         continue
-                    lang, fixed_code = await fix_code(file.content)
+                    lang, fixed_code = await fix_code(file.content, model)
                     if fixed_code:
                         result.files[i].content = fixed_code
 
@@ -444,7 +444,7 @@ async def build_prompt_responses_pair(generator_model=None):
         for i, file in enumerate(result.files):
             if file.language.lower() not in supported_languages:
                 continue
-            lang, fixed_code = await fix_code(file.content)
+            lang, fixed_code = await fix_code(file.content, model)
             if fixed_code:
                 result.files[i].content = fixed_code
 

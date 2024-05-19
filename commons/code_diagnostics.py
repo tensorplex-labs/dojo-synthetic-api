@@ -117,7 +117,8 @@ def tsserver_diagnostics(code: str):
         response = read_response(process)
         if not response.strip():
             break
-        parse_diagnostics(response)
+        diagnostics = parse_diagnostics(response)
+        logger.info(f"diagnostics: {diagnostics}")
 
     # Close the tsserver
     process.terminate()
