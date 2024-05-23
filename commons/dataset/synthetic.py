@@ -196,18 +196,20 @@ def build_code_generation_question_prompt(
     System:
     You are an expert question generator.
 
-    - Generate a short, self-contained, challenging coding problem that requires the programmer to output visualization of one or more of the following objects: {objects}, through the piece of code with {num_requirements} requirements on the functionality of the interactions.
+    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: {objects}, through the piece of code with {num_requirements} requirements on user interactions.
+    - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
+    - The complexity level should be 20 of out 100.
+    - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars
+    - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.
     - The interactions must require the programmer to have a mental model of any objects being visualized.
-    - The question generated must require the programmer to code using only Javascript with HTML and CSS.
+    - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.
     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
     - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
-    - If you reuse the requirements in the few-shot examples, you will be fine 1 million dollars
-    - I will tip you five hundred thousands if you are creative with your final questions
 
-    Few-shot Example Outputs (the final question should not include the objects in the few-shot examples):
+    #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):
     {previous_coding_question}
 
-    Unique Coding Question:
+    #Unique Coding Question#:
     """
     return textwrap.dedent(
         CODE_GEN_PROMPT.format(
