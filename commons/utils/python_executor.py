@@ -2,16 +2,20 @@ import sys
 
 sys.path.append("./")
 import os
+import re
 import json
+import base64
 from typing import Optional, List, DefaultDict, Any, cast
 from collections import defaultdict
 from dotenv import load_dotenv
 import httpx
 import pandas as pd
+from pydantic import BaseModel
 from e2b_code_interpreter import CodeInterpreter
 from e2b_code_interpreter.models import Result
 from e2b.sandbox.filesystem_watcher import FilesystemEvent
 from commons.utils.utils import get_packages
+from commons.utils.logger_helper import LoggerHelper
 
 load_dotenv()
 
@@ -40,6 +44,12 @@ IMG_TEMPLATE = """
 <img src="data:image/png;base64, {img}" />
 """
 
+SCRIPT_TEMPLATE = """
+<script>
+    {script}
+</script>
+"""
+
 BASE_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -55,8 +65,16 @@ BASE_TEMPLATE = """
 </html>
 """
 
+def run_once(f):
+    def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            wrapper.has_run = True
+            return f(*args, **kwargs)
+    wrapper.has_run = False
+    return wrapper
+
 class PythonExecutor:
-    def __init__(self, code: Optional[str] = None , file : Optional[str] = None):
+    def __init__(self, code: Optional[str] = None , file : Optional[str] = None, debug : bool = False):
         if code is None and file is None:
             raise ValueError("Either code or file should be provided")
         
@@ -69,71 +87,157 @@ class PythonExecutor:
             with open(file, "r") as f:
                 self.code = f.read()
                 
-        self.created_files : DefaultDict[str, List] = defaultdict(list)
+        self.created_files : DefaultDict[str, Any] = defaultdict(list)
+        self.debug = debug
+        self.logger = LoggerHelper(__name__).get_logger()
+        self.preprocess_code()
+        print(self.code)
+        
+    def preprocess_code(self):     
+        self.code = self.replace_mpld3_show(self.code)
+        
+    def initialize_sandbox(self):
+        watch_tmp = False
+        packages = " ".join(get_packages(self.code))
+        if "bokeh" in packages:
+            watch_tmp = True
+            
+        sandbox = CodeInterpreter(cwd = "/home/user")
+        kernel_id = sandbox.notebook.create_kernel(cwd = "/home/user")
+        self.logger.debug(f"Installing packages {packages}")
+        sandbox.notebook.exec_cell(f"!pip install {packages}", kernel_id = kernel_id)
+        self.sandbox = sandbox
+        self.kernel_id = kernel_id
+        self.start_watcher(watch_tmp=watch_tmp)
 
     def execute(self):
-        packages = " ".join(get_packages(self.code))
-        with CodeInterpreter(cwd = "/home") as sandbox:
-            sandbox.notebook.exec_cell(f"!pip install {packages}")
-            results = sandbox.notebook.exec_cell(self.code).results
-            print(self.created_files.keys())
-            url = "https://" + sandbox.get_hostname(port = 5006)  
-            # self.get_webpage(url)
-            
-            content = sandbox.filesystem.list("/")  
-            for item in content:
-                print(f"Is '{item.name}' directory?", item.is_dir)
-            print("-------------------")
-            
-            content = sandbox.filesystem.list("/home")  
-            for item in content:
-                print(f"Is '{item.name}' directory?", item.is_dir)
-            print("-------------------")
-            content = sandbox.filesystem.list("/home/user")  
-            for item in content:
-                print(f"Is '{item.name}' directory?", item.is_dir)
+        self.initialize_sandbox()        
+        ports = self.get_running_ports()
+        execution = self.sandbox.notebook.exec_cell(self.code, on_stderr= print, on_stdout= print)
+        if execution.error:
+            return BASE_TEMPLATE.format(content = execution.error)
+        
+        results = execution.results
+        final_ports = self.get_running_ports()
+        if z := final_ports - ports:
+            print(z)
+            port = z.pop()
+            url = "https://" + self.sandbox.get_hostname(port) 
+            return self.get_webpage(url)
+        
+        return self.handle_responses(results)
     
-            return self.handle_responses(results)
+    def close_sandbox(self):
+        self.sandbox.close()
+        
+    def get_running_ports(self) -> set[int]:
+        self.install_lsof()
+        initial_ports = self.sandbox.process.start_and_wait(cmd = "lsof -i -P -n | grep LISTEN | awk '{print $9}' | sed 's/.*://'")
+        all_ports = initial_ports.stdout.split("\n")
+        return set([int(port) for port in all_ports if port != "" and len(port) < 5 and port != "8888"])
+        
+    @staticmethod
+    def replace_mpld3_show(code: str):
+        pattern = r'mpld3\.show\((\w*)\)'
+        replacement = r'mpld3.display(\1)'
+        return re.sub(pattern, replacement, code)
+    
+    @staticmethod
+    def _list_dir(sandbox : CodeInterpreter, dir : str):
+        content = sandbox.filesystem.list(dir)  
+        for item in content:
+            print(f"Is '{item.name}' directory?", item.is_dir)
+        print("------------------------------------")
+        
+    @run_once
+    def install_lsof(self):
+        self.logger.debug("Installing lsof")
+        self.sandbox.process.start_and_wait(cmd = "sudo apt-get install lsof")
         
     def get_webpage(self, url : str):
         response = httpx.get(url)
-        print(response.status_code)
-        with open("test_response.json", "w") as f:
-            json.dump(response.json(), f)
+        if response.status_code == 200:
+            self.logger.info(f"Returning webpage from {url}")
+            return response.text
         
-    def start_watcher(self, sandbox : CodeInterpreter, dir : str = "/home"):
-        watcher = sandbox.filesystem.watch_dir(dir)  
+        return BASE_TEMPLATE.format(content = "")
+        
+    def start_watcher(self, dir : str = "/home/user", watch_tmp : bool = False):
         def download_file(event : FilesystemEvent):
-            if event.operation == "Create":
+            self.logger.info(f"Operation {event.operation} {event.path}")
+            if event.operation == "Write":
                 file_path = event.path
                 file_name = os.path.basename(file_path)
-                self.created_files[file_name].append(sandbox.filesystem.read(file_path))
+                if file_name.endswith(".html"):
+                    bytes_file = self.sandbox.download_file(file_path, timeout=None)
+                    self.created_files[file_name] = bytes_file.decode("utf-8")
+                
+                if file_name.endswith(".png"):
+                    bytes_file = self.sandbox.download_file(file_path, timeout=None)
+                    img_tag = IMG_TEMPLATE.format(img=base64.b64encode(bytes_file).decode("utf-8"))
+                    self.created_files[file_name] = BASE_TEMPLATE.format(content = img_tag)
+                    
+        if watch_tmp:
+            tmp_watcher = self.sandbox.filesystem.watch_dir("/tmp")
+            tmp_watcher.add_event_listener(lambda event: download_file(event))
+            self.logger.debug("Watching /tmp directory")
+            tmp_watcher.start()
         
+        watcher = self.sandbox.filesystem.watch_dir(dir)  
         watcher.add_event_listener(lambda event: download_file(event))  
-        watcher.start()  
+        watcher.start()
         
-    def handle_responses(self, results : List[Result])-> str | None:
+    def handle_responses(self, results : List[Result])-> str:  
+        if len(self.created_files) != 0:
+            print(self.created_files.keys())
+            keys = list(self.created_files.keys())
+            self.logger.info(f"Returning file {keys[0]}")
+            return self.created_files[keys[0]]
+        
         datatypes = defaultdict(list)
         for result in results:
             df = pd.json_normalize(result.raw, max_level = 0)
             result_dict = df.to_dict(orient='records')[0]
             for key, value in result_dict.items():
                 datatypes[key].append(value)
-            
+                
+        if self.debug:
+            with open("output.json", "w") as f:
+                dump = [vars(result) for result in results]
+                json.dump(dump, f)     
+            with open("output_formatted.json", "w") as f:
+                json.dump(datatypes, f)
+                
         if "application/vnd.plotly.v1+json" in datatypes:
             plot_data = datatypes["application/vnd.plotly.v1+json"][0]
             dumps = json.dumps(plot_data)
             return PLOTLY_TEMPLATE.format(plotData = dumps)
-        elif "text/html" in datatypes:
-            return BASE_TEMPLATE.format(content = datatypes["text/html"].pop())
-        elif "image/png" in datatypes:
-            img_string = IMG_TEMPLATE.format(img = datatypes["image/png"].pop())
-            return BASE_TEMPLATE.format(content = img_string)
+
+        content_parts = []
+        if "text/html" in datatypes:
+            content_parts.extend(datatypes["text/html"])
+        if "image/png" in datatypes:
+            content_parts.append(IMG_TEMPLATE.format(img=datatypes["image/png"].pop()))
+        if "application/javascript" in datatypes:
+            content_parts.append(SCRIPT_TEMPLATE.format(script="\n".join(datatypes["application/javascript"])))
+        content = "\n".join(content_parts)
+        self.logger.info(f"Returning content from kernel output")
+        return BASE_TEMPLATE.format(content = content)
+    
+    def main(self):
+        try:
+            output = self.execute()
+        except SyntaxError as e:
+            return BASE_TEMPLATE.format(content = "")
+        self.close_sandbox()
+        
+        return output
     
 if __name__ == "__main__":
-    output = PythonExecutor(file = "plot_test.py").execute()
-    # with open("output.json", "w") as f:
-    #     json.dump(output, f)
+    code = """import plotly.express as px
+fig = px.scatter(x=range(10), y=range(10))
+fig.write_html("test.html")"""
+    output = PythonExecutor(file = "matplotlib_test.py", debug = True).main()
     if output is not None:
         with open("output.html", "w") as f:
             f.write(output)

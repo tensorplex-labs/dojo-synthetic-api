@@ -4,6 +4,7 @@ import sys
 import json
 import asyncio
 import random
+import logging
 import textwrap
 import instructor
 from typing import List, Optional
@@ -14,10 +15,13 @@ from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
 
 sys.path.append("./")
 from commons.llm.openai_proxy import Provider, get_openai_client
+from commons.utils.python_executor import PythonExecutor
+from commons.utils.logger_helper import LoggerHelper
 from commons.utils.utils import generate_simple_json
 
 load_dotenv()
 
+logger = LoggerHelper(__name__).get_logger()
 
 class CodingQuestion(BaseModel):
     question: str = Field(
@@ -30,6 +34,7 @@ class FileObject(BaseModel):
     filename: str = Field(description="Name of the file")
     content: str = Field(description="Content of the file which can be code or json")
     language: str = Field(description="Programming language of the file")
+    original_code: Optional[str] = ""
 
 
 class CodeAnswer(BaseModel):
@@ -44,9 +49,9 @@ class CodeAnswer(BaseModel):
     )
 
 
-def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
+async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
     """Ensure that necessary files appended for python"""
-    result_object = append_codesandbox_files(result_object)
+    result_object = await append_codesandbox_files(result_object)
     # result_object = escape_double_quotes_in_files(result_object)
     return result_object
 
@@ -59,28 +64,50 @@ def escape_double_quotes_in_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
             file.content = file.content.replace(r"\'", r"'")
     return codeanswer_object
 
-
-def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    javascript_file_detected = False
-    for file in codeanswer_object.files:
-        if file.language == "javascript":
-            javascript_file_detected = True
-            break
-
-    if javascript_file_detected:
-        package_json_content = json.dumps(
+async def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
+    package_json_content = json.dumps(
             {"dependencies": {"three": "latest"}}, indent=4
         )
 
-        package_json_file = FileObject(
-            filename="package.json",
-            content=package_json_content,
-            language="json",
-        )
-        codeanswer_object.files.append(package_json_file)
-
+    package_json_file = FileObject(
+        filename="package.json",
+        content=package_json_content,
+        language="json",
+    )
+    codeanswer_object.files.append(package_json_file)
     return codeanswer_object
 
+async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
+    main_file : FileObject | None = None
+    for file in codeanswer_object.files:
+        if file.language == "python" and file.filename == "main.py":
+            main_file = file
+            break
+            
+    if not main_file:
+        raise Exception("No main.py file found in code answer of Python code")
+    
+    executor = PythonExecutor(code=main_file.content)
+    try:
+        loop = asyncio.get_event_loop()
+        html = await loop.run_in_executor(None, executor.main)
+    except Exception as e:
+        logger.error(f"Error occurred while executing Python code: {e}")
+        raise e
+    
+    codeanswer_object.files = [FileObject(filename="index.html", content=html, language="html", original_code = main_file.content)]
+    
+    return codeanswer_object
+            
+async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
+    javascript_file_detected = any(file.language == "javascript" for file in codeanswer_object.files)
+    python_file_detected = any(file.language == "python" for file in codeanswer_object.files)
+    if javascript_file_detected:
+        return await handle_javascript_files(codeanswer_object)
+    elif python_file_detected:
+        return await handle_python_files(codeanswer_object)
+    else:
+        return codeanswer_object
 
 async def generate_question(
     client: instructor.AsyncInstructor, model: str
@@ -113,6 +140,26 @@ async def generate_question(
         pass
 
 
+# def build_code_generation_question_prompt(num_requirements: int) -> str:
+#     print(f"Generating question with {num_requirements} requirements")
+#     # coding_question_json = CodingQuestion.model_json_schema()
+#     CODE_GEN_PROMPT = """
+#     System:
+#     - Generate a short, self-contained, challenging coding problem that requires the programmer to output an visualization from the piece of code with {num_requirements} requirements on the functionality of the interactions.
+#     - The interactions must require the programmer to have a mental model of any objects being visualized.
+#     - The question generated must require the programmer to code using only Javascript with HTML and CSS.
+#     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
+#     - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
+
+#     Coding Question:
+#     """
+#     return textwrap.dedent(
+#         CODE_GEN_PROMPT.format(
+#             num_requirements=num_requirements,
+#             # coding_question_json=coding_question_json,
+#         )
+#     )
+
 def build_code_generation_question_prompt(num_requirements: int) -> str:
     print(f"Generating question with {num_requirements} requirements")
     # coding_question_json = CodingQuestion.model_json_schema()
@@ -120,7 +167,7 @@ def build_code_generation_question_prompt(num_requirements: int) -> str:
     System:
     - Generate a short, self-contained, challenging coding problem that requires the programmer to output an visualization from the piece of code with {num_requirements} requirements on the functionality of the interactions.
     - The interactions must require the programmer to have a mental model of any objects being visualized.
-    - The question generated must require the programmer to code using only Javascript with HTML and CSS.
+    - The question generated must require the programmer to code using only Python.
     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
     - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
 
@@ -134,11 +181,21 @@ def build_code_generation_question_prompt(num_requirements: int) -> str:
     )
 
 
+# def additional_notes_for_question_prompt(prompt: str) -> str:
+#     ADDITIONAL_NOTES = """
+#     Note:
+#     - The visualization should be implemented in JavaScript with HTML and CSS.
+#     - Ensure that the output has both index.js and index.html files
+#      """
+#     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
+
 def additional_notes_for_question_prompt(prompt: str) -> str:
     ADDITIONAL_NOTES = """
     Note:
-    - The visualization should be implemented in JavaScript with HTML and CSS.
-    - Ensure that the output has both index.js and index.html files
+    - The visualization should be implemented in Python.
+    - Ensure that the output has both main.py and requirements.txt files
+    - The visualization should be saved to an external file.
+    - Pygame is not allowed.
      """
     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
 
@@ -183,7 +240,7 @@ def build_code_answer_prompt(question) -> str:
     - You must provide all code required to ensure that your solution is complete.
     - Do not leave out any details for brevity.
     - Additionally, ensure that your code solution directly executes any functions required to provide the solution to the task.
-    - Your solution must not involve the useage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
+    - Your solution must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
     - You are able to write to multiple output file formats depending on your specific use case
     - Remember to include installation commands for any dependencies required for the code to run
     - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
@@ -283,12 +340,13 @@ async def build_prompt_responses_pair():
     for model, result in results:
         if not result:
             continue
-        # result = parse_code_response(result)
+        result = await parse_code_response(result)
         formatted_files = [
             {
                 "filename": file.filename,
                 "content": file.content,
                 "language": file.language,
+                "original_code": file.original_code,
             }
             for file in result.files
         ]
@@ -307,7 +365,9 @@ async def build_prompt_responses_pair():
 
 async def main():
     res = await build_prompt_responses_pair()
-    print(f"{res=}")
+    # print(f"{res=}")
+    with open("generated_data.json", "w") as f:
+        json.dump(res, f, indent=4)
 
 
 if __name__ == "__main__":

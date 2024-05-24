@@ -14,7 +14,7 @@ def generate_simple_json(model: BaseModel) -> dict:
     }
     return descriptions
 
-def get_packages(code : str):
+def get_packages(code : str) -> set[str]:
     replaced_code = code.replace('\\n', '\n').replace('\\t', '\t')
     modules = set()
     
