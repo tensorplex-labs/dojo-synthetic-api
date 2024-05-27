@@ -9,12 +9,18 @@ __spec_version__ = (
 VALIDATOR_MIN_STAKE = 20_000
 
 GENERATOR_MODELS = [
-    "openai/gpt-3.5-turbo",
-    "openai/gpt-3.5-turbo-0125",
-    "openai/gpt-3.5-turbo-1106",
-    "openai/gpt-3.5-turbo-0613",
-    "openai/gpt-3.5-turbo-0301",
-    "openai/gpt-3.5-turbo-16k",
+    # COMMENTED OUT THESE MODELS BECUASE NOT WORKING / NOT STABLE
+    # "openai/gpt-3.5-turbo",
+    # "openai/gpt-3.5-turbo-0125",
+    # "openai/gpt-3.5-turbo-1106",
+    # "openai/gpt-3.5-turbo-0613",
+    # "openai/gpt-3.5-turbo-0301",
+    # "openai/gpt-3.5-turbo-16k",
+    # "openai/gpt-3.5-turbo-instruct",
+    # "google/gemini-pro-1.5",
+    # "perplexity/pplx-7b-online",
+    # "perplexity/pplx-70b-chat",
+    # WORKING MODELS
     "openai/gpt-4-turbo",
     "openai/gpt-4-turbo-preview",
     "openai/gpt-4-1106-preview",
@@ -23,7 +29,9 @@ GENERATOR_MODELS = [
     "openai/gpt-4-32k",
     "openai/gpt-4-32k-0314",
     "openai/gpt-4-vision-preview",
-    "openai/gpt-3.5-turbo-instruct",
+    "openai/gpt-4o",
+    # TODO need to integrate deepseek API provider
+    # "deepseek-chat",
 ]
 
 ANSWER_MODELS = [

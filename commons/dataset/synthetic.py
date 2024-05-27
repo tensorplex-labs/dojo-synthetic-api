@@ -6,22 +6,40 @@ import asyncio
 import random
 import logging
 import textwrap
+import traceback
 import instructor
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
+from tenacity import (
+    AsyncRetrying,
+    RetryError,
+    stop_after_attempt,
+)
+from loguru import logger
+from commons.dataset import GENERATOR_MODELS
+from commons.interpreter import fix_code
 
 sys.path.append("./")
-from commons.llm.openai_proxy import Provider, get_openai_client
+from commons.llm.openai_proxy import (
+    Provider,
+    get_async_openai_client,
+    get_instructor_client,
+)
 from commons.utils.python_executor import PythonExecutor
-from commons.utils.logger_helper import LoggerHelper
 from commons.utils.utils import generate_simple_json
 
 load_dotenv()
 
-logger = LoggerHelper(__name__).get_logger()
+
+def log_retry_info(retry_state):
+    """Meant to be used with tenacity's before_sleep callback"""
+    logger.warning(
+        f"Retry attempt {retry_state.attempt_number} failed with exception: {retry_state.outcome.exception()}",
+    )
+    logger.warning(f"Traceback: {traceback.format_exc()}")
+
 
 class CodingQuestion(BaseModel):
     question: str = Field(
@@ -29,7 +47,6 @@ class CodingQuestion(BaseModel):
     )
 
 
-# Schema for the generated coding answer from LLM
 class FileObject(BaseModel):
     filename: str = Field(description="Name of the file")
     content: str = Field(description="Content of the file which can be code or json")
@@ -98,7 +115,7 @@ async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     codeanswer_object.files = [FileObject(filename="index.html", content=html, language="html", original_code = main_file.content)]
     
     return codeanswer_object
-            
+
 async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     javascript_file_detected = any(file.language == "javascript" for file in codeanswer_object.files)
     python_file_detected = any(file.language == "python" for file in codeanswer_object.files)
@@ -108,75 +125,124 @@ async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
         return await handle_python_files(codeanswer_object)
     else:
         return codeanswer_object
+    
 
-async def generate_question(
-    client: instructor.AsyncInstructor, model: str
-) -> Optional[str]:
-    print(f"Generating question with model: {model}")
+async def _generate_objects_to_visualize(
+    client: instructor.AsyncInstructor, model: str, prev_used_objects: list[str]
+):
+    class PossibleObjects(BaseModel):
+        objects: List[str] = Field(description="List of objects to visualize")
+
+    logger.info(f"Generating objects to use for question with model: {model}")
     kwargs = {
-        "response_model": CodingQuestion,
+        "response_model": PossibleObjects,
         "model": model,
         "messages": [
             {
                 "role": "system",
-                "content": build_code_generation_question_prompt(
-                    random.choices([3, 4, 5], weights=[0.5, 0.3, 0.2])[0]
-                ),
+                "content": f"Please output a valid JSON array containing 30 types of objects (not animal) commonly used for animation coding questions and does not include the following: {', '.join(prev_used_objects)}.",
             }
         ],
-        "temperature": random.uniform(0.0, 0.5),
-        "max_tokens": 8192,
+        "temperature": random.uniform(0.0, 1.0),
+        "max_tokens": 1024,
         "top_p": random.uniform(0.9, 1.0),
-        "seed": random.randint(0, 1e9),  # needed for OpenAI
     }
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+    completion = await client.chat.completions.create(**kwargs)
+    logger.success(f"Got objects to visualize, completion={completion=}")
+    return completion.objects
+
+
+used_objects = []
+previous_coding_question = ""
+
+
+async def generate_question(
+    client: instructor.AsyncInstructor, model: str
+) -> tuple[Optional[str], Optional[Dict]]:
+    logger.info(f"Generating question with model: {model}")
+
+    MAX_RETRIES = 5
+    global used_objects
+    global previous_coding_question
+
     try:
-        completion = await client.chat.completions.create(**kwargs)
-        coding_question = completion.question
-        coding_question = additional_notes_for_question_prompt(coding_question)
-        print(f"Generated question: {coding_question}")
-        return coding_question
-    except Exception as e:
-        print(f"Error occurred while generating question: {e}")
-        pass
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
+        ):
+            with attempt:
+                print(
+                    f"Objects to be excluded in instruction generation: {used_objects}"
+                )
+                print(
+                    f"Few shot instruction included in instruction generation: {previous_coding_question}"
+                )
+                possible_objects = await _generate_objects_to_visualize(
+                    client, model, used_objects
+                )
+                sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+                used_objects = sampled_objects
+                kwargs = {
+                    "response_model": CodingQuestion,
+                    "model": model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": build_code_generation_question_prompt(
+                                random.choices([2, 3, 4], weights=[0.3, 0.5, 0.2])[0],
+                                sampled_objects,
+                                previous_coding_question,
+                            ),
+                        }
+                    ],
+                    "temperature": random.uniform(0.0, 0.5),
+                    "max_tokens": 8192,
+                    "top_p": random.uniform(0.9, 1.0),
+                    "seed": random.randint(0, 1e9),  # needed for OpenAI
+                }
+                completion = await client.chat.completions.create(**kwargs)
+                coding_question = completion.question
+                coding_question = additional_notes_for_question_prompt(coding_question)
+                logger.success(f"Generated question: {coding_question}")
+                previous_coding_question = coding_question
+                return coding_question, kwargs
+    except RetryError:
+        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts")
+
+    return None, None
 
 
-# def build_code_generation_question_prompt(num_requirements: int) -> str:
-#     print(f"Generating question with {num_requirements} requirements")
-#     # coding_question_json = CodingQuestion.model_json_schema()
-#     CODE_GEN_PROMPT = """
-#     System:
-#     - Generate a short, self-contained, challenging coding problem that requires the programmer to output an visualization from the piece of code with {num_requirements} requirements on the functionality of the interactions.
-#     - The interactions must require the programmer to have a mental model of any objects being visualized.
-#     - The question generated must require the programmer to code using only Javascript with HTML and CSS.
-#     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
-#     - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
-
-#     Coding Question:
-#     """
-#     return textwrap.dedent(
-#         CODE_GEN_PROMPT.format(
-#             num_requirements=num_requirements,
-#             # coding_question_json=coding_question_json,
-#         )
-#     )
-
-def build_code_generation_question_prompt(num_requirements: int) -> str:
+def build_code_generation_question_prompt(
+    num_requirements: int, sampled_objects: list[str], previous_coding_question: str
+) -> str:
     print(f"Generating question with {num_requirements} requirements")
     # coding_question_json = CodingQuestion.model_json_schema()
     CODE_GEN_PROMPT = """
     System:
-    - Generate a short, self-contained, challenging coding problem that requires the programmer to output an visualization from the piece of code with {num_requirements} requirements on the functionality of the interactions.
+    You are an expert question generator.
+
+    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: {objects}, through the piece of code with {num_requirements} requirements on user interactions.
+    - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
+    - The complexity level should be 20 of out 100.
+    - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars
+    - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.
     - The interactions must require the programmer to have a mental model of any objects being visualized.
-    - The question generated must require the programmer to code using only Python.
+    - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.
     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
     - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
 
-    Coding Question:
+    #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):
+    {previous_coding_question}
+
+    #Unique Coding Question#:
     """
     return textwrap.dedent(
         CODE_GEN_PROMPT.format(
             num_requirements=num_requirements,
             # coding_question_json=coding_question_json,
+            objects=", ".join(sampled_objects),
+            previous_coding_question=previous_coding_question,
         )
     )
 
@@ -200,7 +266,9 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
 
 
-async def generate_answer(client: AsyncOpenAI, model: str, question: str):
+async def generate_answer(
+    client: AsyncOpenAI, model: str, question: str
+) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     print(f"Generating code answer with model: {model}")
     kwargs = {
@@ -219,8 +287,9 @@ async def generate_answer(client: AsyncOpenAI, model: str, question: str):
         "temperature": 0.0,
         "max_tokens": 8192,
         "top_p": random.uniform(0.9, 1.0),
-        "seed": random.randint(0, 1e9),  # needed for OpenAI
     }
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
     try:
         completion = await client.chat.completions.create(**kwargs)
         # print(f"Generated completion: {completion}")
@@ -248,7 +317,7 @@ def build_code_answer_prompt(question) -> str:
 
     Few-shot Example Outputs:
     {few_shot_examples}
-    
+
     Question:
     {question}
 
@@ -308,20 +377,87 @@ def few_shot_example_outputs():
     return EXAMPLE_OUTPUTS
 
 
-async def build_prompt_responses_pair():
+async def build_2_prompt_responses_pairs():
     import commons.dataset as dataset
 
-    client = get_openai_client(Provider.OPENROUTER)
+    client = get_instructor_client(Provider.OPENROUTER)
     # use these models because we can specify seed
-    MAX_RETRIES = 3
-    prompt = None
-    for _ in range(MAX_RETRIES):
-        model_choice = random.choice(dataset.GENERATOR_MODELS)
-        prompt = await generate_question(client, model_choice)
-        if prompt:
-            break
+    model_choice = random.choice(dataset.GENERATOR_MODELS)
+    prompt, kwargs = await generate_question(client, model_choice)
+    if not prompt or not kwargs:
+        logger.info("Failed to generate question...")
+        return []
 
-    if not prompt:
+    # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
+    # randomly sampled from pool of models
+    answer_models = dataset.ANSWER_MODELS
+    num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
+    selected_models = random.sample(
+        answer_models, min(num_answer_models, len(answer_models))
+    )
+
+    prompt_responses_pairs = []
+    for enable_agent_code_fix in [True, False]:
+        results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
+            *[
+                generate_answer(client, ans_model, prompt)
+                for ans_model in selected_models
+            ]
+        )
+
+        # parse code responses
+        responses = []
+        for model, result in results:
+            if not result:
+                continue
+            # result = parse_code_response(result)
+            if enable_agent_code_fix:
+                supported_languages = ["javascript"]
+                for i, file in enumerate(result.files):
+                    if file.language.lower() not in supported_languages:
+                        continue
+                    lang, fixed_code = await fix_code(file.content, model)
+                    if fixed_code:
+                        result.files[i].content = fixed_code
+
+            formatted_files = [
+                {
+                    "filename": file.filename,
+                    "content": file.content,
+                    "language": file.language,
+                }
+                for file in result.files
+            ]
+            responses.append(
+                {
+                    "model": model,
+                    "completion": {
+                        "files": formatted_files,
+                        "installation_commands": result.installation_commands,
+                        "additional_notes": result.additional_notes,
+                    },
+                }
+            )
+        prompt_responses_pairs.append(
+            {
+                "prompt": prompt
+                + "\n[DEBUGGING] Is agent code fix enabled? "
+                + str(enable_agent_code_fix),
+                "responses": responses,
+            }
+        )
+    return prompt_responses_pairs
+
+
+async def build_prompt_responses_pair(generator_model=None):
+    import commons.dataset as dataset
+
+    client = get_instructor_client(Provider.OPENROUTER)
+    # use these models because we can specify seed
+    model_choice = generator_model or random.choice(dataset.GENERATOR_MODELS)
+    prompt, kwargs = await generate_question(client, model_choice)
+    if not prompt or not kwargs:
+        logger.info("Failed to generate question...")
         return None
 
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
@@ -332,15 +468,24 @@ async def build_prompt_responses_pair():
         answer_models, min(num_answer_models, len(answer_models))
     )
 
-    results = await asyncio.gather(
+    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
         *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
     )
 
+    # parse code responses
     responses = []
     for model, result in results:
         if not result:
             continue
-        result = await parse_code_response(result)
+        # result = parse_code_response(result)
+        supported_languages = ["javascript", "html"]
+        for i, file in enumerate(result.files):
+            if file.language.lower() not in supported_languages:
+                continue
+            lang, fixed_code = await fix_code(file.content, model)
+            if fixed_code:
+                result.files[i].content = fixed_code
+
         formatted_files = [
             {
                 "filename": file.filename,
@@ -363,11 +508,30 @@ async def build_prompt_responses_pair():
     return {"prompt": prompt, "responses": responses}
 
 
+async def test_generate_questions():
+    log_data = []
+    client = get_instructor_client(provider=Provider.OPENROUTER)
+    for model in GENERATOR_MODELS:
+        result = await generate_question(client, model)
+        if result is None:
+            continue
+        # unstructure tuple
+        question, kwargs = result
+        log_data.append({"model": model, "question": question, "kwargs": kwargs})
+
+    print(f"{log_data}")
+    # Convert the list of dictionaries to a JSON string
+    for data in log_data:
+        data["kwargs"].pop("response_model")
+    json_data = json.dumps(log_data, indent=4)
+
+    # Write the JSON string to a file
+    with open("output.json", "w") as file:
+        file.write(json_data)
+
+
 async def main():
-    res = await build_prompt_responses_pair()
-    # print(f"{res=}")
-    with open("generated_data.json", "w") as f:
-        json.dump(res, f, indent=4)
+    await test_generate_questions()
 
 
 if __name__ == "__main__":

@@ -1,18 +1,14 @@
-import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-# Assuming code_gen is a FastAPI router imported from your project's module
-from commons.routes.code_gen import code_gen_router
-from commons.routes.synthetic_gen import synthetic_gen_router
-
-import time
+from contextlib import asynccontextmanager
 from ipaddress import ip_address, ip_network
 
-import httpx
-from fastapi import Request
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
+
+from commons.routes.code_gen import code_gen_router
+from commons.routes.synthetic_gen import generator, synthetic_gen_router, cache
 
 MAX_CONTENT_LENGTH = 1 * 1024 * 1024
 
@@ -62,7 +58,16 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         return Response("Forbidden", status_code=403)
 
 
-app = FastAPI()
+@asynccontextmanager
+async def startup_lifespan(app: FastAPI):
+    await generator.arun()
+    await cache.connect()
+    yield
+    await cache.close()
+
+
+app = FastAPI(lifespan=startup_lifespan)
+
 
 # Add CORS middleware to allow cross-origin requests
 app.add_middleware(
