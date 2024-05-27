@@ -20,6 +20,7 @@ class CodeDiagnostics:
         if tsserver_diag:
             diagnostics += "\n".join(tsserver_diag)
         # diagnostics += ql_diag
+        logger.info(f"Got code diagnostics: {diagnostics}")
         return diagnostics
 
 
@@ -44,8 +45,16 @@ async def diagnostics_quicklint(
     except Exception as e:
         return f"Exception occurred: {e}"
 
+    ############################# TSSERVER ######################################
 
-############################# TSSERVER ######################################
+
+CONFIGURE = "configure"
+OPEN = "open"
+CHANGE = "change"
+GETERR = "geterr"
+SEMANTIC_DIAGNOSTICS_SYNC = "semanticDiagnosticsSync"
+SYNTACTIC_DIAGNOSTICS_SYNC = "syntacticDiagnosticsSync"
+SUGGESTION_DIAGNOSTICS_SYNC = "suggestionDiagnosticsSync"
 
 
 def tsserver_diagnostics(code: str):
@@ -57,14 +66,13 @@ def tsserver_diagnostics(code: str):
         {
             "seq": 0,
             "type": "request",
-            "command": "configure",
+            "command": CONFIGURE,
             "arguments": {"hostInfo": "python"},
         },
     )
-    read_response(process)
 
     # Simulated file path
-    filename = uuid.uuid4().replace("-", "")
+    filename = str(uuid.uuid4()).replace("-", "")
     file_path = f"/path/to/nonexistent/{filename}.js"
 
     # Open a fake file in tsserver
@@ -73,11 +81,10 @@ def tsserver_diagnostics(code: str):
         {
             "seq": 1,
             "type": "request",
-            "command": "open",
+            "command": OPEN,
             "arguments": {"file": file_path},
         },
     )
-    read_response(process)
 
     # Send the content of the JavaScript as a change to the opened file
     send_command(
@@ -85,7 +92,7 @@ def tsserver_diagnostics(code: str):
         {
             "seq": 2,
             "type": "request",
-            "command": "change",
+            "command": CHANGE,
             "arguments": {
                 "file": file_path,
                 "line": 1,
@@ -96,7 +103,6 @@ def tsserver_diagnostics(code: str):
             },
         },
     )
-    read_response(process)
 
     # Request diagnostics
     send_command(
@@ -104,24 +110,60 @@ def tsserver_diagnostics(code: str):
         {
             "seq": 3,
             "type": "request",
-            "command": "geterr",
+            "command": GETERR,
             "arguments": {"files": [file_path], "delay": 0},
         },
     )
 
-    # Give tsserver some time to process and emit diagnostics
-    time.sleep(1)
+    # Request semantic diagnostics
+    send_command(
+        process,
+        {
+            "seq": 4,
+            "type": "request",
+            "command": SEMANTIC_DIAGNOSTICS_SYNC,
+            "arguments": {"file": file_path},
+        },
+    )
 
-    # Read the responses containing diagnostics
-    while True:
-        response = read_response(process)
-        if not response.strip():
-            break
-        diagnostics = parse_diagnostics(response)
-        logger.info(f"diagnostics: {diagnostics}")
+    # Request syntactic diagnostics
+    send_command(
+        process,
+        {
+            "seq": 5,
+            "type": "request",
+            "command": SYNTACTIC_DIAGNOSTICS_SYNC,
+            "arguments": {"file": file_path},
+        },
+    )
+
+    # Request suggestion diagnostics
+    send_command(
+        process,
+        {
+            "seq": 6,
+            "type": "request",
+            "command": SUGGESTION_DIAGNOSTICS_SYNC,
+            "arguments": {"file": file_path},
+        },
+    )
+
+    # TODO handle multiple responses
+    responses = read_response(process)
+
+    # Give tsserver some time to process and emit diagnostics
+    time.sleep(3)
+
+    logger.info(f"Read response from tsserver LSP: \n{responses=}")
+    # if not response.strip():
+    #     break
+    logger.info("Attempting to parse diagnostics...")
+    diagnostics = parse_diagnostics(responses)
+    logger.info(f"Parsed diagnostics: {diagnostics=}")
 
     # Close the tsserver
     process.terminate()
+    return diagnostics
 
 
 def start_tsserver():
@@ -158,7 +200,8 @@ def read_response(process):
 
 
 def parse_diagnostics(response):
-    diagnostics = []
+    formatted_diagnostics = []
+    logger.info(f"Raw response: {response=}")
     try:
         messages = json.loads(response)
         if messages.get("type") == "event":
@@ -170,17 +213,23 @@ def parse_diagnostics(response):
                         category = item["category"]
                         text = item["text"]
                         if category == "error":
-                            diagnostics.append(
+                            formatted_diagnostics.append(
                                 f"Error {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
                             )
                         elif event == "suggestionDiag":
-                            diagnostics.append(
+                            formatted_diagnostics.append(
                                 f"Suggestion {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
                             )
+                        elif event == "syntaxDiag":
+                            formatted_diagnostics.append(
+                                f"Syntax {item['category']}, code - {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']} to line {item['end']['line']}, column {item['end']['offset']}"
+                            )
                     elif isinstance(item, str):
-                        diagnostics.append(item)
+                        formatted_diagnostics.append(item)
     except json.JSONDecodeError:
         logger.error("Error decoding JSON")
-        return diagnostics
-    logger.success(f"Successfully parsed diagnostics\n{diagnostics=}")
-    return diagnostics
+    except Exception as e:
+        logger.error(f"Error occurred: {e}")
+
+    logger.info(f"Successfully parsed diagnostics\n{formatted_diagnostics=}")
+    return formatted_diagnostics
