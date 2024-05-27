@@ -16,7 +16,7 @@ class CodeDiagnostics:
         diagnostics = ""
         # disabled quicklint for now because trying to figure out if tsserver is better
         # ql_diag = await diagnostics_quicklint(code_to_analyze)
-        tsserver_diag = tsserver_diagnostics(code=code_to_analyze)
+        tsserver_diag = await tsserver_diagnostics(code=code_to_analyze)
         if tsserver_diag:
             diagnostics += "\n".join(tsserver_diag)
         # diagnostics += ql_diag
@@ -57,11 +57,11 @@ SYNTACTIC_DIAGNOSTICS_SYNC = "syntacticDiagnosticsSync"
 SUGGESTION_DIAGNOSTICS_SYNC = "suggestionDiagnosticsSync"
 
 
-def tsserver_diagnostics(code: str):
-    process = start_tsserver()
+async def tsserver_diagnostics(code: str):
+    process = await start_tsserver()
 
     # Initialize the project
-    send_command(
+    await send_command(
         process,
         {
             "seq": 0,
@@ -76,7 +76,7 @@ def tsserver_diagnostics(code: str):
     file_path = f"/path/to/nonexistent/{filename}.js"
 
     # Open a fake file in tsserver
-    send_command(
+    await send_command(
         process,
         {
             "seq": 1,
@@ -87,7 +87,7 @@ def tsserver_diagnostics(code: str):
     )
 
     # Send the content of the JavaScript as a change to the opened file
-    send_command(
+    await send_command(
         process,
         {
             "seq": 2,
@@ -105,7 +105,7 @@ def tsserver_diagnostics(code: str):
     )
 
     # Request diagnostics
-    send_command(
+    await send_command(
         process,
         {
             "seq": 3,
@@ -116,7 +116,7 @@ def tsserver_diagnostics(code: str):
     )
 
     # Request semantic diagnostics
-    send_command(
+    await send_command(
         process,
         {
             "seq": 4,
@@ -127,7 +127,7 @@ def tsserver_diagnostics(code: str):
     )
 
     # Request syntactic diagnostics
-    send_command(
+    await send_command(
         process,
         {
             "seq": 5,
@@ -138,7 +138,7 @@ def tsserver_diagnostics(code: str):
     )
 
     # Request suggestion diagnostics
-    send_command(
+    await send_command(
         process,
         {
             "seq": 6,
@@ -149,7 +149,7 @@ def tsserver_diagnostics(code: str):
     )
 
     # TODO handle multiple responses
-    responses = read_response(process)
+    responses = await read_response(process)
 
     # Give tsserver some time to process and emit diagnostics
     time.sleep(3)
@@ -166,37 +166,44 @@ def tsserver_diagnostics(code: str):
     return diagnostics
 
 
-def start_tsserver():
-    return subprocess.Popen(
-        ["tsserver"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
+async def start_tsserver():
+    return await asyncio.create_subprocess_exec(
+        "tsserver",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        universal_newlines=False,
     )
 
 
-def send_command(process, command):
-    process.stdin.write(json.dumps(command) + "\n")
-    process.stdin.flush()
+async def send_command(process, command):
+    process.stdin.write((json.dumps(command) + "\n").encode("utf-8"))
+    await process.stdin.drain()
 
 
-def read_response(process):
-    response = ""
+async def read_response(process):
+    responses = []
     content_length = 0
 
     while True:
-        line = process.stdout.readline().strip()
-        if line.startswith("Content-Length:"):
-            content_length = int(line.split(":")[1].strip())
-        elif line == "":
-            if content_length > 0:
-                response = process.stdout.read(content_length)
-                break
-        else:
-            continue
+        try:
+            line = await asyncio.wait_for(process.stdout.readline(), timeout=2)
+            line = line.strip().decode("utf-8")
+            print("line", line)
+            if line.startswith("Content-Length:"):
+                content_length = int(line.split(":")[1].strip())
+            elif line == "":
+                if content_length > 0:
+                    response = process.stdout.read(content_length)
+                    responses.append(response)
+                    content_length = 0  # Reset for the next message
+            else:
+                continue
+        except asyncio.TimeoutError:
+            logger.info("Timeout reading response")
+            break
 
-    return response
+    return responses
 
 
 def parse_diagnostics(response):
