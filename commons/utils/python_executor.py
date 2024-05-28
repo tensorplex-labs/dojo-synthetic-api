@@ -10,12 +10,11 @@ from collections import defaultdict
 from dotenv import load_dotenv
 import httpx
 import pandas as pd
-from pydantic import BaseModel
+from loguru import logger
 from e2b_code_interpreter import CodeInterpreter
 from e2b_code_interpreter.models import Result
 from e2b.sandbox.filesystem_watcher import FilesystemEvent
-from commons.utils.utils import get_packages
-from commons.utils.logger_helper import LoggerHelper
+from commons.utils.utils import get_packages, ExecutionError
 
 load_dotenv()
 
@@ -89,9 +88,9 @@ class PythonExecutor:
                 
         self.created_files : DefaultDict[str, Any] = defaultdict(list)
         self.debug = debug
-        self.logger = LoggerHelper(__name__).get_logger()
         self.preprocess_code()
-        print(self.code)
+        # print("Code preprocessed")
+        # print(self.code)
         
     def preprocess_code(self):     
         self.code = self.replace_mpld3_show(self.code)
@@ -104,7 +103,7 @@ class PythonExecutor:
             
         sandbox = CodeInterpreter(cwd = "/home/user")
         kernel_id = sandbox.notebook.create_kernel(cwd = "/home/user")
-        self.logger.debug(f"Installing packages {packages}")
+        logger.debug(f"Installing packages {packages}")
         sandbox.notebook.exec_cell(f"!pip install {packages}", kernel_id = kernel_id)
         self.sandbox = sandbox
         self.kernel_id = kernel_id
@@ -115,12 +114,11 @@ class PythonExecutor:
         ports = self.get_running_ports()
         execution = self.sandbox.notebook.exec_cell(self.code, on_stderr= print, on_stdout= print)
         if execution.error:
-            return BASE_TEMPLATE.format(content = execution.error)
+            raise ExecutionError(execution.error.traceback, self.code)
         
         results = execution.results
         final_ports = self.get_running_ports()
         if z := final_ports - ports:
-            print(z)
             port = z.pop()
             url = "https://" + self.sandbox.get_hostname(port) 
             return self.get_webpage(url)
@@ -128,6 +126,7 @@ class PythonExecutor:
         return self.handle_responses(results)
     
     def close_sandbox(self):
+        print("Closing sandbox")
         self.sandbox.close()
         
     def get_running_ports(self) -> set[int]:
@@ -151,20 +150,20 @@ class PythonExecutor:
         
     @run_once
     def install_lsof(self):
-        self.logger.debug("Installing lsof")
+        logger.debug("Installing lsof")
         self.sandbox.process.start_and_wait(cmd = "sudo apt-get install lsof")
         
     def get_webpage(self, url : str):
         response = httpx.get(url)
         if response.status_code == 200:
-            self.logger.info(f"Returning webpage from {url}")
+            logger.info(f"Returning webpage from {url}")
             return response.text
         
         return BASE_TEMPLATE.format(content = "")
         
     def start_watcher(self, dir : str = "/home/user", watch_tmp : bool = False):
         def download_file(event : FilesystemEvent):
-            self.logger.info(f"Operation {event.operation} {event.path}")
+            logger.info(f"Operation {event.operation} {event.path}")
             if event.operation == "Write":
                 file_path = event.path
                 file_name = os.path.basename(file_path)
@@ -180,7 +179,7 @@ class PythonExecutor:
         if watch_tmp:
             tmp_watcher = self.sandbox.filesystem.watch_dir("/tmp")
             tmp_watcher.add_event_listener(lambda event: download_file(event))
-            self.logger.debug("Watching /tmp directory")
+            logger.debug("Watching /tmp directory")
             tmp_watcher.start()
         
         watcher = self.sandbox.filesystem.watch_dir(dir)  
@@ -189,11 +188,17 @@ class PythonExecutor:
         
     def handle_responses(self, results : List[Result])-> str:  
         if len(self.created_files) != 0:
-            print(self.created_files.keys())
+            # print(self.created_files.keys())
             keys = list(self.created_files.keys())
-            self.logger.info(f"Returning file {keys[0]}")
+            logger.info(f"Returning file {keys[0]}")
             return self.created_files[keys[0]]
+        else:
+            raise ExecutionError("Visualisation must be saved to an external file", self.code)
         
+        ## Uncomment this block to handle kernel outputs
+        # return self.handle_output(results)
+    
+    def handle_output(self, results : List[Result]):
         datatypes = defaultdict(list)
         for result in results:
             df = pd.json_normalize(result.raw, max_level = 0)
@@ -221,23 +226,34 @@ class PythonExecutor:
         if "application/javascript" in datatypes:
             content_parts.append(SCRIPT_TEMPLATE.format(script="\n".join(datatypes["application/javascript"])))
         content = "\n".join(content_parts)
-        self.logger.info(f"Returning content from kernel output")
+        logger.info(f"Returning content from kernel output")
         return BASE_TEMPLATE.format(content = content)
     
     def main(self):
         try:
             output = self.execute()
-        except SyntaxError as e:
-            return BASE_TEMPLATE.format(content = "")
+        except Exception as e:
+            self.close_sandbox()
+            raise e
+        
         self.close_sandbox()
         
         return output
     
 if __name__ == "__main__":
-    code = """import plotly.express as px
+    test_code = """
+import plotly.express as px
 fig = px.scatter(x=range(10), y=range(10))
-fig.write_html("test.html")"""
-    output = PythonExecutor(file = "matplotlib_test.py", debug = True).main()
-    if output is not None:
-        with open("output.html", "w") as f:
-            f.write(output)
+fig.show()"""
+    for _ in range(5):
+        executor = PythonExecutor(code = test_code, debug = True)
+        try:
+            output = executor.main()
+        except ExecutionError as e:
+            print(e.err)
+            del executor
+            continue
+        del executor
+        if output is not None:
+            with open("output.html", "w") as f:
+                f.write(output)

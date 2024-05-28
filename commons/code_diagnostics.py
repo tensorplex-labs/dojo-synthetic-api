@@ -1,3 +1,5 @@
+import sys
+sys.path.append("./")
 import asyncio
 import subprocess
 import json
@@ -6,21 +8,88 @@ from typing import Annotated
 
 from loguru import logger
 import uuid
+from commons.utils.python_executor import PythonExecutor
 
 
 class CodeDiagnostics:
     @staticmethod
     async def diagnostics(
         code_to_analyze: Annotated[str, "Code to be analyzed"],
+        language: Annotated[str, "Language of the code"],
     ) -> str:
-        diagnostics = ""
-        # disabled quicklint for now because trying to figure out if tsserver is better
-        # ql_diag = await diagnostics_quicklint(code_to_analyze)
-        tsserver_diag = tsserver_diagnostics(code=code_to_analyze)
-        if tsserver_diag:
-            diagnostics += "\n".join(tsserver_diag)
-        # diagnostics += ql_diag
-        return diagnostics
+        if language == "python":
+            executor = PythonExecutor(code=code_to_analyze)
+            try:
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, executor.main)
+            except Exception as e:
+                logger.error(f"Error occurred while executing Python code: {e}")
+                return str(e)
+        else:            
+            diagnostics = ""
+            # disabled quicklint for now because trying to figure out if tsserver is better
+            # ql_diag = await diagnostics_quicklint(code_to_analyze)
+            tsserver_diag = tsserver_diagnostics(code=code_to_analyze)
+            if tsserver_diag:
+                diagnostics += "\n".join(tsserver_diag)
+            # diagnostics += ql_diag
+            return diagnostics
+        
+test_code = """
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.widgets as widgets
+
+# Read CSV file
+df = pd.read_csv('categories.csv')
+
+# Create the bar chart
+plt.bar(df.columns, df.iloc[0])
+plt.title('Category Frequencies')
+plt.xlabel('Category')
+plt.ylabel('Frequency')
+
+# Set up slider
+ax_slider = plt.axes([0.7, 0.1, 0.2, 0.03])
+slider = widgets.Slider(ax_slider, 'Slider', valmin=0, valmax=100)
+slider.on_changed(update)
+
+def update(val):
+    filtered_df = df.iloc[:, :int(slider.val)]
+    plt.bar(df.columns, filtered_df.iloc[0])
+    plt.draw_idle()
+
+# Set up hover functionality
+def hover(event):
+    if event.inaxes == plt.gca():
+        x, y = event.xdata, event.ydata
+        frequency = df.iloc[0].iloc[int(x)]
+        plt.gca().set_title(f'Category Frequencies Hovered frequency: {frequency}')
+        plt.draw_idle()
+
+fig = plt.gcf()
+fig.canvas.mpl_connect('motion_notify_event', hover)
+
+# Set up reset button
+ax_button = plt.axes([0.7, 0.05, 0.2, 0.03])
+button = widgets.Button(ax_button, 'Reset')
+button.on_clicked(reset)
+
+def reset(event):
+    plt.bar(df.columns, df.iloc[0])
+    slider.set_val(50)
+    plt.draw_idle()
+
+# Customize chart appearance
+plt.xlabel('Category', fontsize=14, fontweight='bold')
+plt.ylabel('Frequency', fontsize=14, fontweight='bold')
+plt.legend()
+plt.show()
+"""
+
+if __name__ == "__main__":
+    code_diagnostics = CodeDiagnostics()
+    print(asyncio.run(code_diagnostics.diagnostics(test_code, "python")))
 
 
 ############################# QUICKLINT ######################################

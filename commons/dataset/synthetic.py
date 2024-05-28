@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+sys.path.append("./")
 import json
 import asyncio
 import random
@@ -8,7 +9,7 @@ import logging
 import textwrap
 import traceback
 import instructor
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -28,7 +29,7 @@ from commons.llm.openai_proxy import (
     get_instructor_client,
 )
 from commons.utils.python_executor import PythonExecutor
-from commons.utils.utils import generate_simple_json
+from commons.utils.utils import generate_simple_json, ExecutionError
 
 load_dotenv()
 
@@ -64,7 +65,12 @@ class CodeAnswer(BaseModel):
     additional_notes: Optional[str] = Field(
         description="Any additional notes or comments about the code solution"
     )
-
+    
+class ErrorAnswer(BaseModel):
+    error : str = Field(description="The problem in the code solution")
+    solution : str = Field(description="The solution to the problem in the code solution")
+    changes : Optional[str] = Field(description="Any changes that can be made to the code solution to fit the requirements")
+    
 
 async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
     """Ensure that necessary files appended for python"""
@@ -108,7 +114,7 @@ async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     try:
         loop = asyncio.get_event_loop()
         html = await loop.run_in_executor(None, executor.main)
-    except Exception as e:
+    except ExecutionError as e:
         logger.error(f"Error occurred while executing Python code: {e}")
         raise e
     
@@ -148,7 +154,7 @@ async def _generate_objects_to_visualize(
         "top_p": random.uniform(0.9, 1.0),
     }
     if model.startswith("openai"):
-        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+        kwargs["seed"] = random.randint(0, cast(int, 1e9)) # needed for OpenAI
     completion = await client.chat.completions.create(**kwargs)
     logger.success(f"Got objects to visualize, completion={completion=}")
     return completion.objects
@@ -178,11 +184,11 @@ async def generate_question(
                 print(
                     f"Few shot instruction included in instruction generation: {previous_coding_question}"
                 )
-                possible_objects = await _generate_objects_to_visualize(
-                    client, model, used_objects
-                )
-                sampled_objects = random.sample(possible_objects, random.randint(3, 5))
-                used_objects = sampled_objects
+                # possible_objects = await _generate_objects_to_visualize(
+                #     client, model, used_objects
+                # )
+                # sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+                # used_objects = sampled_objects
                 kwargs = {
                     "response_model": CodingQuestion,
                     "model": model,
@@ -191,7 +197,7 @@ async def generate_question(
                             "role": "system",
                             "content": build_code_generation_question_prompt(
                                 random.choices([2, 3, 4], weights=[0.3, 0.5, 0.2])[0],
-                                sampled_objects,
+                                [],
                                 previous_coding_question,
                             ),
                         }
@@ -199,7 +205,7 @@ async def generate_question(
                     "temperature": random.uniform(0.0, 0.5),
                     "max_tokens": 8192,
                     "top_p": random.uniform(0.9, 1.0),
-                    "seed": random.randint(0, 1e9),  # needed for OpenAI
+                    "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
                 }
                 completion = await client.chat.completions.create(**kwargs)
                 coding_question = completion.question
@@ -213,6 +219,39 @@ async def generate_question(
     return None, None
 
 
+# def build_code_generation_question_prompt(
+#     num_requirements: int, sampled_objects: list[str], previous_coding_question: str
+# ) -> str:
+#     print(f"Generating question with {num_requirements} requirements")
+#     # coding_question_json = CodingQuestion.model_json_schema()
+#     CODE_GEN_PROMPT = """
+#     System:
+#     You are an expert question generator.
+
+#     - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: {objects}, through the piece of code with {num_requirements} requirements on user interactions.
+#     - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
+#     - The complexity level should be 20 of out 100.
+#     - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars
+#     - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.
+#     - The interactions must require the programmer to have a mental model of any objects being visualized.
+#     - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.
+#     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
+#     - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
+
+#     #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):
+#     {previous_coding_question}
+
+#     #Unique Coding Question#:
+#     """
+#     return textwrap.dedent(
+#         CODE_GEN_PROMPT.format(
+#             num_requirements=num_requirements,
+#             # coding_question_json=coding_question_json,
+#             objects=", ".join(sampled_objects),
+#             previous_coding_question=previous_coding_question,
+#         )
+#     )
+
 def build_code_generation_question_prompt(
     num_requirements: int, sampled_objects: list[str], previous_coding_question: str
 ) -> str:
@@ -222,15 +261,14 @@ def build_code_generation_question_prompt(
     System:
     You are an expert question generator.
 
-    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: {objects}, through the piece of code with {num_requirements} requirements on user interactions.
+    - Generate a short, self-contained coding problem that requires the programmer to output an interactive plot, through the piece of code with {num_requirements} requirements on user interactions.
     - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
     - The complexity level should be 20 of out 100.
     - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars
     - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.
     - The interactions must require the programmer to have a mental model of any objects being visualized.
-    - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.
+    - #Unique Coding Question# generated must require the programmer to code using only Python.
     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
-    - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
 
     #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):
     {previous_coding_question}
@@ -241,7 +279,7 @@ def build_code_generation_question_prompt(
         CODE_GEN_PROMPT.format(
             num_requirements=num_requirements,
             # coding_question_json=coding_question_json,
-            objects=", ".join(sampled_objects),
+            # objects=", ".join(sampled_objects),
             previous_coding_question=previous_coding_question,
         )
     )
@@ -258,23 +296,23 @@ def build_code_generation_question_prompt(
 def additional_notes_for_question_prompt(prompt: str) -> str:
     ADDITIONAL_NOTES = """
     Note:
-    - The visualization should be implemented in Python.
+    - The plot should be implemented in Python.
+    - Any required data must be mocked or generated within the code.
     - Ensure that the output has both main.py and requirements.txt files
-    - The visualization should be saved to an external file.
-    - Pygame is not allowed.
+    - The plot should be saved to an external file without losing any interactivity.
      """
     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
 
 
 async def generate_answer(
-    client: AsyncOpenAI, model: str, question: str
+    client: AsyncOpenAI, model: str, question: str, err : str | None, code: str | None
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     print(f"Generating code answer with model: {model}")
-    kwargs = {
-        "response_model": CodeAnswer,
-        "model": model,
-        "messages": [
+    if bool(err) != bool(code):
+        raise ValueError("Both error and code must be provided or neither")
+    
+    messages = [
             {
                 "role": "system",
                 "content": f"You are an expert at outputting json. You always output valid json based on this schema: {CodeAnswer.model_json_schema()}",
@@ -283,13 +321,26 @@ async def generate_answer(
                 "role": "user",
                 "content": build_code_answer_prompt(question),
             },
-        ],
-        "temperature": 0.0,
+        ]
+    
+    if err and code:
+        err_prompt = await build_err_prompt(client,model, code, err)
+        messages.append({
+            "role": "system",
+            "content": err_prompt
+        })
+        logger.info(err_prompt)
+    
+    kwargs = {
+        "response_model": CodeAnswer,
+        "model": model,
+        "messages": messages,
+        "temperature": 0.1,
         "max_tokens": 8192,
         "top_p": random.uniform(0.9, 1.0),
     }
     if model.startswith("openai"):
-        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+        kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
     try:
         completion = await client.chat.completions.create(**kwargs)
         # print(f"Generated completion: {completion}")
@@ -300,6 +351,36 @@ async def generate_answer(
 
     return model, None
 
+
+# def build_code_answer_prompt(question) -> str:
+#     CODE_ANS_PROMPT = """
+#     System:
+#     - You must assume that you do not have access to the file system, therefore if any test data is provided, you must store it in memory appropriately in the necessary variable and not in a file.
+#     - You must not provide any other text or explanations.
+#     - You must provide all code required to ensure that your solution is complete.
+#     - Do not leave out any details for brevity.
+#     - Additionally, ensure that your code solution directly executes any functions required to provide the solution to the task.
+#     - Your solution must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
+#     - You are able to write to multiple output file formats depending on your specific use case
+#     - Remember to include installation commands for any dependencies required for the code to run
+#     - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
+#     - The provided code solution should be directly executable without requiring modifications to run successfully.
+
+#     Few-shot Example Outputs:
+#     {few_shot_examples}
+
+#     Question:
+#     {question}
+
+#     Answer according to the JSON_SCHEMA:
+#     """
+
+#     return textwrap.dedent(
+#         CODE_ANS_PROMPT.format(
+#             question=question,
+#             few_shot_examples=few_shot_example_outputs(),
+#         )
+#     )
 
 def build_code_answer_prompt(question) -> str:
     CODE_ANS_PROMPT = """
@@ -315,9 +396,6 @@ def build_code_answer_prompt(question) -> str:
     - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
     - The provided code solution should be directly executable without requiring modifications to run successfully.
 
-    Few-shot Example Outputs:
-    {few_shot_examples}
-
     Question:
     {question}
 
@@ -327,10 +405,71 @@ def build_code_answer_prompt(question) -> str:
     return textwrap.dedent(
         CODE_ANS_PROMPT.format(
             question=question,
-            few_shot_examples=few_shot_example_outputs(),
+            # few_shot_examples=few_shot_example_outputs(),
         )
     )
 
+async def build_err_prompt(client : AsyncOpenAI,model : str, code : str, err : str) -> str:
+    MODEL_ERROR_PROMPT = """
+    You are a code reviewer.
+    You will be provided code along with the error message it causes.
+    Your task is to
+    - identify the problem in the code and explain how to solve it to the software developer
+    - check if the code achieves the goal of making an interactive plot
+    - check if the plot is saved to an external file without losing interactivity
+    - check if the library chosen supports interactivity and suggest alternatives if necessary
+    
+    Code:
+    {code}
+    
+    Error:
+    {err}
+    """  
+    
+    ERROR_PROMPT = """
+    The following code has been reviewed and you are to address the concerns raised by the code reviewer.:
+    Code:
+    {code}
+    
+    Error:
+    {err}
+    
+    Solution:
+    {solution}
+    
+    Implementation Changes:
+    {changes}
+    """
+    
+    kwargs = {
+        "response_model": ErrorAnswer,
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": f"You are an expert at outputting json. You always output valid json based on this schema: {ErrorAnswer.model_json_schema()}",
+            },
+            {
+                "role": "user",
+                "content": MODEL_ERROR_PROMPT.format(code = code, err = err)
+            },
+        ],
+        "temperature": 0.0,
+        "max_tokens": 8192,
+        "top_p": random.uniform(0.9, 1.0),
+    }
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
+    try:
+        completion = await client.chat.completions.create(**kwargs)
+        # print(f"Generated completion: {completion}")
+        logger.info(f"Generated error prompt: {completion}")
+        return ERROR_PROMPT.format(code = code, err = completion.error, solution = completion.solution, changes = completion.changes)
+    except Exception as e:
+        print(f"Error occurred while generating code answer: {e}")
+        pass
+
+    return ERROR_PROMPT.format(code = code, err = err)
 
 def few_shot_example_outputs():
     EXAMPLE_OUTPUTS = """
@@ -448,6 +587,21 @@ async def build_2_prompt_responses_pairs():
         )
     return prompt_responses_pairs
 
+async def generate_answer_with_feedback(
+    client: AsyncOpenAI, model: str, question: str
+) -> Tuple[str, CodeAnswer | None]:
+    previous_code = None
+    err = None
+    while True:
+        model, result = await generate_answer(client, model, question, err, previous_code)
+        if result is None:
+            return model, None
+        
+        try:
+            return model, await parse_code_response(result)
+        except ExecutionError as e:
+            err = e.err
+            previous_code = e.code
 
 async def build_prompt_responses_pair(generator_model=None):
     import commons.dataset as dataset
@@ -464,12 +618,12 @@ async def build_prompt_responses_pair(generator_model=None):
     # randomly sampled from pool of models
     answer_models = dataset.ANSWER_MODELS
     num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
-    selected_models = random.sample(
-        answer_models, min(num_answer_models, len(answer_models))
-    )
-
+    # selected_models = random.sample(
+    #     answer_models, min(num_answer_models, len(answer_models))
+    # )
+    selected_models = ["mistralai/mixtral-8x22b-instruct"]
     results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
-        *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
+        *[generate_answer_with_feedback(client, ans_model, prompt) for ans_model in selected_models]
     )
 
     # parse code responses
@@ -478,13 +632,13 @@ async def build_prompt_responses_pair(generator_model=None):
         if not result:
             continue
         # result = parse_code_response(result)
-        supported_languages = ["javascript", "html"]
-        for i, file in enumerate(result.files):
-            if file.language.lower() not in supported_languages:
-                continue
-            lang, fixed_code = await fix_code(file.content, model)
-            if fixed_code:
-                result.files[i].content = fixed_code
+        # supported_languages = ["javascript", "html"]
+        # for i, file in enumerate(result.files):
+        #     if file.language.lower() not in supported_languages:
+        #         continue
+        #     lang, fixed_code = await fix_code(file.content, model)
+        #     if fixed_code:
+        #         result.files[i].content = fixed_code
 
         formatted_files = [
             {
@@ -531,7 +685,9 @@ async def test_generate_questions():
 
 
 async def main():
-    await test_generate_questions()
+   responses =  await build_prompt_responses_pair()
+   with open("output.json", "w") as f:
+       json.dump(responses, f, indent=4)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,11 @@ from pydantic import BaseModel
 
 load_dotenv()
 
+class ExecutionError(Exception):
+    def __init__(self, err : str, code : str) -> None:
+        self.err = err
+        self.code = code
+
 
 def generate_simple_json(model: BaseModel) -> dict:
     schema = model.model_json_schema()
@@ -37,7 +42,7 @@ def get_packages(code : str) -> set[str]:
     except SyntaxError as e:
         print("Syntax Error in", code)
         print(replaced_code)
-        raise e
+        raise ExecutionError(str(e), code)
     
     # return modules not part of the standard library
     return modules - stdlib_module_names
