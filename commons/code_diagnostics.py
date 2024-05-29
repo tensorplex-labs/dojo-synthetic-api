@@ -14,6 +14,7 @@ class CodeDiagnostics:
         code_to_analyze: Annotated[str, "Code to be analyzed"],
     ) -> str:
         diagnostics = ""
+        logger.info(f"Code to analyze: {code_to_analyze}")
         # disabled quicklint for now because trying to figure out if tsserver is better
         # ql_diag = await diagnostics_quicklint(code_to_analyze)
         tsserver_diag = await tsserver_diagnostics(code=code_to_analyze)
@@ -181,7 +182,7 @@ async def send_command(process, command):
     await process.stdin.drain()
 
 
-async def read_response(process):
+async def read_response(process: asyncio.subprocess.Process):
     responses = []
     content_length = 0
 
@@ -194,7 +195,7 @@ async def read_response(process):
                 content_length = int(line.split(":")[1].strip())
             elif line == "":
                 if content_length > 0:
-                    response = process.stdout.read(content_length)
+                    response = await process.stdout.read(content_length)
                     responses.append(response)
                     content_length = 0  # Reset for the next message
             else:
@@ -206,37 +207,38 @@ async def read_response(process):
     return responses
 
 
-def parse_diagnostics(response):
+def parse_diagnostics(responses):
     formatted_diagnostics = []
-    logger.info(f"Raw response: {response=}")
-    try:
-        messages = json.loads(response)
-        if messages.get("type") == "event":
-            event = messages.get("event")
-            if event in ["semanticDiag", "syntaxDiag", "suggestionDiag"]:
-                diagnostics = messages.get("body", {}).get("diagnostics", [])
-                for item in diagnostics:
-                    if isinstance(item, dict):
-                        category = item["category"]
-                        text = item["text"]
-                        if category == "error":
-                            formatted_diagnostics.append(
-                                f"Error {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
-                            )
-                        elif event == "suggestionDiag":
-                            formatted_diagnostics.append(
-                                f"Suggestion {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
-                            )
-                        elif event == "syntaxDiag":
-                            formatted_diagnostics.append(
-                                f"Syntax {item['category']}, code - {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']} to line {item['end']['line']}, column {item['end']['offset']}"
-                            )
-                    elif isinstance(item, str):
-                        formatted_diagnostics.append(item)
-    except json.JSONDecodeError:
-        logger.error("Error decoding JSON")
-    except Exception as e:
-        logger.error(f"Error occurred: {e}")
+    logger.info(f"Raw response: {responses=}")
+    for response in responses:
+        try:
+            messages = json.loads(response)
+            if messages.get("type") == "event":
+                event = messages.get("event")
+                if event in ["semanticDiag", "syntaxDiag", "suggestionDiag"]:
+                    diagnostics = messages.get("body", {}).get("diagnostics", [])
+                    for item in diagnostics:
+                        if isinstance(item, dict):
+                            category = item["category"]
+                            text = item["text"]
+                            if category == "error":
+                                formatted_diagnostics.append(
+                                    f"Error: {text} at line {item['start']['line']}, column {item['start']['offset']}"
+                                )
+                            elif event == "suggestionDiag":
+                                formatted_diagnostics.append(
+                                    f"Suggestion: {text} at line {item['start']['line']}, column {item['start']['offset']}"
+                                )
+                            elif event == "syntaxDiag":
+                                formatted_diagnostics.append(
+                                    f"Syntax {item['category']}: {text} at line {item['start']['line']}, column {item['start']['offset']} to line {item['end']['line']}, column {item['end']['offset']}"
+                                )
+                        elif isinstance(item, str):
+                            formatted_diagnostics.append(item)
+        except json.JSONDecodeError:
+            logger.error("Error decoding JSON")
+        except Exception as e:
+            logger.error(f"Error occurred: {e}")
 
     logger.info(f"Successfully parsed diagnostics\n{formatted_diagnostics=}")
     return formatted_diagnostics

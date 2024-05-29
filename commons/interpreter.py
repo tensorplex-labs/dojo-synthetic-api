@@ -1,7 +1,7 @@
 from enum import Enum
 from dotenv import load_dotenv
 import asyncio
-from autogen import AssistantAgent, UserProxyAgent
+from autogen import AssistantAgent, UserProxyAgent, register_function
 from loguru import logger
 from commons.code_diagnostics import CodeDiagnostics
 from commons.llm.openai_proxy import (
@@ -9,7 +9,6 @@ from commons.llm.openai_proxy import (
     get_openai_kwargs,
 )
 from autogen.code_utils import extract_code
-from autogen.cache import Cache
 from autogen import GroupChat, GroupChatManager
 
 load_dotenv()
@@ -218,7 +217,7 @@ async def fix_code(
         llm_config=build_autogen_llm_config(model_name=model_name, provider=provider),
     )
 
-    reviewer = AssistantAgent(
+    reviewer = UserProxyAgent(
         "code reviewer",
         description=f"Code Reviewer, reviews written code for correctness. Does not do any coding and instead asks the {AGENT_CODER_NAME} to address issues.",
         code_execution_config=False,
@@ -226,34 +225,23 @@ async def fix_code(
         system_message=f"""
         You are code reviewer.
         Your task is to continuously run diagnostics on the code provided until it has no errors or warnings in order to review the code.
-        You will be able to get the code diagnostics from the functions provided.
+        You should use any tools provided to retrieve code diagnostics.
         You must not do any coding, and must instead delegate the coding tasks to the {AGENT_CODER_NAME}.
         """,
         llm_config=build_autogen_llm_config(model_name=model_name, provider=provider),
-    )
-    reviewer.register_for_execution(name="code_diagnostics")(
-        CodeDiagnostics.diagnostics
-    )
-
-    user_proxy = UserProxyAgent(
-        "UserProxy",
-        code_execution_config=False,
-        is_termination_msg=_is_termination_msg,
-        system_message=f"""
-        You are code reviewer.
-        Your task is to continuously run diagnostics on the code provided until it has no errors or warnings in order to review the code.
-        You will be able to get the code diagnostics from the functions provided.
-        You must not do any coding, and must instead delegate the coding tasks to the {AGENT_CODER_NAME}.
-        """,
         default_auto_reply="Reply TERMINATE when the initial request has been fulfilled.",
         human_input_mode="NEVER",
     )
-    user_proxy.register_for_execution(name="code_diagnostics")(
-        CodeDiagnostics.diagnostics
+
+    register_function(
+        CodeDiagnostics.diagnostics,
+        caller=reviewer,  # The agent can suggest calls to the {tool}.
+        executor=coder,  # The agent can execute the {tool} calls.
+        name="code_diagnostics",  # By default, the function name is used as the tool name.
+        description="Call a real LSP server to get diagnostics on a piece of code",  # A description of the tool.
     )
 
-    # with Cache.disk() as cache:
-    chat_result = await user_proxy.a_initiate_chat(
+    chat_result = await reviewer.a_initiate_chat(
         coder,
         message=f"Evaluate and fix the code provided:\n{code}",
         # cache=cache,
@@ -314,6 +302,7 @@ async def agent_code(problem: str):
         software_eng,
         message=f"""This is the coding problem:\n\n{problem}""",
         max_turns=12,
+        cache=None,
     )
     logger.info("Conversation ENDED")
 
