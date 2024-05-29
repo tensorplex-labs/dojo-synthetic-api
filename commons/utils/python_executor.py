@@ -238,6 +238,9 @@ class PythonExecutor:
             try:
                 output = self.execute()
                 return output  # If execution succeeds, break out of the retry loop
+            except ExecutionError as e:
+                self.close_sandbox()
+                raise e
             except Exception as e:
                 self.close_sandbox()
                 
@@ -249,6 +252,7 @@ class PythonExecutor:
                     raise e
                 
         self.close_sandbox()
+        return BASE_TEMPLATE.format(content = "")
     
 if __name__ == "__main__":
     test_code = """
