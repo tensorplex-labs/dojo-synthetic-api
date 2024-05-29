@@ -54,7 +54,6 @@ class FileObject(BaseModel):
     filename: str = Field(description="Name of the file")
     content: str = Field(description="Content of the file which can be code or json")
     language: str = Field(description="Programming language of the file")
-    original_code: Optional[str] = ""
 
 
 class CodeAnswer(BaseModel):
@@ -121,7 +120,7 @@ async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
         logger.error(f"Error occurred while executing Python code: {e}")
         raise e
     
-    codeanswer_object.files = [FileObject(filename="index.html", content=html, language="html", original_code = main_file.content)]
+    codeanswer_object.files = [FileObject(filename="index.html", content=html, language="html")]
     
     return codeanswer_object
 
