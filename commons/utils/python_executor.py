@@ -1,4 +1,5 @@
 import sys
+import time
 
 sys.path.append("./")
 import os
@@ -230,15 +231,24 @@ class PythonExecutor:
         return BASE_TEMPLATE.format(content = content)
     
     def main(self):
-        try:
-            output = self.execute()
-        except Exception as e:
-            self.close_sandbox()
-            raise e
-        
+        MAX_RETRIES = 3
+        RETRY_DELAY = 3  # seconds
+
+        for retry_count in range(MAX_RETRIES):
+            try:
+                output = self.execute()
+                return output  # If execution succeeds, break out of the retry loop
+            except Exception as e:
+                self.close_sandbox()
+                
+                if retry_count < MAX_RETRIES - 1:
+                    logger.warning(f"Execution failed. Retrying in {RETRY_DELAY} seconds... (Attempt {retry_count + 1}/{MAX_RETRIES})")
+                    time.sleep(RETRY_DELAY)
+                else:
+                    logger.error(f"Execution failed after {MAX_RETRIES} attempts. Raising exception.")
+                    raise e
+                
         self.close_sandbox()
-        
-        return output
     
 if __name__ == "__main__":
     test_code = """

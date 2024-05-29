@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import typing
 sys.path.append("./")
 import json
 import asyncio
@@ -13,6 +14,7 @@ from typing import Dict, List, Optional, Tuple, cast
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+from instructor import AsyncInstructor
 from tenacity import (
     AsyncRetrying,
     RetryError,
@@ -70,6 +72,7 @@ class ErrorAnswer(BaseModel):
     error : str = Field(description="The problem in the code solution")
     solution : str = Field(description="The solution to the problem in the code solution")
     changes : Optional[str] = Field(description="Any changes that can be made to the code solution to fit the requirements")
+    reasoning : Optional[str] = Field(description="The reasoning behind the solution to the problem in the code solution")
     
 
 async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
@@ -299,13 +302,13 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
     - The plot should be implemented in Python.
     - Any required data must be mocked or generated within the code.
     - Ensure that the output has both main.py and requirements.txt files
-    - The plot should be saved to an external file without losing any interactivity.
+    - The plot should be saved to an html file without losing any interactivity.
      """
     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
 
 
 async def generate_answer(
-    client: AsyncOpenAI, model: str, question: str, err : str | None, code: str | None
+    client: AsyncOpenAI | AsyncInstructor, model: str, question: str, err : str | None, code: str | None
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     print(f"Generating code answer with model: {model}")
@@ -324,7 +327,7 @@ async def generate_answer(
         ]
     
     if err and code:
-        err_prompt = await build_err_prompt(client,model, code, err)
+        err_prompt = await build_err_prompt(client,model, code, err, question)
         messages.append({
             "role": "system",
             "content": err_prompt
@@ -409,21 +412,52 @@ def build_code_answer_prompt(question) -> str:
         )
     )
 
-async def build_err_prompt(client : AsyncOpenAI,model : str, code : str, err : str) -> str:
+async def build_err_prompt(client : AsyncOpenAI | AsyncInstructor,model : str, code : str, err : str, prompt : str) -> str:
     MODEL_ERROR_PROMPT = """
     You are a code reviewer.
     You will be provided code along with the error message it causes.
-    Your task is to
-    - identify the problem in the code and explain how to solve it to the software developer
-    - check if the code achieves the goal of making an interactive plot
-    - check if the plot is saved to an external file without losing interactivity
-    - check if the library chosen supports interactivity and suggest alternatives if necessary
+    Your task is to find out if the given code fits the requirements of the task and if not, provide a solution to the software developer.
+    You must present your reasoning for the error and the solution as shown in the example.
+    
+    Original Task:
+    {question}
     
     Code:
     {code}
     
     Error:
     {err}
+    
+    Step 1: Analyze the original task requirements.
+    - Identify the key requirements and constraints mentioned in the task description.
+    - List the main objectives that the code should achieve.
+
+    Step 2: Examine the provided code.
+    - Go through the code and identify any potential issues or areas that don't align with the task requirements.
+    - Note down any syntax errors, logical errors, or missing functionality.
+
+    Step 3: Investigate the error message.
+    - Analyze the error message and determine the cause of the error.
+    - Identify the specific line or section of code that is causing the error.
+
+    Step 4: Evaluate the code against the task requirements.
+    - Compare the code's functionality with the task requirements.
+    - Determine if the code fully satisfies the requirements or if there are any gaps or missing features.
+
+    Step 5: Propose a solution.
+    - Based on the identified issues and the task requirements, suggest a solution to fix the code.
+    - Provide specific changes or modifications that need to be made to the code.
+    - Explain how the proposed changes will address the error and align the code with the task requirements.
+
+    Step 6: Provide reasoning for the proposed solution.
+    - Justify why the proposed solution is appropriate and how it resolves the identified issues.
+    - Explain how the modifications ensure that the code meets the task requirements effectively.
+
+    Step 7: Summarize the review.
+    - Recap the main findings from the code review, including the identified issues and the proposed solution.
+    - Emphasize the importance of aligning the code with the task requirements and fixing any errors.
+
+    Please provide your step-by-step reasoning and solution based on the given task, code, and error message.
     """  
     
     ERROR_PROMPT = """
@@ -451,7 +485,7 @@ async def build_err_prompt(client : AsyncOpenAI,model : str, code : str, err : s
             },
             {
                 "role": "user",
-                "content": MODEL_ERROR_PROMPT.format(code = code, err = err)
+                "content": MODEL_ERROR_PROMPT.format(code = code, err = err, question = prompt)
             },
         ],
         "temperature": 0.0,
@@ -588,7 +622,7 @@ async def build_2_prompt_responses_pairs():
     return prompt_responses_pairs
 
 async def generate_answer_with_feedback(
-    client: AsyncOpenAI, model: str, question: str
+    client: AsyncOpenAI | AsyncInstructor, model: str, question: str
 ) -> Tuple[str, CodeAnswer | None]:
     previous_code = None
     err = None
