@@ -1,11 +1,13 @@
 from enum import Enum
 import textwrap
 
+
 class Language(Enum):
     PYTHON = "Python"
     JAVASCRIPT = "Javascript"
 
-def build_code_answer_prompt(question : str, include_few_shot_examples : bool) -> str:
+
+def build_code_answer_prompt(question: str, include_few_shot_examples: bool) -> str:
     CODE_ANS_PROMPT = """
     System:
     - You must assume that you do not have access to the file system, therefore if any test data is provided, you must store it in memory appropriately in the necessary variable and not in a file.
@@ -32,7 +34,9 @@ def build_code_answer_prompt(question : str, include_few_shot_examples : bool) -
         few_shot_examples_section = """
     Few-shot Example Outputs:
     {few_shot_examples}
-    """.format(few_shot_examples=few_shot_example_outputs())
+    """.format(
+            few_shot_examples=few_shot_example_outputs()
+        )
 
     return textwrap.dedent(
         CODE_ANS_PROMPT.format(
@@ -40,7 +44,8 @@ def build_code_answer_prompt(question : str, include_few_shot_examples : bool) -
             few_shot_examples_section=few_shot_examples_section,
         )
     )
-    
+
+
 def few_shot_example_outputs():
     EXAMPLE_OUTPUTS = """
     "question":"Write me a program that visualized our solar system, you may use python, javascript or pure HTML.",
@@ -107,7 +112,7 @@ def additional_notes_for_question_prompt(prompt: str, language: Language) -> str
     return prompt + textwrap.dedent(ADDITIONAL_NOTES)
 
 
-def build_python_review_prompt(question : str, code : str, error : str):
+def build_python_review_prompt(question: str, code: str, error: str):
     MODEL_ERROR_PROMPT = """
     You are a code reviewer.
     You will be provided code along with the error message it causes.
@@ -155,12 +160,9 @@ def build_python_review_prompt(question : str, code : str, error : str):
     Please provide your step-by-step reasoning and solution based on the given task, code, and error message.
     """
     return textwrap.dedent(
-        MODEL_ERROR_PROMPT.format(
-            question=question,
-            code=code,
-            err=error
-        )
+        MODEL_ERROR_PROMPT.format(question=question, code=code, err=error)
     )
+
 
 def build_python_fix_prompt(code: str, err: str, solution: str = "", changes: str = ""):
     ERROR_PROMPT = """
@@ -185,28 +187,26 @@ def build_python_fix_prompt(code: str, err: str, solution: str = "", changes: st
     """
 
     return textwrap.dedent(
-        ERROR_PROMPT.format(
-            code=code,
-            err=err,
-            solution=solution,
-            changes=changes
-        )
+        ERROR_PROMPT.format(code=code, err=err, solution=solution, changes=changes)
     )
-    
-    
+
+
 def build_code_generation_question_prompt(
-    num_requirements: int, sampled_objects: list[str], previous_coding_question: str, language : Language
+    num_requirements: int,
+    sampled_objects: list[str],
+    previous_coding_question: str,
+    language: Language,
 ) -> str:
     print(f"Generating question with {num_requirements} requirements")
     # coding_question_json = CodingQuestion.model_json_schema()
     JAVASCRIPT_OUTPUT = """
     visualization of one of the following objects: {objects}
     """
-    
+
     PYTHON_OUTPUT = """
     an interactive plot
     """
-    
+
     CODE_GEN_PROMPT = """
     System:
     You are an expert question generator.
@@ -234,12 +234,12 @@ def build_code_generation_question_prompt(
     elif language == Language.PYTHON:
         output = PYTHON_OUTPUT
         language_requirement = "Python"
-           
+
     return textwrap.dedent(
         CODE_GEN_PROMPT.format(
-            output = output,
+            output=output,
             num_requirements=num_requirements,
-            language = language_requirement,
+            language=language_requirement,
             # coding_question_json=coding_question_json,
             previous_coding_question=previous_coding_question,
         )

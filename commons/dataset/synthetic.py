@@ -30,7 +30,14 @@ from commons.llm.openai_proxy import (
     get_async_openai_client,
     get_instructor_client,
 )
-from commons.dataset.prompt_builders import build_code_answer_prompt, Language, additional_notes_for_question_prompt, build_python_fix_prompt, build_python_review_prompt, build_code_generation_question_prompt
+from commons.dataset.prompt_builders import (
+    build_code_answer_prompt,
+    Language,
+    additional_notes_for_question_prompt,
+    build_python_fix_prompt,
+    build_python_review_prompt,
+    build_code_generation_question_prompt,
+)
 from commons.utils.python_executor import PythonExecutor
 from commons.utils.utils import generate_simple_json, ExecutionError
 
@@ -186,7 +193,7 @@ previous_coding_question = ""
 
 
 async def generate_question(
-    client: instructor.AsyncInstructor, model: str, language : Language
+    client: instructor.AsyncInstructor, model: str, language: Language
 ) -> tuple[Optional[str], Optional[Dict]]:
     logger.info(f"Generating question with model: {model}")
 
@@ -210,9 +217,11 @@ async def generate_question(
                     possible_objects = await _generate_objects_to_visualize(
                         client, model, used_objects
                     )
-                    sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+                    sampled_objects = random.sample(
+                        possible_objects, random.randint(3, 5)
+                    )
                     used_objects = sampled_objects
-                
+
                 kwargs = {
                     "response_model": CodingQuestion,
                     "model": model,
@@ -223,7 +232,7 @@ async def generate_question(
                                 random.choices([2, 3, 4], weights=[0.3, 0.5, 0.2])[0],
                                 used_objects,
                                 previous_coding_question,
-                                language
+                                language,
                             ),
                         }
                     ],
@@ -234,7 +243,9 @@ async def generate_question(
                 }
                 completion = await client.chat.completions.create(**kwargs)
                 coding_question = completion.question
-                coding_question = additional_notes_for_question_prompt(coding_question, language)
+                coding_question = additional_notes_for_question_prompt(
+                    coding_question, language
+                )
                 logger.success(f"Generated question: {coding_question}")
                 previous_coding_question = coding_question
                 return coding_question, kwargs
@@ -243,11 +254,12 @@ async def generate_question(
 
     return None, None
 
+
 async def generate_answer(
     client: AsyncOpenAI | instructor.AsyncInstructor,
     model: str,
     question: str,
-    langauge : Language,
+    langauge: Language,
     err: str | None = None,
     code: str | None = None,
 ) -> Tuple[str, Optional[CodeAnswer]]:
@@ -263,7 +275,9 @@ async def generate_answer(
         },
         {
             "role": "user",
-            "content": build_code_answer_prompt(question, langauge.value == Language.JAVASCRIPT),
+            "content": build_code_answer_prompt(
+                question, langauge.value == Language.JAVASCRIPT
+            ),
         },
     ]
 
@@ -294,7 +308,11 @@ async def generate_answer(
 
 
 async def build_err_prompt(
-    client: AsyncOpenAI | instructor.AsyncInstructor, model: str, code: str, err: str, prompt: str
+    client: AsyncOpenAI | instructor.AsyncInstructor,
+    model: str,
+    code: str,
+    err: str,
+    prompt: str,
 ) -> str:
     kwargs = {
         "response_model": ErrorAnswer,
@@ -332,7 +350,7 @@ async def build_err_prompt(
     return build_python_fix_prompt(code=code, err=err)
 
 
-async def build_2_prompt_responses_pairs(language : Language):
+async def build_2_prompt_responses_pairs(language: Language):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
@@ -405,7 +423,10 @@ async def build_2_prompt_responses_pairs(language : Language):
 
 
 async def generate_answer_with_feedback(
-    client: AsyncOpenAI | instructor.AsyncInstructor, model: str, question: str, language : Language
+    client: AsyncOpenAI | instructor.AsyncInstructor,
+    model: str,
+    question: str,
+    language: Language,
 ) -> Tuple[str, CodeAnswer | None]:
     previous_code = None
     err = None
@@ -424,7 +445,7 @@ async def generate_answer_with_feedback(
             previous_code = e.code
 
 
-async def build_prompt_responses_pair(language : Language, generator_model=None):
+async def build_prompt_responses_pair(language: Language, generator_model=None):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
@@ -447,8 +468,10 @@ async def build_prompt_responses_pair(language : Language, generator_model=None)
         if language == Language.JAVASCRIPT:
             tasks.append(generate_answer(client, ans_model, prompt, language))
         elif language == Language.PYTHON:
-            tasks.append(generate_answer_with_feedback(client, ans_model, prompt, language))
-        
+            tasks.append(
+                generate_answer_with_feedback(client, ans_model, prompt, language)
+            )
+
     results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(*tasks)
 
     # parse code responses
@@ -456,7 +479,7 @@ async def build_prompt_responses_pair(language : Language, generator_model=None)
     for model, result in results:
         if not result:
             continue
-        
+
         if language == Language.JAVASCRIPT:
             result = await parse_code_response(result)
             supported_languages = ["javascript", "html"]
@@ -488,7 +511,7 @@ async def build_prompt_responses_pair(language : Language, generator_model=None)
     return {"prompt": prompt, "responses": responses}
 
 
-async def test_generate_questions(language : Language):
+async def test_generate_questions(language: Language):
     log_data = []
     client = get_instructor_client(provider=Provider.OPENROUTER)
     for model in GENERATOR_MODELS:
@@ -512,7 +535,7 @@ async def test_generate_questions(language : Language):
 
 async def main():
     language = Language("Javascript")
-    responses = await build_prompt_responses_pair(language= language)
+    responses = await build_prompt_responses_pair(language=language)
     with open("output.json", "w") as f:
         json.dump(responses, f, indent=4)
 
