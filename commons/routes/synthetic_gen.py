@@ -18,11 +18,11 @@ QUEUE_KEY = "synthetic:queue"
 
 class SyntheticGenResponse(BaseModel):
     success: bool
-    body: Optional[List[dict]] = None
+    body: Optional[dict] = None
     error: Optional[str] = None
 
 
-@synthetic_gen_router.get("/synthetic-gen", response_model=SyntheticGenResponse)
+@synthetic_gen_router.get("/synthetic-gen")
 async def execute_python_code(background_tasks: BackgroundTasks):
     try:
         num_elems = await cache.redis.llen(QUEUE_KEY)
@@ -37,13 +37,9 @@ async def execute_python_code(background_tasks: BackgroundTasks):
 
         background_tasks.add_task(generator.arun)
 
-        return {
-            "success": True,
-            "body": result,
-            "error": None,
-        }
+        return SyntheticGenResponse(success=True, body=result, error=None)
     except Exception as e:
-        return {"success": False, "body": [], "error": str(e)}
+        return SyntheticGenResponse(success=False, body={}, error=str(e))
 
 
 class SyntheticGenerator:

@@ -14,12 +14,14 @@ class CodeDiagnostics:
         code_to_analyze: Annotated[str, "Code to be analyzed"],
     ) -> str:
         diagnostics = ""
+        logger.info(f"Code to analyze: {code_to_analyze}")
         # disabled quicklint for now because trying to figure out if tsserver is better
         # ql_diag = await diagnostics_quicklint(code_to_analyze)
-        tsserver_diag = tsserver_diagnostics(code=code_to_analyze)
+        tsserver_diag = await tsserver_diagnostics(code=code_to_analyze)
         if tsserver_diag:
             diagnostics += "\n".join(tsserver_diag)
         # diagnostics += ql_diag
+        logger.info(f"Got code diagnostics: {diagnostics}")
         return diagnostics
 
 
@@ -44,48 +46,54 @@ async def diagnostics_quicklint(
     except Exception as e:
         return f"Exception occurred: {e}"
 
+    ############################# TSSERVER ######################################
 
-############################# TSSERVER ######################################
+
+CONFIGURE = "configure"
+OPEN = "open"
+CHANGE = "change"
+GETERR = "geterr"
+SEMANTIC_DIAGNOSTICS_SYNC = "semanticDiagnosticsSync"
+SYNTACTIC_DIAGNOSTICS_SYNC = "syntacticDiagnosticsSync"
+SUGGESTION_DIAGNOSTICS_SYNC = "suggestionDiagnosticsSync"
 
 
-def tsserver_diagnostics(code: str):
-    process = start_tsserver()
+async def tsserver_diagnostics(code: str):
+    process = await start_tsserver()
 
     # Initialize the project
-    send_command(
+    await send_command(
         process,
         {
             "seq": 0,
             "type": "request",
-            "command": "configure",
+            "command": CONFIGURE,
             "arguments": {"hostInfo": "python"},
         },
     )
-    read_response(process)
 
     # Simulated file path
-    filename = uuid.uuid4().replace("-", "")
+    filename = str(uuid.uuid4()).replace("-", "")
     file_path = f"/path/to/nonexistent/{filename}.js"
 
     # Open a fake file in tsserver
-    send_command(
+    await send_command(
         process,
         {
             "seq": 1,
             "type": "request",
-            "command": "open",
+            "command": OPEN,
             "arguments": {"file": file_path},
         },
     )
-    read_response(process)
 
     # Send the content of the JavaScript as a change to the opened file
-    send_command(
+    await send_command(
         process,
         {
             "seq": 2,
             "type": "request",
-            "command": "change",
+            "command": CHANGE,
             "arguments": {
                 "file": file_path,
                 "line": 1,
@@ -96,91 +104,141 @@ def tsserver_diagnostics(code: str):
             },
         },
     )
-    read_response(process)
 
     # Request diagnostics
-    send_command(
+    await send_command(
         process,
         {
             "seq": 3,
             "type": "request",
-            "command": "geterr",
+            "command": GETERR,
             "arguments": {"files": [file_path], "delay": 0},
         },
     )
 
-    # Give tsserver some time to process and emit diagnostics
-    time.sleep(1)
+    # Request semantic diagnostics
+    await send_command(
+        process,
+        {
+            "seq": 4,
+            "type": "request",
+            "command": SEMANTIC_DIAGNOSTICS_SYNC,
+            "arguments": {"file": file_path},
+        },
+    )
 
-    # Read the responses containing diagnostics
-    while True:
-        response = read_response(process)
-        if not response.strip():
-            break
-        diagnostics = parse_diagnostics(response)
-        logger.info(f"diagnostics: {diagnostics}")
+    # Request syntactic diagnostics
+    await send_command(
+        process,
+        {
+            "seq": 5,
+            "type": "request",
+            "command": SYNTACTIC_DIAGNOSTICS_SYNC,
+            "arguments": {"file": file_path},
+        },
+    )
+
+    # Request suggestion diagnostics
+    await send_command(
+        process,
+        {
+            "seq": 6,
+            "type": "request",
+            "command": SUGGESTION_DIAGNOSTICS_SYNC,
+            "arguments": {"file": file_path},
+        },
+    )
+
+    # TODO handle multiple responses
+    responses = await read_response(process)
+
+    # Give tsserver some time to process and emit diagnostics
+    time.sleep(3)
+
+    logger.info(f"Read response from tsserver LSP: \n{responses=}")
+    # if not response.strip():
+    #     break
+    logger.info("Attempting to parse diagnostics...")
+    diagnostics = parse_diagnostics(responses)
+    logger.info(f"Parsed diagnostics: {diagnostics=}")
 
     # Close the tsserver
     process.terminate()
+    return diagnostics
 
 
-def start_tsserver():
-    return subprocess.Popen(
-        ["tsserver"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
+async def start_tsserver():
+    return await asyncio.create_subprocess_exec(
+        "tsserver",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        universal_newlines=False,
     )
 
 
-def send_command(process, command):
-    process.stdin.write(json.dumps(command) + "\n")
-    process.stdin.flush()
+async def send_command(process, command):
+    process.stdin.write((json.dumps(command) + "\n").encode("utf-8"))
+    await process.stdin.drain()
 
 
-def read_response(process):
-    response = ""
+async def read_response(process: asyncio.subprocess.Process):
+    responses = []
     content_length = 0
 
     while True:
-        line = process.stdout.readline().strip()
-        if line.startswith("Content-Length:"):
-            content_length = int(line.split(":")[1].strip())
-        elif line == "":
-            if content_length > 0:
-                response = process.stdout.read(content_length)
-                break
-        else:
-            continue
+        try:
+            line = await asyncio.wait_for(process.stdout.readline(), timeout=2)
+            line = line.strip().decode("utf-8")
+            print("line", line)
+            if line.startswith("Content-Length:"):
+                content_length = int(line.split(":")[1].strip())
+            elif line == "":
+                if content_length > 0:
+                    response = await process.stdout.read(content_length)
+                    responses.append(response)
+                    content_length = 0  # Reset for the next message
+            else:
+                continue
+        except asyncio.TimeoutError:
+            logger.info("Timeout reading response")
+            break
 
-    return response
+    return responses
 
 
-def parse_diagnostics(response):
-    diagnostics = []
-    try:
-        messages = json.loads(response)
-        if messages.get("type") == "event":
-            event = messages.get("event")
-            if event in ["semanticDiag", "syntaxDiag", "suggestionDiag"]:
-                diagnostics = messages.get("body", {}).get("diagnostics", [])
-                for item in diagnostics:
-                    if isinstance(item, dict):
-                        category = item["category"]
-                        text = item["text"]
-                        if category == "error":
-                            diagnostics.append(
-                                f"Error {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
-                            )
-                        elif event == "suggestionDiag":
-                            diagnostics.append(
-                                f"Suggestion {item['code']}: {text} at line {item['start']['line']}, column {item['start']['offset']}"
-                            )
-                    elif isinstance(item, str):
-                        diagnostics.append(item)
-    except json.JSONDecodeError:
-        logger.error("Error decoding JSON")
-        return diagnostics
-    logger.success(f"Successfully parsed diagnostics\n{diagnostics=}")
-    return diagnostics
+def parse_diagnostics(responses):
+    formatted_diagnostics = []
+    logger.info(f"Raw response: {responses=}")
+    for response in responses:
+        try:
+            messages = json.loads(response)
+            if messages.get("type") == "event":
+                event = messages.get("event")
+                if event in ["semanticDiag", "syntaxDiag", "suggestionDiag"]:
+                    diagnostics = messages.get("body", {}).get("diagnostics", [])
+                    for item in diagnostics:
+                        if isinstance(item, dict):
+                            category = item["category"]
+                            text = item["text"]
+                            if category == "error":
+                                formatted_diagnostics.append(
+                                    f"Error: {text} at line {item['start']['line']}, column {item['start']['offset']}"
+                                )
+                            elif event == "suggestionDiag":
+                                formatted_diagnostics.append(
+                                    f"Suggestion: {text} at line {item['start']['line']}, column {item['start']['offset']}"
+                                )
+                            elif event == "syntaxDiag":
+                                formatted_diagnostics.append(
+                                    f"Syntax {item['category']}: {text} at line {item['start']['line']}, column {item['start']['offset']} to line {item['end']['line']}, column {item['end']['offset']}"
+                                )
+                        elif isinstance(item, str):
+                            formatted_diagnostics.append(item)
+        except json.JSONDecodeError:
+            logger.error("Error decoding JSON")
+        except Exception as e:
+            logger.error(f"Error occurred: {e}")
+
+    logger.info(f"Successfully parsed diagnostics\n{formatted_diagnostics=}")
+    return formatted_diagnostics

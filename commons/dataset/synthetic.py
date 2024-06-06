@@ -441,14 +441,15 @@ async def build_prompt_responses_pair(generator_model=None):
     for model, result in results:
         if not result:
             continue
-        # result = parse_code_response(result)
-        supported_languages = ["javascript", "html"]
-        for i, file in enumerate(result.files):
-            if file.language.lower() not in supported_languages:
-                continue
-            lang, fixed_code = await fix_code(file.content, model)
-            if fixed_code:
-                result.files[i].content = fixed_code
+
+        # # result = parse_code_response(result)
+        # supported_languages = ["javascript", "html"]
+        # for i, file in enumerate(result.files):
+        #     if file.language.lower() not in supported_languages:
+        #         continue
+        #     lang, fixed_code = await fix_code(file.content, model)
+        #     if fixed_code:
+        #         result.files[i].content = fixed_code
 
         formatted_files = [
             {
