@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+from enum import Enum
 import json
 import asyncio
 import random
@@ -30,6 +31,13 @@ from commons.utils.utils import generate_simple_json
 
 load_dotenv()
 
+# Levels of Prompt Augmentation
+# from least to most depreciated
+class AugmentationLevel(Enum):
+    ORIGINAL = 0
+    REMOVE_REQUIREMENTS = 1
+    CHANGE_REQUIREMENTS = 2
+    CHANGE_ANIMATION_OBJECT = 3
 
 def log_retry_info(retry_state):
     """Meant to be used with tenacity's before_sleep callback"""
@@ -231,9 +239,10 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
 
 
 async def generate_answer(
-    client: AsyncOpenAI, model: str, question: str
+    client: AsyncOpenAI, model: str, question: str, level: AugmentationLevel
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
+    question = await augment_question(client, model, question, level)
     print(f"Generating code answer with model: {model}")
     kwargs = {
         "response_model": CodeAnswer,
@@ -294,6 +303,42 @@ def build_code_answer_prompt(question) -> str:
             few_shot_examples=few_shot_example_outputs(),
         )
     )
+
+async def augment_question(
+    client: instructor.AsyncInstructor, model: str, question: str, augmentation_level: AugmentationLevel
+):
+    """ Augment the question with the given model and augmentation level."""
+    logger.info(f"Augmenting question with model and augmentation: {model}, {augmentation_level}")
+    augmentation_prompt = ""
+    if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
+        augmentation_prompt = f"Please remove any 1 requirement from the following question: {question}"
+    elif augmentation_level == AugmentationLevel.CHANGE_REQUIREMENTS:
+        augmentation_prompt = f"Please change some minor requirements from the following question, do not change the animation object: {question}"
+    elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
+        augmentation_prompt = f"Please change the animation object from the following question to something semantically similar such that rest of the question does not need to be modified: {question}"
+    else:
+        return question
+        
+    kwargs = {
+        "response_model": CodingQuestion,
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": augmentation_prompt,
+            }
+        ],
+        "temperature": random.uniform(0.0, 0.5),
+        "max_tokens": 8192,
+        "top_p": random.uniform(0.9, 1.0),
+    }
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+    completion = await client.chat.completions.create(**kwargs)
+    # logger.success(f"Got objects to visualize, completion={completion=}")
+    logger.success(f"Original question: {question}")
+    logger.success(f"Augmented question and level:  {augmentation_level}, {completion.question}")
+    return completion.question
 
 
 def few_shot_example_outputs():
@@ -427,14 +472,28 @@ async def build_prompt_responses_pair(generator_model=None):
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
     # randomly sampled from pool of models
     answer_models = dataset.ANSWER_MODELS
-    num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
-    selected_models = random.sample(
-        answer_models, min(num_answer_models, len(answer_models))
-    )
 
-    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
-        *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
+    selected_model = random.choice(answer_models)
+    logger.info(f"Selected model for answer generation: {selected_model}")
+
+    # suffle augmentation levels for random selection
+    augmentation_levels = list(AugmentationLevel)
+    random.shuffle(augmentation_levels)
+    
+    # single model, multiple levels of augmentation
+    results: List[Tuple[str, str]] = await asyncio.gather(
+        *[generate_answer(client, selected_model, prompt, level) for level in augmentation_levels]
     )
+    
+    # multiple models
+    
+    # num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
+    # selected_models = random.sample(
+    #     answer_models, min(num_answer_models, len(answer_models))
+    # )
+    # results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
+    #     *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
+    # )
 
     # parse code responses
     responses = []
