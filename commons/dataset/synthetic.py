@@ -30,6 +30,8 @@ from commons.utils.utils import generate_simple_json
 
 load_dotenv()
 
+UI_ELEMENTS = ["dropdown", "button", "radio button", "slider", "text field", "checkbox", "random quote"]
+ACTIONS = ["click", "hover", "double click", "right click", "drag", "resize", "color change"]
 
 def log_retry_info(retry_state):
     """Meant to be used with tenacity's before_sleep callback"""
@@ -190,13 +192,33 @@ async def generate_question(
 def build_code_generation_question_prompt(
     num_requirements: int, sampled_objects: list[str], previous_coding_question: str
 ) -> str:
+    global UI_ELEMENTS, ACTIONS
+    random_action = random.choice(ACTIONS)
+    random_ui_element = random.choice(UI_ELEMENTS)
+    choices = [random_action, random_ui_element]
+    # choices = UI_ELEMENTS + ACTIONS + "none"
+    
+    selected_random_element = random.choice(choices)
+
+    random_instruction_prompt = ""
+    
+    # don't modify instruction if none is selected
+    if random_instruction_prompt != "none":
+        random_instruction_prompt = f"- The interactions must include a {selected_random_element}."
+        # positive = f"- The interactions must include a {selected_random_element}."
+        # negative = f"- The interactions must not include a {selected_random_element}."
+        # choose a positive or negative instruction
+        # random_instruction_prompt = random.choice([positive, negative])
+
     print(f"Generating question with {num_requirements} requirements")
+    print(f"Random instruction inserted: {random_instruction_prompt}")
     # coding_question_json = CodingQuestion.model_json_schema()
     CODE_GEN_PROMPT = """
     System:
     You are an expert question generator.
 
     - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: {objects}, through the piece of code with {num_requirements} requirements on user interactions.
+    {random_instruction_prompt}
     - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
     - The complexity level should be 20 of out 100.
     - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars
@@ -217,6 +239,7 @@ def build_code_generation_question_prompt(
             # coding_question_json=coding_question_json,
             objects=", ".join(sampled_objects),
             previous_coding_question=previous_coding_question,
+            random_instruction_prompt=random_instruction_prompt,
         )
     )
 
