@@ -1,5 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import sys
+sys.path.append("./")
 from commons.dataset import GENERATOR_MODELS
 import os
 import json
@@ -9,7 +11,7 @@ import matplotlib.pyplot as plt
 directory = "commons/dataset/sample_synthetic_bank"
 sentences = []
 for filename in os.listdir(directory):
-    if filename.endswith(".json"): 
+    if filename.endswith("output.json"): 
         file_path = os.path.join(directory, filename)
         
         # Read the JSON file
@@ -22,7 +24,9 @@ for filename in os.listdir(directory):
                     'question': item['question'], 
                     'model': item['model']
                 })
-model = SentenceTransformer('all-MiniLM-L6-v2')
+# model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer("mixedbread-ai/mxbai-embed-large-v1")
+
 
 sentence_embeddings = model.encode([obj['question'] for obj in sentences])
 # sentence_embeddings = model.encode(sentences)
@@ -38,6 +42,7 @@ print(np.array2string(cos_sim_matrix, precision=2, separator=', '))
 
 def process_cos_sim_matrix (sentences, prompt_model):
     trimmed_sentences = [sentence for sentence in sentences if sentence['model'] == prompt_model]
+    print(trimmed_sentences)
     trimmed_sentence_embeddings = model.encode([obj['question'] for obj in trimmed_sentences])
     trimmed_cos_sim_matrix = cosine_similarity(trimmed_sentence_embeddings)
     for i in range(len(trimmed_cos_sim_matrix)):
@@ -106,6 +111,7 @@ def process_cos_sim_matrix (sentences, prompt_model):
     ax2.set_title('Cosine Similarity Matrix')
 
     plt.tight_layout()
+    plt.savefig(f"cos_sim_matrix_new.png")
     plt.show()
 
 

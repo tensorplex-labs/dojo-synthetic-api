@@ -1,0 +1,1052 @@
+[
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web visualization of a computer using only HTML, CSS, and JavaScript. The visualization should include a slider to adjust the size of the computer dynamically. Additionally, implement two buttons: one to change the color of the computer and another to toggle between laptop and desktop models. Ensure that the visualization updates in real-time based on user interactions. No external libraries should be used, and the solution should be implemented with a clear mental model of the computer's structure.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: phone, computer, book, bottle, plane, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a slider.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.4027170872875421,
+            "max_tokens": 8192,
+            "top_p": 0.9685075014536733,
+            "seed": 250593488
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using only HTML, CSS, and JavaScript to visualize a bicycle. The application should include the following user interactions: 1. A dropdown menu allowing the user to select the color of the bicycle (e.g., red, blue, green). 2. A button that, when clicked, redraws the bicycle in the selected color. 3. A slider to adjust the size of the bicycle's wheels. 4. A checkbox that, when checked, adds a basket to the front of the bicycle. Ensure that the visualization updates in real-time based on user interactions. The mental model of the bicycle should include at least the frame, wheels, and optionally the basket. Use only built-in JavaScript libraries for this task.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: phone, building, tree, train, bicycle, through the piece of code with 4 requirements on user interactions.\n- The interactions must include a dropdown.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.3351732662299082,
+            "max_tokens": 8192,
+            "top_p": 0.9972543946536064,
+            "seed": 253864150
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript to visualize a rocket. The application should display a simple 2D representation of a rocket. Include a checkbox that, when checked, changes the color of the rocket from its default color to red. Additionally, implement a slider to adjust the size of the rocket. The visualization should update immediately based on user interactions with the checkbox and the slider.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: plane, rocket, ball, circle, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a checkbox.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.41976331414023943,
+            "max_tokens": 8192,
+            "top_p": 0.9565740528707437,
+            "seed": 316400642
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using HTML, CSS, and JavaScript that visualizes a 3D model of a chair. The application should allow users to change the color of the chair using a dropdown menu. Additionally, implement a slider to adjust the scale of the chair model. Ensure that these interactions update the chair's visualization in real-time.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: plane, camera, chair, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a color change.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.012257787277097087,
+            "max_tokens": 8192,
+            "top_p": 0.9745337201483214,
+            "seed": 696549721
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only HTML, CSS, and JavaScript that allows users to visualize a house. The application should meet the following requirements:\n1. Include a text field where users can input the number of windows in the house. The house should update visually based on the number entered.\n2. The house should initially be displayed with a default number of windows, a door, and a roof. Users can modify the number of windows using the text field.\n3. The application should not allow non-numeric input in the text field and should provide a visual error message if non-numeric input is entered.\nYour solution should not use any external libraries or frameworks and must rely solely on built-in JavaScript, HTML, and CSS functionalities.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: table, keyboard, motorcycle, lamp, house, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a text field.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.26900133630541395,
+            "max_tokens": 8192,
+            "top_p": 0.968641494013768,
+            "seed": 549915350
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript to visualize a 3D model of a house. The application should allow users to interact with the house model in the following ways: 1) Resize the house using a slider control. 2) Change the color of the house using a color picker. 3) Rotate the house model using mouse drag. Ensure that the resizing maintains the proportions of the house. The visualization should be rendered directly in the web browser without using any external libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: torus, car, tree, box, house, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a resize.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.4481523355771233,
+            "max_tokens": 8192,
+            "top_p": 0.9126944226812594,
+            "seed": 690396716
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript to visualize a computer. The application should display a simple 2D representation of a computer. Include a radio button that, when selected between 'laptop' and 'desktop', changes the visualization accordingly. Additionally, implement a dropdown menu to choose the color of the computer from options like 'black', 'silver', and 'white'. The visualization should update immediately based on user interactions with the radio button and the dropdown menu.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\n    System:\n    You are an expert question generator.\n\n    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: television, pencil, glasses, computer, through the piece of code with 2 requirements on user interactions.\n    - The interactions must include a radio button.\n    - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n    - The complexity level should be 20 of out 100.\n    - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n    - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n    - The interactions must require the programmer to have a mental model of any objects being visualized.\n    - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n    - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n    - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n    #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n    Create a web application using HTML, CSS, and JavaScript to visualize a rocket. The application should display a simple 2D representation of a rocket. Include a checkbox that, when checked, changes the color of the rocket from its default color to red. Additionally, implement a slider to adjust the size of the rocket. The visualization should update immediately based on user interactions with the checkbox and the slider.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n\n\n    #Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.43595731760602696,
+            "max_tokens": 8192,
+            "top_p": 0.9168739006103311,
+            "seed": 898454388
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using HTML, CSS, and JavaScript that allows users to visualize a house. The application should meet the following requirements:\n1. The house should be represented in a simple 2D shape (e.g., a rectangle for the body and a triangle for the roof) using HTML and CSS.\n2. Users should be able to change the color of the house by selecting a color from a dropdown menu.\n3. Implement a feature where double-clicking on the house toggles the visibility of the windows (represented as smaller rectangles within the house).\n4. Add a slider to control the size of the house; as the slider moves, the house should increase or decrease in size accordingly.\nEnsure that all interactions are handled using JavaScript without any external libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: computer, hat, chair, house, through the piece of code with 4 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.010518664783609966,
+            "max_tokens": 8192,
+            "top_p": 0.9788118834898549,
+            "seed": 951705677
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript to visualize a computer. The application should display a simple 2D representation of a computer. Include a button that, when clicked, toggles the display of the computer's internal components (like CPU, RAM, Hard Drive) on the screen. Additionally, implement a dropdown menu to select different computer models (e.g., Gaming, Office, Laptop), which changes the style and components of the computer displayed. Lastly, add a form input where users can label the computer with a custom name, which should appear on the visualization. The visualization and its features should update immediately based on user interactions with the button, dropdown, and input field.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\n    System:\n    You are an expert question generator.\n\n    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: capsule, book, window, bottle, computer, through the piece of code with 3 requirements on user interactions.\n    - The interactions must include a click.\n    - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n    - The complexity level should be 20 of out 100.\n    - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n    - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n    - The interactions must require the programmer to have a mental model of any objects being visualized.\n    - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n    - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n    - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n    #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n    Create a web application using HTML, CSS, and JavaScript to visualize a rocket. The application should display a simple 2D representation of a rocket. Include a checkbox that, when checked, changes the color of the rocket from its default color to red. Additionally, implement a slider to adjust the size of the rocket. The visualization should update immediately based on user interactions with the checkbox and the slider.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n\n\n    #Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.2852041617715399,
+            "max_tokens": 8192,
+            "top_p": 0.9069192945059259,
+            "seed": 552314362
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using HTML, CSS, and JavaScript to visualize a sun. The application should display a simple 2D representation of the sun. Include a button that, when clicked, toggles the display of sun rays from visible to hidden. Additionally, implement a dropdown menu to select the color of the sun from options like yellow, orange, and red. Finally, add a range input to control the number of rays emanating from the sun. The visualization should update immediately based on user interactions with the button, dropdown, and range input.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\n    System:\n    You are an expert question generator.\n\n    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: sun, train, ball, plane, fence, through the piece of code with 3 requirements on user interactions.\n    - The interactions must include a button.\n    - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n    - The complexity level should be 20 of out 100.\n    - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n    - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n    - The interactions must require the programmer to have a mental model of any objects being visualized.\n    - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n    - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n    - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n    #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n    Create a web application using HTML, CSS, and JavaScript to visualize a rocket. The application should display a simple 2D representation of a rocket. Include a checkbox that, when checked, changes the color of the rocket from its default color to red. Additionally, implement a slider to adjust the size of the rocket. The visualization should update immediately based on user interactions with the checkbox and the slider.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n\n\n    #Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.419756216024019,
+            "max_tokens": 8192,
+            "top_p": 0.9389945730577133,
+            "seed": 136777847
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a house using only HTML, CSS, and JavaScript. The visualization should include a 3D model of a house. Implement two user interactions: 1) A slider to adjust the scale of the house (zoom in and out), and 2) A dropdown menu to change the color of the house. Ensure that the user's adjustments are reflected in real-time in the visualization. Use only built-in JavaScript libraries for this task.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: cylinder, torus, ring, prism, house, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a slider.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.4205891600517512,
+            "max_tokens": 8192,
+            "top_p": 0.9946911034823163,
+            "seed": 127115677
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a bridge. The application should allow users to change the color of the bridge by double-clicking on it. Additionally, implement a slider to adjust the width of the bridge. Ensure that the bridge is initially displayed in a default color and size, and that these properties change dynamically based on user interactions.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: window, boat, bridge, book, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.26986850331212053,
+            "max_tokens": 8192,
+            "top_p": 0.9101053607663596,
+            "seed": 269155665
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript that allows users to visualize a tree. The application should feature a radio button with options to choose between different types of trees (e.g., Pine, Oak, Maple). Based on the user's selection, the application should dynamically render a simple graphical representation of the chosen tree type on the webpage. Ensure that the visualization changes immediately upon selection without the need to submit a form. This task requires you to manage state changes and update the DOM in response to user interactions.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: boat, shoe, tree, glasses, chair, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a radio button.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.09486340843555668,
+            "max_tokens": 8192,
+            "top_p": 0.9187474606473464,
+            "seed": 783301663
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript to visualize a car. The application should allow users to change the color of the car through a color picker. The application should also include a feature where double-clicking on the car will toggle the display of its details (e.g., model, year, make). Ensure that all functionality is implemented using only built-in JavaScript libraries without any external frameworks or libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: bicycle, fountain, ball, car, chair, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.4605959018250849,
+            "max_tokens": 8192,
+            "top_p": 0.9438734072986583,
+            "seed": 555229401
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only HTML, CSS, and JavaScript that visualizes a surfboard. The application should allow users to change the color of the surfboard by double-clicking on it. Additionally, implement a feature where resizing the browser window will automatically adjust the size of the surfboard proportionally. Ensure that your code does not use any external libraries and relies solely on built-in JavaScript functionalities.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: helicopter, bicycle, piano, surfboard, boat, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.03722954398683809,
+            "max_tokens": 8192,
+            "top_p": 0.9273193351521278,
+            "seed": 206876287
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only JavaScript, HTML, and CSS that visualizes a 3D model of a shoe. The application should allow users to interact with the shoe model in the following ways: 1) Rotate the shoe 360 degrees by dragging the mouse across the screen. 2) Change the color of the shoe when the user double-clicks anywhere on the shoe. Ensure that the rotation and color change functionalities are clearly distinguishable and that the user can easily understand how to interact with the model.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: keyboard, pen, book, shoe, table, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.49484623547610096,
+            "max_tokens": 8192,
+            "top_p": 0.9291889939720315,
+            "seed": 308322596
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a 3D pyramid using only HTML, CSS, and JavaScript. The visualization should allow users to interact with the pyramid in the following ways: 1) When a user hovers over the pyramid, it should change color. 2) Implement a button that, when clicked, toggles the visibility of the pyramid. 3) Include a slider control that adjusts the size of the pyramid. Ensure that all interactions require the user to have a mental model of the pyramid being visualized. Use only built-in JavaScript libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: desk, train, cube, pyramid, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a hover.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.13296521494706431,
+            "max_tokens": 8192,
+            "top_p": 0.9936044583730116,
+            "seed": 162651380
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript that visualizes a 3D model of a glass. The application should include the following user interactions: 1. A slider to adjust the opacity of the glass from completely transparent to fully opaque. 2. A dropdown menu to select the type of glass (e.g., wine glass, beer mug, water glass). 3. A button to reset the glass to its default state. The visualization should update in real-time based on user interactions. Ensure that you mentally model the glass object in your implementation.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: chair, book, glass, plate, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a slider.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.23553703257326047,
+            "max_tokens": 8192,
+            "top_p": 0.9020375800808061,
+            "seed": 534201983
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript that allows users to visualize a helicopter. The visualization should be a simple 2D representation using HTML elements styled with CSS. The application should include two user interactions: 1) A button that, when clicked, displays a random inspirational quote from a predefined list of quotes. 2) A slider that allows users to rotate the helicopter visualization on the webpage. Ensure that the rotation effect is smooth and visually appealing. The application should not use any external libraries or frameworks.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: tree, ship, fence, helicopter, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a random quote.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.2935597369130366,
+            "max_tokens": 8192,
+            "top_p": 0.9795229905753119,
+            "seed": 27654588
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using JavaScript, HTML, and CSS that visualizes a hat. The visualization should include the following interactive elements: 1) A checkbox that, when checked, changes the color of the hat. 2) A slider that adjusts the size of the hat. 3) A dropdown menu that allows the user to select different styles of hats (e.g., baseball cap, top hat, beanie). Ensure that the application only uses built-in JavaScript libraries and that the interactions require a mental model of the hat being visualized.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: watch, hat, umbrella, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a checkbox.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.42421604844466065,
+            "max_tokens": 8192,
+            "top_p": 0.9319059522524472,
+            "seed": 84267839
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only HTML, CSS, and JavaScript that allows users to visualize a tree. The application should include a text field where users can input the number of branches they want the tree to have. Upon submitting this number, a visual representation of a tree with the specified number of branches should be displayed on the webpage. Additionally, include a color picker to allow users to choose the color of the tree's branches. Ensure that the tree visualization updates in real-time as users adjust the number of branches or change the color.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: bottle, backpack, book, tree, lamp, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a text field.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.20887721658116537,
+            "max_tokens": 8192,
+            "top_p": 0.9226734473092066,
+            "seed": 404083933
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using HTML, CSS, and JavaScript to visualize a notebook. The application should have the following features: 1. A button to toggle between two notebook designs (e.g., spiral notebook and regular notebook). 2. A slider to adjust the width of the notebook. 3. A color picker to change the color of the notebook cover. Ensure that the visualization updates in real-time based on user interactions. Use only built-in JavaScript libraries for this task.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: spoon, notebook, window, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a button.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.16329370410554178,
+            "max_tokens": 8192,
+            "top_p": 0.9298013412509617,
+            "seed": 181022575
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web page using HTML, CSS, and JavaScript to visualize a bicycle. The page should include a checkbox that allows the user to toggle between two different styles of bicycles (e.g., road bike and mountain bike). Additionally, incorporate two sliders: one to adjust the size of the bicycle and another to change the color dynamically. Ensure that the visualization updates in real-time as the user interacts with the controls.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: key, pen, motorcycle, bicycle, helicopter, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a checkbox.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.42553908194160683,
+            "max_tokens": 8192,
+            "top_p": 0.9656859325032683,
+            "seed": 400907203
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a 3D torus. The application should allow users to resize the torus using a slider input. Additionally, implement a color picker to change the color of the torus. Ensure that the visualization updates in real-time as users adjust the slider or select a new color. The torus should be rendered using the canvas element, and you must not use any external libraries or frameworks.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: pyramid, clock, chair, torus, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a resize.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.322748762378794,
+            "max_tokens": 8192,
+            "top_p": 0.9889425103250151,
+            "seed": 640869938
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a pencil. The application should display a simple, stylized representation of a pencil. Implement two user interactions: 1) When a user hovers over the pencil, it should rotate to point in a different direction. 2) When a user clicks on the pencil, it should change its color. Ensure that the visualization and interactions do not require any external libraries and only use built-in browser capabilities.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: guitar, window, cup, pencil, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a hover.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.3038758243916622,
+            "max_tokens": 8192,
+            "top_p": 0.9545832545236588,
+            "seed": 4701830
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only HTML, CSS, and JavaScript to visualize a 3D cube. The application should include a button that, when clicked, toggles the rotation of the cube on or off. Additionally, implement a slider control that allows the user to adjust the speed of the rotation. Ensure that the cube is rendered using CSS for styling and JavaScript for the interactive elements. The user should be able to clearly perceive the cube rotating in three dimensions, and the speed adjustment should be noticeable and smooth.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: arrow, submarine, cube, house, boat, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a button.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.2967346635753436,
+            "max_tokens": 8192,
+            "top_p": 0.9523076400968242,
+            "seed": 50076089
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a chair using HTML, CSS, and JavaScript. The visualization should dynamically update based on user input. Include a text field where users can input the color of the chair. The chair should change its color based on the input from the text field. Additionally, include a slider to adjust the size of the chair. Ensure that the visualization updates in real-time as the user interacts with the text field and slider.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: helicopter, camera, chair, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a text field.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.28065973727755733,
+            "max_tokens": 8192,
+            "top_p": 0.915395431247355,
+            "seed": 805576504
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a shield using HTML, CSS, and JavaScript. The visualization should allow users to interact with the shield in the following ways: 1) Users can drag the shield across the screen. 2) Users can click on the shield to change its color randomly. 3) Users can double-click anywhere on the screen to reset the shield to its original position and color. Ensure that the shield maintains its proportions and orientation during these interactions. Use only built-in JavaScript functions without any external libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: bridge, lamp, shield, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a drag.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.20446451313438008,
+            "max_tokens": 8192,
+            "top_p": 0.9392088813393334,
+            "seed": 373028543
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only HTML, CSS, and JavaScript that allows users to visualize a train. The application should meet the following requirements: 1. The train should be visually represented on the webpage and should be initially displayed at the center of the screen. 2. Users should be able to drag the train horizontally across the screen. 3. The background should change color when the train is dragged to either end of the screen. Ensure that the user interactions are intuitive and that the mental model of a moving train is well represented in the interface.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: sword, camera, train, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a drag.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.31974316139276976,
+            "max_tokens": 8192,
+            "top_p": 0.9993181518049559,
+            "seed": 425297865
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a 3D cube using only HTML, CSS, and JavaScript. The cube should be displayed on a webpage and should support the following user interactions: 1) When the user hovers over the cube, it should change color. 2) When the user clicks on the cube, it should rotate. 3) When the user scrolls up or down on the page, the cube should increase or decrease in size respectively. 4) When the user right-clicks on the cube, a small tooltip should appear displaying the current size of the cube. Ensure that all interactions are handled purely with built-in JavaScript functionalities without any external libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: chair, laptop, skateboard, cube, through the piece of code with 4 requirements on user interactions.\n- The interactions must include a hover.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.04505627265476264,
+            "max_tokens": 8192,
+            "top_p": 0.9609281083562524,
+            "seed": 394607518
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a 3D model of a cube. The application should include a dropdown menu that allows users to select one of the following colors: red, blue, green, or yellow. Upon selection, the color of the cube should change accordingly. Additionally, include a button that, when clicked, toggles the rotation of the cube on or off. Ensure that the visualization and interactions are implemented using only built-in JavaScript functionalities without any external libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: bicycle, car, boat, cube, book, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a dropdown.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.2544976476292513,
+            "max_tokens": 8192,
+            "top_p": 0.9228765720077104,
+            "seed": 8669505
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript that allows users to visualize a 3D model of a bottle. The application should feature two user interactions: 1) Users can drag the bottle horizontally to rotate it around its vertical axis. 2) Users should be able to drag vertically to zoom in and out of the bottle model. The application must not use any external libraries or frameworks, and it should provide a responsive design that adjusts well on different screen sizes.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: robot, bottle, shield, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a drag.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.49437040678063154,
+            "max_tokens": 8192,
+            "top_p": 0.900928344849749,
+            "seed": 194590407
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a 3D cube using only HTML, CSS, and JavaScript. The cube should be displayed on a webpage and should rotate when the user hovers over it. Additionally, implement a color change interaction where the color of the cube changes to a randomly selected color from a predefined list each time the user clicks anywhere on the webpage. Ensure that the cube maintains its 3D appearance and rotation effect throughout the interactions.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: submarine, tower, cube, tractor, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a hover.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.15319392638829876,
+            "max_tokens": 8192,
+            "top_p": 0.9318634850978564,
+            "seed": 212175314
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only HTML, CSS, and JavaScript to visualize a television. The application should include a dropdown menu that allows the user to select from three different television models: 'Classic', 'Modern', and 'Futuristic'. Each selection should dynamically update the visualization of the television on the webpage. Additionally, include two buttons: one to turn the television 'on' and 'off', which changes the screen color from black to white (and vice versa), and another to 'mute' or 'unmute' the television, which should display a mute icon on the screen when muted. Ensure that the visualization and interactions require the programmer to have a mental model of a television.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: motorcycle, rocket, table, television, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a dropdown.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.21864219293698905,
+            "max_tokens": 8192,
+            "top_p": 0.9608435228371255,
+            "seed": 91911477
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a torus using only HTML, CSS, and JavaScript. The visualization should allow users to interact with the torus in the following ways: 1) Change the color of the torus using a color picker input. 2) Rotate the torus along its central axis using a slider control. 3) Scale the torus up or down using a dropdown menu with predefined scale options. Ensure that these interactions update the visualization in real-time. No external libraries should be used; rely solely on built-in browser capabilities.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: lamp, bottle, torus, box, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a color change.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.22244638615500462,
+            "max_tokens": 8192,
+            "top_p": 0.9592893986585644,
+            "seed": 756433270
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a tree using only HTML, CSS, and JavaScript. The visualization should include the following interactive elements: 1. A slider to adjust the thickness of the tree trunk. 2. A dropdown menu to select the type of leaves (e.g., round, pointed, or oval). 3. A color picker to change the color of the leaves. 4. A button to randomly generate a new tree shape. Ensure that the tree is visually represented in a way that requires the user to have a mental model of a tree, including its trunk and leaves. Use only built-in JavaScript libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: window, box, cloud, helicopter, tree, through the piece of code with 4 requirements on user interactions.\n- The interactions must include a slider.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.05155381818836957,
+            "max_tokens": 8192,
+            "top_p": 0.941873820884956,
+            "seed": 468783067
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a 3D model of a shoe. The application should allow users to interact with the visualization in the following ways: 1) Rotate the shoe model by dragging the mouse, 2) Zoom in and out using the scroll wheel, and 3) Change the color of the shoe by double-clicking on different parts of the shoe. Ensure that the application runs entirely in the browser without any external libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: plate, keyboard, shoe, glasses, table, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.26080686822162125,
+            "max_tokens": 8192,
+            "top_p": 0.9367398472228414,
+            "seed": 216681511
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript that allows users to visualize a 3D model of a bottle. The application should include the following user interactions: 1. A text field where users can input the height of the bottle. 2. A button to submit the height and update the visualization accordingly. 3. A slider to adjust the width of the bottle dynamically. Ensure that the visualization updates in real-time as the slider is moved. The application should not use any external libraries and must rely solely on built-in JavaScript functions for the 3D visualization.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: lamp, bridge, bottle, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a text field.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.012000161818271293,
+            "max_tokens": 8192,
+            "top_p": 0.9390228499197032,
+            "seed": 502638897
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using only HTML, CSS, and JavaScript that visualizes a school bus. The application should allow users to interact with the visualization in two specific ways: 1) Change the color of the school bus through a color picker input. 2) Toggle the display of the bus's route map by clicking a button. Ensure that the visualization and interactions do not require any external libraries and are solely implemented using built-in browser functionalities.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: ship, firetruck, tractor, school bus, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a color change.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.20527597763403976,
+            "max_tokens": 8192,
+            "top_p": 0.9704557096807163,
+            "seed": 184545569
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a guitar. The application should allow users to resize the guitar visualization interactively using a slider. Additionally, implement a color picker that allows users to change the color of the guitar. Ensure that the visualization updates in real time as users adjust the slider or select a new color. The guitar should be represented graphically in a simple yet recognizable form.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: table, pencil, guitar, phone, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a resize.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.25651226419557777,
+            "max_tokens": 8192,
+            "top_p": 0.9726974075387921,
+            "seed": 762679965
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based application using only HTML, CSS, and JavaScript that allows users to visualize a 3D model of a bottle. The application should meet the following requirements:\n1. When the user clicks on a 'Display Bottle' button, a 3D representation of a bottle should appear on the screen.\n2. Include a slider that allows the user to rotate the bottle horizontally.\n3. Implement a color picker that enables the user to change the color of the bottle. Ensure that the application does not use any external libraries and relies solely on built-in JavaScript functionalities.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: bottle, phone, book, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.07845134360466083,
+            "max_tokens": 8192,
+            "top_p": 0.9182068766061171,
+            "seed": 171833248
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using HTML, CSS, and JavaScript to visualize a robot. The application should include a button labeled 'Toggle View'. When this button is clicked, the visualization of the robot should switch between a front view and a side view. Ensure that the robot is represented in a minimalistic style using basic shapes such as rectangles and circles. The application should not use any external libraries or frameworks.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: pen, monitor, laptop, robot, bottle, through the piece of code with 2 requirements on user interactions.\n- The interactions must include a button.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.12346470226709766,
+            "max_tokens": 8192,
+            "top_p": 0.9449084797603591,
+            "seed": 809150147
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web application using HTML, CSS, and JavaScript that allows users to visualize a 3D model of a pyramid. The application should include the following user interactions: 1) A radio button to toggle between a wireframe and a solid view of the pyramid. 2) A slider to adjust the height of the pyramid. 3) A color picker to change the color of the pyramid. 4) A button to reset the pyramid to its default state. Ensure that the visualization updates in real-time as the user interacts with the controls.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: teapot, sphere, pencil, table, pyramid, through the piece of code with 4 requirements on user interactions.\n- The interactions must include a radio button.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.07736254605863135,
+            "max_tokens": 8192,
+            "top_p": 0.9899708625567201,
+            "seed": 707146825
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using HTML, CSS, and JavaScript that allows users to visualize a house. The application should meet the following requirements:\n1. Display a basic representation of a house using HTML and CSS.\n2. Implement a button that, when clicked, changes the color of the house.\n3. Include a slider to adjust the size of the house. The house should resize accordingly as the slider is moved.\nEnsure that the application only uses built-in JavaScript libraries and that users must interact with the application through clicking the button and adjusting the slider.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: airplane, house, book, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.30098222253956747,
+            "max_tokens": 8192,
+            "top_p": 0.9125155983093693,
+            "seed": 853561738
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a simple web application using HTML, CSS, and JavaScript to visualize a computer. The application should meet the following requirements: \n1. Include a text field where users can enter a color (e.g., 'black', 'silver'). The computer visualization should update to reflect this color choice. \n2. Include a button that, when clicked, toggles the visibility of the computer on the screen. \n3. Include a slider to adjust the size of the computer visualization on the screen. As the slider is moved, the computer should resize accordingly in real-time. Ensure that the application is interactive and visually represents the computer based on user input.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: book, door, hat, computer, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a text field.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.4539202978672052,
+            "max_tokens": 8192,
+            "top_p": 0.9085691630170096,
+            "seed": 331962780
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a rocket. The application should meet the following requirements: 1) The rocket should be displayed on the webpage initially as a simple 2D shape. 2) When a user double-clicks anywhere on the rocket, it should change colors. 3) Include a button that, when clicked, makes the rocket move upwards on the screen. Ensure that all interactions are handled purely with built-in JavaScript functions, without any external libraries.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: drum, hat, train, camera, rocket, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.22928154273404766,
+            "max_tokens": 8192,
+            "top_p": 0.9897746747379995,
+            "seed": 491119575
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based application using only HTML, CSS, and JavaScript to visualize a flower. The visualization should include a slider to adjust the size of the flower. Additionally, include two buttons: one to change the color of the flower and another to toggle between different types of flowers (e.g., rose, tulip, sunflower). Ensure that the user can see the changes in real-time as they interact with the controls.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: helicopter, phone, flower, book, through the piece of code with 3 requirements on user interactions.\n- The interactions must include a slider.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.1872352227731091,
+            "max_tokens": 8192,
+            "top_p": 0.9166611828769714,
+            "seed": 4344133
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a train using only HTML, CSS, and JavaScript. The visualization should include a simple 2D representation of a train. Implement three user interactions: 1) A click on the train to start its movement along a predefined track, 2) A button to toggle the lights of the train on and off, and 3) A range slider to adjust the speed of the train. Ensure that the user's interactions are reflected in real-time in the visualization. Use only built-in JavaScript libraries for this task.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\n    System:\n    You are an expert question generator.\n\n    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: desk, book, lamp, train, through the piece of code with 3 requirements on user interactions.\n    - The interactions must include a click.\n    - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n    - The complexity level should be 20 of out 100.\n    - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n    - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n    - The interactions must require the programmer to have a mental model of any objects being visualized.\n    - #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n    - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n    - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n    #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n    Create a web-based visualization of a house using only HTML, CSS, and JavaScript. The visualization should include a 3D model of a house. Implement two user interactions: 1) A slider to adjust the scale of the house (zoom in and out), and 2) A dropdown menu to change the color of the house. Ensure that the user's adjustments are reflected in real-time in the visualization. Use only built-in JavaScript libraries for this task.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n\n\n    #Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.05044791046558128,
+            "max_tokens": 8192,
+            "top_p": 0.989664133361805,
+            "seed": 260968552
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create an interactive web application using only HTML, CSS, and JavaScript to visualize a bag. The application should allow users to interact with the bag in the following ways: 1) Drag the bag to move it around the screen. 2) Click on the bag to open or close it, changing its visual appearance to indicate it's open or closed. 3) Hover over the bag to display a tooltip with a description ('Stylish backpack for everyday use'). 4) Double-click on the bag to change its color randomly from a set of predefined colors (e.g., red, blue, green, black). Ensure that the bag maintains a consistent design and functionality across different browsers.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: door, umbrella, bag, through the piece of code with 4 requirements on user interactions.\n- The interactions must include a drag.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.4208519778053501,
+            "max_tokens": 8192,
+            "top_p": 0.9700318138465024,
+            "seed": 738402287
+        }
+    },
+    {
+        "model": "openai/gpt-4-turbo",
+        "question": "Create a web-based visualization of a 3D cube using only HTML, CSS, and JavaScript. The cube should be displayed on a webpage and respond to the following user interactions: 1) Rotate the cube 45 degrees around its vertical axis when the user double-clicks anywhere on the cube. 2) Change the color of the cube to red when the user hovers over it. 3) Reset the cube to its original orientation and color when the user right-clicks on the cube. 4) Increase the size of the cube by 10% when the user scrolls up with the mouse wheel over the cube. Ensure that you use only built-in JavaScript libraries and provide a mental model of the cube in your implementation.\nNote:\n- The visualization should be implemented in JavaScript with HTML and CSS.\n- Ensure that the output has both index.js and index.html files\n",
+        "kwargs": {
+            "model": "openai/gpt-4-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "\nSystem:\nYou are an expert question generator.\n\n- Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: phone, cube, car, through the piece of code with 4 requirements on user interactions.\n- The interactions must include a double click.\n- Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.\n- The complexity level should be 20 of out 100.\n- If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars\n- I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.\n- The interactions must require the programmer to have a mental model of any objects being visualized.\n- #Unique Coding Question# generated must require the programmer to code using only Javascript with HTML and CSS.\n- You must not provide any example code snippets, because you must let the programmer solve the question by themselves.\n- If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.\n\n#Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):\n\n\n#Unique Coding Question#:\n\n\n\n                As a genius expert, your task is to understand the content and provide\n                the parsed objects in json that match the following json_schema:\n\n\n                {\n  \"properties\": {\n    \"question\": {\n      \"description\": \"Coding question to be solved by a software engineer\",\n      \"title\": \"Question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"question\"\n  ],\n  \"title\": \"CodingQuestion\",\n  \"type\": \"object\"\n}\n\n                Make sure to return an instance of the JSON, not the schema itself\n"
+                },
+                {
+                    "role": "user",
+                    "content": "Return the correct JSON response within a ```json codeblock. not the JSON_SCHEMA"
+                }
+            ],
+            "temperature": 0.07763484261545733,
+            "max_tokens": 8192,
+            "top_p": 0.9223404093462031,
+            "seed": 292088037
+        }
+    }
+]

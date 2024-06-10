@@ -7,6 +7,7 @@ import random
 import textwrap
 import traceback
 import instructor
+sys.path.append("./")
 from typing import Dict, List, Optional, Tuple
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
@@ -20,7 +21,7 @@ from loguru import logger
 from commons.dataset import GENERATOR_MODELS
 from commons.interpreter import fix_code
 
-sys.path.append("./")
+
 from commons.llm.openai_proxy import (
     Provider,
     get_async_openai_client,
@@ -495,6 +496,10 @@ async def build_prompt_responses_pair(generator_model=None):
     return {"prompt": prompt, "responses": responses}
 
 
+
+
+semaphore = asyncio.Semaphore(1)
+
 async def test_generate_questions():
     log_data = []
     client = get_instructor_client(provider=Provider.OPENROUTER)
@@ -507,19 +512,30 @@ async def test_generate_questions():
         log_data.append({"model": model, "question": question, "kwargs": kwargs})
 
     print(f"{log_data}")
+
     # Convert the list of dictionaries to a JSON string
     for data in log_data:
         data["kwargs"].pop("response_model")
-    json_data = json.dumps(log_data, indent=4)
 
-    # Write the JSON string to a file
-    with open("output.json", "w") as file:
-        file.write(json_data)
+    # Read the existing data from the file
+    async with semaphore:
+        try:
+            with open("output.json", "r") as file:
+                existing_data = json.load(file)
+        except FileNotFoundError:
+            existing_data = []
 
+        # Add the new data to the existing data
+        existing_data.extend(log_data)
+
+        # Write the updated data back to the file
+        with open("output.json", "w") as file:
+            json.dump(existing_data, file, indent=4)
 
 async def main():
-    await test_generate_questions()
-
+    num_questions = 50
+    tasks = [test_generate_questions() for _ in range(num_questions)]
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     asyncio.run(main())
