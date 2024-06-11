@@ -313,9 +313,9 @@ async def augment_question(
     if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"Please remove any 1 requirement from the following question: {question}"
     elif augmentation_level == AugmentationLevel.CHANGE_REQUIREMENTS:
-        augmentation_prompt = f"Please change some minor requirements from the following question, do not change the animation object: {question}"
+        augmentation_prompt = f"Please change all the requirements from the following question. Do not change the animation object or the number of requirements: {question}"
     elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
-        augmentation_prompt = f"Please change the animation object from the following question to something semantically similar such that rest of the question does not need to be modified: {question}"
+        augmentation_prompt = f"Please change the animation object from the following question to something else such that rest of the question does not need to be modified. Make sure the new object does not look like the previous object: {question}"
     else:
         return question
         
