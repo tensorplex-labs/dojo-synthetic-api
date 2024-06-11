@@ -10,8 +10,14 @@ import matplotlib.pyplot as plt
 
 directory = "commons/dataset/sample_synthetic_bank"
 sentences = []
+
+# optional filename to use file instead of directory
+# file = None
+file = "output_gpt4_turbo_40_v4.json"
+
 for filename in os.listdir(directory):
-    if filename.endswith("output.json"): 
+    extension = str(file) if file else ".json"
+    if filename.endswith(extension): 
         file_path = os.path.join(directory, filename)
         
         # Read the JSON file
@@ -24,8 +30,8 @@ for filename in os.listdir(directory):
                     'question': item['question'], 
                     'model': item['model']
                 })
-# model = SentenceTransformer('all-MiniLM-L6-v2')
-model = SentenceTransformer("mixedbread-ai/mxbai-embed-large-v1")
+model = SentenceTransformer('all-MiniLM-L6-v2')
+# model = SentenceTransformer("mixedbread-ai/mxbai-embed-large-v1")
 
 
 sentence_embeddings = model.encode([obj['question'] for obj in sentences])
@@ -111,6 +117,7 @@ def process_cos_sim_matrix (sentences, prompt_model):
     ax2.set_title('Cosine Similarity Matrix')
 
     plt.tight_layout()
+    # save as file
     plt.savefig(f"cos_sim_matrix_new.png")
     plt.show()
 

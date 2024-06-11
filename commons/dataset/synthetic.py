@@ -533,9 +533,11 @@ async def test_generate_questions():
             json.dump(existing_data, file, indent=4)
 
 async def main():
-    num_questions = 50
-    tasks = [test_generate_questions() for _ in range(num_questions)]
-    await asyncio.gather(*tasks)
+    num_questions = 40
+    # tasks = [test_generate_questions() for _ in range(num_questions)]
+    # await asyncio.gather(*tasks)
+    for _ in range(num_questions):
+        await test_generate_questions()
 
 if __name__ == "__main__":
     asyncio.run(main())
