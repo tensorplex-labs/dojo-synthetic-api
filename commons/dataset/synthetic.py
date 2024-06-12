@@ -38,6 +38,10 @@ class AugmentationLevel(Enum):
     REMOVE_REQUIREMENTS = 1
     CHANGE_REQUIREMENTS = 2
     CHANGE_ANIMATION_OBJECT = 3
+    
+class PromptResponseMode(Enum):
+    SINGLE_MODEL_MULTIPLE_AUGMENTATION = 0
+    MULTIPLE_MODELS_NO_AUGMENTATION = 1
 
 def log_retry_info(retry_state):
     """Meant to be used with tenacity's before_sleep callback"""
@@ -458,7 +462,7 @@ async def build_2_prompt_responses_pairs():
     return prompt_responses_pairs
 
 
-async def build_prompt_responses_pair(generator_model=None):
+async def build_prompt_responses_pair(generator_model=None, mode:PromptResponseMode=PromptResponseMode.MULTIPLE_MODELS_NO_AUGMENTATION):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
@@ -473,28 +477,32 @@ async def build_prompt_responses_pair(generator_model=None):
     # randomly sampled from pool of models
     answer_models = dataset.ANSWER_MODELS
 
-    selected_model = random.choice(answer_models)
-    logger.info(f"Selected model for answer generation: {selected_model}")
-
-    # suffle augmentation levels for random selection
-    augmentation_levels = list(AugmentationLevel)
-    random.shuffle(augmentation_levels)
-    
     # single model, multiple levels of augmentation
-    results: List[Tuple[str, str]] = await asyncio.gather(
-        *[generate_answer(client, selected_model, prompt, level) for level in augmentation_levels]
-    )
-    
-    # multiple models
-    
-    # num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
-    # selected_models = random.sample(
-    #     answer_models, min(num_answer_models, len(answer_models))
-    # )
-    # results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
-    #     *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
-    # )
+    if mode == PromptResponseMode.SINGLE_MODEL_MULTIPLE_AUGMENTATION:
+        selected_model = random.choice(answer_models)
+        logger.info(f"Selected model for answer generation: {selected_model}")
 
+        # suffle augmentation levels for random selection
+        augmentation_levels = list(AugmentationLevel)
+        random.shuffle(augmentation_levels)
+        
+        # single model, multiple levels of augmentation
+        results: List[Tuple[str, str]] = await asyncio.gather(
+            *[generate_answer(client, selected_model, prompt, level) for level in augmentation_levels]
+        )
+    
+    # multiple models, no augmentation
+    elif mode == PromptResponseMode.MULTIPLE_MODELS_NO_AUGMENTATION:
+        num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
+        selected_models = random.sample(
+            answer_models, min(num_answer_models, len(answer_models))
+        )
+        results: List[Tuple[str, str]] = await asyncio.gather(
+            *[generate_answer(client, ans_model, prompt, AugmentationLevel.ORIGINAL) for ans_model in selected_models]
+        )
+
+        
+    
     # parse code responses
     responses = []
     for model, result in results:

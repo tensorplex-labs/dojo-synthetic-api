@@ -7,12 +7,13 @@ from loguru import logger
 from commons.cache import RedisCache
 from commons.dataset.synthetic import (
     build_prompt_responses_pair,
+    PromptResponseMode
 )
 
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
 
-TARGET_SIZE = 6
+TARGET_SIZE = 1
 QUEUE_KEY = "synthetic:queue"
 
 
@@ -33,7 +34,7 @@ async def execute_python_code(background_tasks: BackgroundTasks):
             except json.JSONDecodeError:
                 result = {}
         else:
-            result = await build_prompt_responses_pair()
+            result = await build_prompt_responses_pair(mode=PromptResponseMode.SINGLE_MODEL_MULTIPLE_AUGMENTATION)
 
         background_tasks.add_task(generator.arun)
 
@@ -89,7 +90,7 @@ class SyntheticGenerator:
                 num_keys = await cache.redis.llen(QUEUE_KEY)
                 if num_keys < TARGET_SIZE:
                     # TODO restore once done with testing agent
-                    responses = await build_prompt_responses_pair()
+                    responses = await build_prompt_responses_pair(mode=PromptResponseMode.SINGLE_MODEL_MULTIPLE_AUGMENTATION)
                     # responses = await build_2_prompt_responses_pairs()
                     await cache.redis.rpush(QUEUE_KEY, json.dumps(responses))
         except Exception as exc:
