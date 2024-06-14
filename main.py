@@ -7,8 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from commons.routes.code_gen import code_gen_router
-from commons.routes.synthetic_gen import generator, synthetic_gen_router, cache
+from commons.routes.synthetic_gen import cache, generator, synthetic_gen_router
 
 MAX_CONTENT_LENGTH = 1 * 1024 * 1024
 
@@ -79,7 +78,7 @@ app.add_middleware(
 
 
 # Include the code_gen router
-app.include_router(code_gen_router)
+# app.include_router(code_gen_router)
 app.include_router(synthetic_gen_router)
 
 if __name__ == "__main__":
