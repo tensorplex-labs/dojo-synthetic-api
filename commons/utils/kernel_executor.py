@@ -1,22 +1,21 @@
-import sys
-
-sys.path.append("./")
-import os
 import asyncio
 import json
-from uuid import uuid4
+import os
 from datetime import datetime
-from typing import Iterable, List, Optional, Dict, Union, Literal, cast
+from typing import Dict, Iterable, List, Literal, Optional, Union, cast
+from uuid import uuid4
+
 import httpx
-from pydantic import BaseModel
 from dotenv import load_dotenv
+from pydantic import BaseModel
+from tornado.escape import json_encode, url_escape
 from tornado.httpclient import HTTPRequest
-from tornado.escape import url_escape, json_encode
-from tornado.websocket import websocket_connect, WebSocketClientConnection
+from tornado.websocket import WebSocketClientConnection, websocket_connect
 
 from commons.utils.utils import get_packages
 
 load_dotenv()
+
 
 class Config(BaseModel):
     ws_url: str = "ws://{host}".format(host=os.getenv("GATEWAY_HOST"))
@@ -102,7 +101,7 @@ img_template = """
 """
 
 base_template = """
-<!DOCTYPE html><html><head><title>Output</title></head><body>{content}</body></html> 
+<!DOCTYPE html><html><head><title>Output</title></head><body>{content}</body></html>
 """
 
 text_template = """
@@ -228,7 +227,7 @@ class PythonExecutor:
                 dict_response["type"] = type(response.content).__name__
                 output.append(dict_response)
             json.dump(output, file)
-            
+
         for response in responses:
             # if response.msg_type == "stream":
             #     assert isinstance(response.content, StreamContent)

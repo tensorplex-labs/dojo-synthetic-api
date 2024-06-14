@@ -1,45 +1,38 @@
-import os
-import re
-import sys
-import typing
-
-sys.path.append("./")
-import json
 import asyncio
+import json
+import os
 import random
-import logging
-import textwrap
+import re
 import traceback
-import instructor
 from typing import Dict, List, Optional, Tuple, cast
-from openai import AsyncOpenAI
+
+import instructor
 from dotenv import load_dotenv
+from loguru import logger
+from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
     RetryError,
     stop_after_attempt,
 )
-from loguru import logger
-from commons.dataset import GENERATOR_MODELS
-from commons.interpreter import fix_code
 
-sys.path.append("./")
-from commons.llm.openai_proxy import (
-    Provider,
-    get_async_openai_client,
-    get_instructor_client,
-)
+from commons.dataset import GENERATOR_MODELS
 from commons.dataset.prompt_builders import (
-    build_code_answer_prompt,
     Language,
     additional_notes_for_question_prompt,
+    build_code_answer_prompt,
+    build_code_generation_question_prompt,
     build_python_fix_prompt,
     build_python_review_prompt,
-    build_code_generation_question_prompt,
+)
+from commons.interpreter import fix_code
+from commons.llm.openai_proxy import (
+    Provider,
+    get_instructor_client,
 )
 from commons.utils.python_executor import PythonExecutor
-from commons.utils.utils import generate_simple_json, ExecutionError
+from commons.utils.utils import ExecutionError
 
 load_dotenv()
 

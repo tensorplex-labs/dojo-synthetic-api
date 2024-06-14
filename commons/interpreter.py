@@ -1,17 +1,22 @@
-import sys
-sys.path.append("./")
-from enum import Enum
-from dotenv import load_dotenv
 import asyncio
-from autogen import AssistantAgent, UserProxyAgent, register_function
+from enum import Enum
+
+from autogen import (
+    AssistantAgent,
+    GroupChat,
+    GroupChatManager,
+    UserProxyAgent,
+    register_function,
+)
+from autogen.code_utils import extract_code
+from dotenv import load_dotenv
 from loguru import logger
+
 from commons.code_diagnostics import CodeDiagnostics
 from commons.llm.openai_proxy import (
     Provider,
     get_openai_kwargs,
 )
-from autogen.code_utils import extract_code
-from autogen import GroupChat, GroupChatManager
 
 load_dotenv()
 
@@ -138,10 +143,11 @@ def build_manager_prompt():
     logger.info(f"Built prompt: {prompt}")
     return prompt
 
-def _is_termination_msg(message : dict):
+
+def _is_termination_msg(message: dict):
     """Check if a message is a termination message."""
     if isinstance(message, dict):
-        message_content : str | None = message.get("content")
+        message_content: str | None = message.get("content")
         if message_content is None:
             return False
         return message_content.rstrip().endswith(EOS_TOKEN)
@@ -207,6 +213,7 @@ def has_code(message):
         if lang.lower() in ["bash", "shell", "sh", "python", "javascript"]:
             return True
     return False
+
 
 async def fix_code(
     code: str, model_name: str, provider: Provider = Provider.OPENROUTER
