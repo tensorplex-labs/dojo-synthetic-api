@@ -1,10 +1,9 @@
-version: '3.8'
-
+---
 volumes:
   redis-data:
 
 networks:
-  dojo-synethetic-api:
+  dojo-synthetic-api-network:
     driver: bridge
 
 services:
@@ -13,7 +12,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     networks:
-      - dojo-synethetic-api
+      - dojo-synthetic-api-network
     volumes:
       - redis-data:/data
     command: redis-server --requirepass <CHANGE PASSWORD PLS> # CHANGE
@@ -30,7 +29,7 @@ services:
       - REDIS_USER=default
       - OPENROUTER_API_KEY=<PLEASE GET A OPENROUTER APIKEY> # CHANGE
     networks:
-      - dojo-synethetic-api
+      - dojo-synthetic-api-network
     depends_on:
       - redis
   
