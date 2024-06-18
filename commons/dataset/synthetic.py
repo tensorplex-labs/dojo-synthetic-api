@@ -17,7 +17,7 @@ from tenacity import (
     stop_after_attempt,
 )
 from loguru import logger
-from commons.dataset import GENERATOR_MODELS
+from commons.dataset import GENERATOR_MODELS, ANSWER_MODELS
 from commons.interpreter import fix_code
 
 sys.path.append("./")
@@ -185,7 +185,7 @@ async def generate_question(
     except RetryError:
         logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
         used_models.add(model)
-        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
+        remaining_models = [m for m in ANSWER_MODELS if m not in used_models]
         if not remaining_models:
             logger.error("No answer models left to try.")
             return None, None
