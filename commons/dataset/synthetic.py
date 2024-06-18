@@ -254,13 +254,21 @@ async def generate_answer(
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+
+    MAX_RETRIES = 5
+
     try:
-        completion = await client.chat.completions.create(**kwargs)
-        # print(f"Generated completion: {completion}")
-        return model, completion
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
+        ):
+            with attempt:
+                completion = await client.chat.completions.create(**kwargs)
+                # print(f"Generated completion: {completion}")
+                return model, completion
+    except RetryError:
+        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts")
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
-        pass
 
     return model, None
 
