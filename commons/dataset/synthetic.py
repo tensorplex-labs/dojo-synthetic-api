@@ -182,7 +182,11 @@ async def generate_question(
                 previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
-        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts")
+        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
+        new_model = random.choice([m for m in GENERATOR_MODELS if m != model])
+        return await generate_question(client, new_model)
+    except Exception as e:
+        print(f"Error occurred while generating question: {e}")
 
     return None, None
 
@@ -266,7 +270,9 @@ async def generate_answer(
                 # print(f"Generated completion: {completion}")
                 return model, completion
     except RetryError:
-        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts")
+        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
+        new_model = random.choice([m for m in GENERATOR_MODELS if m != model])
+        return await generate_answer(client, new_model, question)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
 
