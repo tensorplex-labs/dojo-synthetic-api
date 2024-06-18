@@ -183,7 +183,7 @@ async def generate_question(
                 return coding_question, kwargs
     except RetryError:
         logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
-        new_model = random.choice([m for m in GENERATOR_MODELS if m != model])
+        new_model = random.choice([m for m in dataset.ANSWER_MODELS if m != model])
         return await generate_question(client, new_model)
     except Exception as e:
         print(f"Error occurred while generating question: {e}")
@@ -238,6 +238,7 @@ async def generate_answer(
     client: AsyncOpenAI, model: str, question: str
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
+    import commons.dataset as dataset
     print(f"Generating code answer with model: {model}")
     kwargs = {
         "response_model": CodeAnswer,
@@ -271,7 +272,7 @@ async def generate_answer(
                 return model, completion
     except RetryError:
         logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
-        new_model = random.choice([m for m in GENERATOR_MODELS if m != model])
+        new_model = random.choice([m for m in dataset.ANSWER_MODELS if m != model])
         return await generate_answer(client, new_model, question)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
