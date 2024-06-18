@@ -243,11 +243,18 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
 
 
 async def generate_answer(
-    client: AsyncOpenAI, model: str, question: str, level: AugmentationLevel
+    client: AsyncOpenAI, model: str, question: str, level: AugmentationLevel, top_p: float = None, seed: float = None
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     question = await augment_question(client, model, question, level)
     print(f"Generating code answer with model: {model}")
+    
+    # MULTI MODEL CASE
+    if top_p == None and seed == None:
+        top_p = random.uniform(0.9, 1.0)
+        seed = random.randint(0, 1e9)
+        
+    
     kwargs = {
         "response_model": CodeAnswer,
         "model": model,
@@ -263,10 +270,10 @@ async def generate_answer(
         ],
         "temperature": 0.0,
         "max_tokens": 8192,
-        "top_p": random.uniform(0.9, 1.0),
+        "top_p": top_p,
     }
     if model.startswith("openai"):
-        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+        kwargs["seed"] = seed  # needed for OpenAI
     try:
         completion = await client.chat.completions.create(**kwargs)
         # print(f"Generated completion: {completion}")
@@ -486,9 +493,12 @@ async def build_prompt_responses_pair(generator_model=None, mode:PromptResponseM
         augmentation_levels = list(AugmentationLevel)
         random.shuffle(augmentation_levels)
         
+        top_p = random.uniform(0.9, 1.0)
+        seed = random.randint(0, 1e9)
+        
         # single model, multiple levels of augmentation
         results: List[Tuple[str, str]] = await asyncio.gather(
-            *[generate_answer(client, selected_model, prompt, level) for level in augmentation_levels]
+            *[generate_answer(client, selected_model, prompt, level, top_p, seed) for level in augmentation_levels]
         )
     
     # multiple models, no augmentation
