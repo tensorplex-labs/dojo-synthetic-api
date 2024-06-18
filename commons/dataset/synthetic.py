@@ -141,6 +141,7 @@ async def generate_question(
     global used_objects
     global previous_coding_question
 
+    used_models = set()
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
@@ -183,7 +184,12 @@ async def generate_question(
                 return coding_question, kwargs
     except RetryError:
         logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
-        new_model = random.choice([m for m in dataset.ANSWER_MODELS if m != model])
+        used_models.add(model)
+        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
+        if not remaining_models:
+            logger.error("No answer models left to try.")
+            return None, None
+        new_model = random.choice(remaining_models)
         return await generate_question(client, new_model)
     except Exception as e:
         print(f"Error occurred while generating question: {e}")
@@ -262,6 +268,7 @@ async def generate_answer(
 
     MAX_RETRIES = 5
 
+    used_models = set()
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
@@ -272,7 +279,12 @@ async def generate_answer(
                 return model, completion
     except RetryError:
         logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
-        new_model = random.choice([m for m in dataset.ANSWER_MODELS if m != model])
+        used_models.add(model)
+        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
+        if not remaining_models:
+            logger.error("No answer models left to try.")
+            return model, None
+        new_model = random.choice(remaining_models)
         return await generate_answer(client, new_model, question)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
