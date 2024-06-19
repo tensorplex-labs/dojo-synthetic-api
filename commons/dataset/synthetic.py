@@ -88,7 +88,25 @@ def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
 
     if javascript_file_detected:
         package_json_content = json.dumps(
-            {"dependencies": {"three": "latest"}}, indent=4
+            {
+                "name": "javascript",
+                "version": "1.0.0",
+                "description": "The JavaScript template",
+                "scripts": {
+                    "start": "parcel ./index.html",
+                    "build": "parcel build ./index.html"
+                },
+                "devDependencies": {
+                    "parcel": "^2.0.0",
+                    "babel-eslint": "^10.1.0",
+                    "eslint": "^7.2.0"
+                },
+                "keywords": [
+                    "css",
+                    "javascript"
+                ]
+            }, 
+            indent=4
         )
 
         package_json_file = FileObject(
@@ -442,7 +460,7 @@ async def build_prompt_responses_pair(generator_model=None):
         if not result:
             continue
 
-        # # result = parse_code_response(result)
+        result = parse_code_response(result)
         # supported_languages = ["javascript", "html"]
         # for i, file in enumerate(result.files):
         #     if file.language.lower() not in supported_languages:
