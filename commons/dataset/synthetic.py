@@ -26,7 +26,6 @@ from commons.dataset.prompt_builders import (
     build_python_fix_prompt,
     build_python_review_prompt,
 )
-from commons.interpreter import fix_code
 from commons.llm.openai_proxy import (
     Provider,
     get_instructor_client,
@@ -400,16 +399,6 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
     for model, result in results:
         if not result:
             continue
-
-        if language == Language.JAVASCRIPT:
-            result = await parse_code_response(result)
-            supported_languages = ["javascript", "html"]
-            for i, file in enumerate(result.files):
-                if file.language.lower() not in supported_languages:
-                    continue
-                lang, fixed_code = await fix_code(file.content, model)
-                if fixed_code:
-                    result.files[i].content = fixed_code
 
         formatted_files = [
             {
