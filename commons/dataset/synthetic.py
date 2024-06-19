@@ -82,7 +82,7 @@ def escape_double_quotes_in_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
 def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     javascript_file_detected = False
     for file in codeanswer_object.files:
-        if file.language == "javascript":
+        if file.language.lower() == "javascript":
             javascript_file_detected = True
             break
 
@@ -487,6 +487,8 @@ async def build_prompt_responses_pair(generator_model=None):
                 },
             }
         )
+    with open("output.json", "w") as file:
+        json.dump(responses, file, indent=4)
     return {"prompt": prompt, "responses": responses}
 
 
