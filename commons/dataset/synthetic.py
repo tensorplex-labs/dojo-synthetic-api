@@ -254,6 +254,10 @@ async def generate_answer(
         top_p = random.uniform(0.9, 1.0)
         seed = random.randint(0, 1e9)
         
+    # AUGMENTATIONS (TESTING ONLY)
+    if level != AugmentationLevel.ORIGINAL:
+        model += str(AugmentationLevel)
+        
     
     kwargs = {
         "response_model": CodeAnswer,
