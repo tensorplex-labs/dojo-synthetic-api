@@ -17,7 +17,7 @@ from tenacity import (
     stop_after_attempt,
 )
 from loguru import logger
-from commons.dataset import GENERATOR_MODELS
+from commons.dataset import GENERATOR_MODELS, ANSWER_MODELS
 from commons.interpreter import fix_code
 
 sys.path.append("./")
@@ -159,6 +159,8 @@ async def generate_question(
     global used_objects
     global previous_coding_question
 
+    used_models = set()
+    # try generating until max_retries, then switch models
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
@@ -200,7 +202,17 @@ async def generate_question(
                 previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
-        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts")
+        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
+        used_models.add(model)
+        remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
+        # return if no models remaining
+        if not remaining_models:
+            logger.error("No generator models left to try.")
+            return None, None
+        new_model = random.choice(remaining_models)
+        return await generate_question(client, new_model)
+    except Exception as e:
+        print(f"Error occurred while generating question: {e}")
 
     return None, None
 
@@ -252,6 +264,7 @@ async def generate_answer(
     client: AsyncOpenAI, model: str, question: str
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
+    import commons.dataset as dataset
     print(f"Generating code answer with model: {model}")
     kwargs = {
         "response_model": CodeAnswer,
@@ -272,13 +285,31 @@ async def generate_answer(
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+
+    MAX_RETRIES = 5
+
+    used_models = set()
+    # try generating until max retries, then switch models
     try:
-        completion = await client.chat.completions.create(**kwargs)
-        # print(f"Generated completion: {completion}")
-        return model, completion
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
+        ):
+            with attempt:
+                completion = await client.chat.completions.create(**kwargs)
+                # print(f"Generated completion: {completion}")
+                return model, completion
+    except RetryError:
+        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
+        used_models.add(model)
+        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
+        # return if no models remaining
+        if not remaining_models:
+            logger.error("No answer models left to try.")
+            return model, None
+        new_model = random.choice(remaining_models)
+        return await generate_answer(client, new_model, question)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
-        pass
 
     return model, None
 
@@ -440,7 +471,8 @@ async def build_prompt_responses_pair(generator_model=None):
     prompt, kwargs = await generate_question(client, model_choice)
     if not prompt or not kwargs:
         logger.info("Failed to generate question...")
-        return None
+        raise RuntimeError("Error generating prompt-response pair")
+        # return None
 
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
     # randomly sampled from pool of models
@@ -449,6 +481,13 @@ async def build_prompt_responses_pair(generator_model=None):
     selected_models = random.sample(
         answer_models, min(num_answer_models, len(answer_models))
     )
+    
+    # check if enough answer models are specified 
+    if len(answer_models) < num_answer_models:
+        logger.warning(
+            f"Number of answer models is less than the specified number of models: {num_answer_models}"
+        )
+        raise RuntimeError("Error generating prompt-response pair")
 
     results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
         *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
@@ -458,7 +497,7 @@ async def build_prompt_responses_pair(generator_model=None):
     responses = []
     for model, result in results:
         if not result:
-            continue
+            raise RuntimeError("Error generating prompt-response pair")
 
         result = parse_code_response(result)
         # supported_languages = ["javascript", "html"]
