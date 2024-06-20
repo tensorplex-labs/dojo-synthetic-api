@@ -1,14 +1,15 @@
 import asyncio
 import json
-from fastapi import APIRouter, BackgroundTasks
-from pydantic import BaseModel
-from typing import List, Optional
-from loguru import logger
+from typing import Optional
+
 from commons.cache import RedisCache
 from commons.dataset.synthetic import (
     build_prompt_responses_pair,
     PromptResponseMode
 )
+from fastapi import APIRouter, BackgroundTasks
+from loguru import logger
+from pydantic import BaseModel
 
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
@@ -62,12 +63,11 @@ class SyntheticGenerator:
     async def arun(self):
         work_todo = await self.calc_work_todo()
         await self.on_found_work(work_todo)
-        async with asyncio.TaskGroup() as tg:
-            workers = [tg.create_task(self.worker()) for _ in range(self._num_workers)]
-            await self.todo.join()
-            logger.success("All tasks finished...")
-            for w in workers:
-                w.cancel()
+        workers = [asyncio.create_task(self.worker()) for _ in range(self._num_workers)]
+        await self.todo.join()
+        logger.success("All tasks finished...")
+        for w in workers:
+            w.cancel()
 
     async def worker(self):
         while True:
