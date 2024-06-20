@@ -256,7 +256,7 @@ async def generate_answer(
         
     # AUGMENTATIONS (TESTING ONLY)
     if level != AugmentationLevel.ORIGINAL:
-        model += str(AugmentationLevel)
+        model += str(level)
         
     
     kwargs = {
@@ -333,7 +333,8 @@ async def augment_question(
         augmentation_prompt = f"Please change the animation object from the following question to something else such that rest of the question does not need to be modified. Make sure the new object does not look like the previous object: {question}"
     else:
         return question
-        
+
+      
     kwargs = {
         "response_model": CodingQuestion,
         "model": model,
