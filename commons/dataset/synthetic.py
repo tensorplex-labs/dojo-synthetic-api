@@ -39,7 +39,7 @@ def get_random_object_words(n=10):
     # Get all noun synsets
     noun_synsets = list(wordnet.all_synsets('n'))
     # Filter to get only common objects (excluding abstract nouns)
-    object_synsets = [synset for synset in noun_synsets if (synset.lexname() == 'noun.artifact' or synset.lexname() == 'noun.object' or synset.lexname() == 'noun.plant' or synset.lexname == 'noun.food')]
+    object_synsets = [synset for synset in noun_synsets if (synset.lexname() == 'noun.artifact' or synset.lexname() == 'noun.plant' or synset.lexname == 'noun.food' or synset.lexname() == 'noun.shape')]
     # Get random words from the filtered list
     random_words = [random.choice(object_synsets).lemmas()[0].name().replace('_', ' ').lower() for _ in range(n)]
     return random_words
@@ -131,11 +131,18 @@ async def _generate_objects_to_visualize(
         "messages": [
             {
                 "role": "system",
-                "content": f"Please output a valid JSON array containing 30 types of objects "
-                    f"(not animals) commonly used for animation coding questions and does not include the following: "
-                    f"{', '.join(prev_used_objects)}. Additionally, include the following random objects: "
-                    f"{', '.join(random_words)} and generate similar objects for each."
-                    "Ensure all objects are visually distinct, easily recognizable by humans. "
+                # "content": f"Please output a valid JSON array containing 30 types of objects "
+                #     f"(not animals) commonly used for animation coding questions and does not include the following: "
+                #     f"{', '.join(prev_used_objects)}. Additionally, include the following random objects: "
+                #     f"{', '.join(random_words)} and generate similar objects for each."
+                #     "Ensure all objects are visually distinct, easily recognizable by humans. "
+                #     "Examples of suitable objects (don't use these): "
+                #     "'kaleidoscope', 'rubik's cube', 'stained glass window', 'sundial', 'puzzle piece', 'origami crane'."
+                "content": f"Please generate a JSON array containing 30 distinct and easily recognizable objects "
+                    f"commonly used in animation (excluding animals). Do not include the following: "
+                    f"{', '.join(prev_used_objects)}. Additionally, include these random objects: "
+                    f"{', '.join(random_words)}. If any of the provided random objects are innapropraite or too complex or ambiguous to be understood by a layman, replace them with simpler alternatives. When a decision to add an object needs to be made, think if the object can be animated or an image easily available, if not then don't add to the list. Add more objects (maybe something cool) if needed to make up a total of 30. "
+                    "Ensure all objects are visually distinct and easy to understand. "
                     "Examples of suitable objects (don't use these): "
                     "'kaleidoscope', 'rubik's cube', 'stained glass window', 'sundial', 'puzzle piece', 'origami crane'."
             }
@@ -154,6 +161,7 @@ async def _generate_objects_to_visualize(
 
 used_objects = []
 previous_coding_question = ""
+
 
 
 async def generate_question(
@@ -589,7 +597,9 @@ async def test_generate_objects(n=10):
         sampled_objects = random.sample(possible_objects, random.randint(3, 5))
         print(f"Sampled objects: {sampled_objects}")
         # prev_used_objects = sampled_objects
-        await append_list_to(sampled_objects, "sampled_objects_objects_only.csv")
+        await append_list_to(sampled_objects, "sampled_objects_new_version.csv")
+        # await append_list_to(possible_objects, "sampled_objects_full.csv")
+
         
     tasks = [run_iteration(i) for i in range(n)]
     results = await asyncio.gather(*tasks)
