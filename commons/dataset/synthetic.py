@@ -141,7 +141,7 @@ async def _generate_objects_to_visualize(
                 "content": f"Please generate a JSON array containing 30 distinct and easily recognizable objects "
                     f"commonly used in animation (excluding animals). Do not include the following: "
                     f"{', '.join(prev_used_objects)}. Additionally, include these random objects: "
-                    f"{', '.join(random_words)}. If any of the provided random objects are innapropraite or too complex or ambiguous to be understood by a layman, replace them with simpler alternatives. When a decision to add an object needs to be made, think if the object can be animated or an image easily available, if not then don't add to the list. Add more objects (maybe something cool) if needed to make up a total of 30. "
+                    f"{', '.join(random_words)}. If any of the provided random objects are innapropraite or too complex or ambiguous to be understood by a layman, replace them with simpler alternatives. When a decision to add an object needs to be made, think if the object can be animated or an image easily available, if not then don't add to the list. Add more objects if needed to make up a total of 30. "
                     "Ensure all objects are visually distinct and easy to understand. "
                     "Examples of suitable objects (don't use these): "
                     "'kaleidoscope', 'rubik's cube', 'stained glass window', 'sundial', 'puzzle piece', 'origami crane'."
