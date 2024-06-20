@@ -487,8 +487,7 @@ async def build_prompt_responses_pair(generator_model=None):
                 },
             }
         )
-    with open("output.json", "w") as file:
-        json.dump(responses, file, indent=4)
+
     return {"prompt": prompt, "responses": responses}
 
 
