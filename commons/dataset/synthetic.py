@@ -39,7 +39,8 @@ def get_random_object_words(n=10):
     # Get all noun synsets
     noun_synsets = list(wordnet.all_synsets('n'))
     # Filter to get only common objects (excluding abstract nouns)
-    object_synsets = [synset for synset in noun_synsets if (synset.lexname() == 'noun.artifact' or synset.lexname() == 'noun.plant' or synset.lexname == 'noun.food' or synset.lexname() == 'noun.shape')]
+    # object_synsets = [synset for synset in noun_synsets if (synset.lexname() == 'noun.artifact' or synset.lexname() == 'noun.plant' or synset.lexname == 'noun.food' or synset.lexname() == 'noun.shape')]
+    object_synsets = [synset for synset in noun_synsets if (synset.lexname() == 'noun.artifact' or synset.lexname == 'noun.food' or synset.lexname() == 'noun.shape')]
     # Get random words from the filtered list
     random_words = [random.choice(object_synsets).lemmas()[0].name().replace('_', ' ').lower() for _ in range(n)]
     return random_words
@@ -184,10 +185,12 @@ async def generate_question(
                 print(
                     f"Few shot instruction included in instruction generation: {previous_coding_question}"
                 )
-                possible_objects = await _generate_objects_to_visualize(
-                    client, model, used_objects
-                )
-                sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+                # possible_objects = await _generate_objects_to_visualize(
+                #     client, model, used_objects
+                # )
+                # sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+                n = random.randint(4, 6)
+                sampled_objects = get_random_object_words(n)
                 used_objects = sampled_objects
                 kwargs = {
                     "response_model": CodingQuestion,
@@ -222,33 +225,15 @@ async def generate_question(
 def build_code_generation_question_prompt(
     num_requirements: int, sampled_objects: list[str], previous_coding_question: str
 ) -> str:
-    global UI_ELEMENTS, ACTIONS
-    random_action = random.choice(ACTIONS)
-    random_ui_element = random.choice(UI_ELEMENTS)
-    choices = [random_action, random_ui_element]
-    # choices = UI_ELEMENTS + ACTIONS + "none"
-    
-    selected_random_element = random.choice(choices)
-
-    random_instruction_prompt = ""
-    
-    # don't modify instruction if none is selected
-    if random_instruction_prompt != "none":
-        random_instruction_prompt = f"- The interactions must include a {selected_random_element}."
-        # positive = f"- The interactions must include a {selected_random_element}."
-        # negative = f"- The interactions must not include a {selected_random_element}."
-        # choose a positive or negative instruction
-        # random_instruction_prompt = random.choice([positive, negative])
 
     print(f"Generating question with {num_requirements} requirements")
-    print(f"Random instruction inserted: {random_instruction_prompt}")
     # coding_question_json = CodingQuestion.model_json_schema()
     CODE_GEN_PROMPT = """
     System:
     You are an expert question generator.
 
-    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: {objects}, through the piece of code with {num_requirements} requirements on user interactions.
-    {random_instruction_prompt}
+    - Generate a short, self-contained coding problem that requires the programmer to output visualization of one of the following objects: {objects}, through the piece of code with {num_requirements} requirements on user interactions. 
+    
     - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
     - The complexity level should be 20 of out 100.
     - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars
@@ -269,7 +254,6 @@ def build_code_generation_question_prompt(
             # coding_question_json=coding_question_json,
             objects=", ".join(sampled_objects),
             previous_coding_question=previous_coding_question,
-            random_instruction_prompt=random_instruction_prompt,
         )
     )
 
@@ -529,83 +513,83 @@ async def build_prompt_responses_pair(generator_model=None):
 
 semaphore = asyncio.Semaphore(1)
 
-# async def test_generate_questions():
-#     log_data = []
-#     client = get_instructor_client(provider=Provider.OPENROUTER)
-#     for model in GENERATOR_MODELS:
-#         result = await generate_question(client, model)
-#         if result is None:
-#             continue
-#         # unstructure tuple
-#         question, kwargs = result
-#         log_data.append({"model": model, "question": question, "kwargs": kwargs})
+async def test_generate_questions():
+    log_data = []
+    client = get_instructor_client(provider=Provider.OPENROUTER)
+    for model in GENERATOR_MODELS:
+        result = await generate_question(client, model)
+        if result is None:
+            continue
+        # unstructure tuple
+        question, kwargs = result
+        log_data.append({"model": model, "question": question, "kwargs": kwargs})
 
-#     print(f"{log_data}")
+    print(f"{log_data}")
 
-#     # Convert the list of dictionaries to a JSON string
-#     for data in log_data:
-#         data["kwargs"].pop("response_model")
+    # Convert the list of dictionaries to a JSON string
+    for data in log_data:
+        data["kwargs"].pop("response_model")
 
-#     # Read the existing data from the file
-#     async with semaphore:
-#         try:
-#             with open("output.json", "r") as file:
-#                 existing_data = json.load(file)
-#         except FileNotFoundError:
-#             existing_data = []
-
-#         # Add the new data to the existing data
-#         existing_data.extend(log_data)
-
-#         # Write the updated data back to the file
-#         with open("output.json", "w") as file:
-#             json.dump(existing_data, file, indent=4)
-
-# async def main():
-#     num_questions = 40
-#     # tasks = [test_generate_questions() for _ in range(num_questions)]
-#     # await asyncio.gather(*tasks)
-#     for _ in range(num_questions):
-#         await test_generate_questions()
-
-
-async def append_list_to(data, filename):
+    # Read the existing data from the file
     async with semaphore:
-        # Check if file exists
-        file_exists = os.path.isfile(filename)
-        
-        # Open the file in append mode
-        with open(filename, 'a') as f:
-            if not file_exists:
-                # If file does not exist, write a header
-                f.write(','.join(data) + ',')
-            else:
-                # If file exists, append data on the same line
-                f.seek(0, os.SEEK_END)
-                f.write(','.join(data) + ',')
+        try:
+            with open("output.json", "r") as file:
+                existing_data = json.load(file)
+        except FileNotFoundError:
+            existing_data = []
 
-async def test_generate_objects(n=10):
-    import commons.dataset as dataset
-    prev_used_objects = []
-    client = get_instructor_client(Provider.OPENROUTER)
-    async def run_iteration(i):
-        # use these models because we can specify seed
-        model_choice = random.choice(dataset.GENERATOR_MODELS)
-        possible_objects = await _generate_objects_to_visualize(client, model_choice, [])
-        print("Possible Objects: ", possible_objects)
-        # print(f"Objects to be excluded in instruction generation: {prev_used_objects}")
-        sampled_objects = random.sample(possible_objects, random.randint(3, 5))
-        print(f"Sampled objects: {sampled_objects}")
-        # prev_used_objects = sampled_objects
-        await append_list_to(sampled_objects, "sampled_objects_new_version.csv")
-        # await append_list_to(possible_objects, "sampled_objects_full.csv")
+        # Add the new data to the existing data
+        existing_data.extend(log_data)
 
-        
-    tasks = [run_iteration(i) for i in range(n)]
-    results = await asyncio.gather(*tasks)
+        # Write the updated data back to the file
+        with open("output.json", "w") as file:
+            json.dump(existing_data, file, indent=4)
 
 async def main():
-    await test_generate_objects(100)
+    num_questions = 5
+    # tasks = [test_generate_questions() for _ in range(num_questions)]
+    # await asyncio.gather(*tasks)
+    for _ in range(num_questions):
+        await test_generate_questions()
+
+
+# async def append_list_to(data, filename):
+#     async with semaphore:
+#         # Check if file exists
+#         file_exists = os.path.isfile(filename)
+        
+#         # Open the file in append mode
+#         with open(filename, 'a') as f:
+#             if not file_exists:
+#                 # If file does not exist, write a header
+#                 f.write(','.join(data) + ',')
+#             else:
+#                 # If file exists, append data on the same line
+#                 f.seek(0, os.SEEK_END)
+#                 f.write(','.join(data) + ',')
+
+# async def test_generate_objects(n=10):
+#     import commons.dataset as dataset
+#     prev_used_objects = []
+#     client = get_instructor_client(Provider.OPENROUTER)
+#     async def run_iteration(i):
+#         # use these models because we can specify seed
+#         model_choice = random.choice(dataset.GENERATOR_MODELS)
+#         possible_objects = await _generate_objects_to_visualize(client, model_choice, [])
+#         print("Possible Objects: ", possible_objects)
+#         # print(f"Objects to be excluded in instruction generation: {prev_used_objects}")
+#         sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+#         print(f"Sampled objects: {sampled_objects}")
+#         # prev_used_objects = sampled_objects
+#         await append_list_to(sampled_objects, "sampled_objects_new_version.csv")
+#         # await append_list_to(possible_objects, "sampled_objects_full.csv")
+
+        
+#     tasks = [run_iteration(i) for i in range(n)]
+#     results = await asyncio.gather(*tasks)
+
+# async def main():
+#     await test_generate_objects(100)
 
 if __name__ == "__main__":
     asyncio.run(main())
