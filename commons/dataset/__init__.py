@@ -38,6 +38,7 @@ ANSWER_MODELS = [
     # "phind/phind-codellama-34b",
     # "codellama/codellama-70b-instruct",
     # "mistralai/mixtral-8x22b-instruct",
+    # "mistralai/mixtral-8x22b-instruct",
     "openai/gpt-4-turbo-2024-04-09",
     "openai/gpt-4-1106-preview",
     # "openai/gpt-3.5-turbo-1106",
@@ -48,6 +49,7 @@ ANSWER_MODELS = [
     # "meta-llama/llama-3-8b-instruct",
     # Models that do not with instructor currently
     # "meta-llama/llama-3-70b-instruct",
+    # "meta-llama/llama-3-8b-instruct",
     # "mistralai/mistral-large",
     # "google/gemini-pro-1.5",
     # "cognitivecomputations/dolphin-mixtral-8x7b",
