@@ -574,24 +574,18 @@ semaphore = asyncio.Semaphore(1)
 async def test_generate_questions():
     log_data = []
     client = get_instructor_client(provider=Provider.OPENROUTER)
-    for model in GENERATOR_MODELS:
-        result = await generate_question(client, model)
-        if result is None:
-            continue
-        # unstructure tuple
-        question, kwargs = result
-        log_data.append({"model": model, "question": question, "kwargs": kwargs})
+    model = random.choice(GENERATOR_MODELS)
+    result = await generate_question(client, model)
+    # unstructure tuple
+    question, kwargs = result
+    log_data.append({"model": model, "question": question})
 
     print(f"{log_data}")
-
-    # Convert the list of dictionaries to a JSON string
-    for data in log_data:
-        data["kwargs"].pop("response_model")
 
     # Read the existing data from the file
     async with semaphore:
         try:
-            with open("output.json", "r") as file:
+            with open("questions.json", "r") as file:
                 existing_data = json.load(file)
         except FileNotFoundError:
             existing_data = []
@@ -600,51 +594,52 @@ async def test_generate_questions():
         existing_data.extend(log_data)
 
         # Write the updated data back to the file
-        with open("output.json", "w") as file:
+        with open("questions.json", "w") as file:
             json.dump(existing_data, file, indent=4)
 
 async def main():
-    num_questions = 5
-    # tasks = [test_generate_questions() for _ in range(num_questions)]
-    # await asyncio.gather(*tasks)
-    for _ in range(num_questions):
-        await test_generate_questions()
+    num_questions = 20
+    tasks = [test_generate_questions() for _ in range(num_questions)]
+    await asyncio.gather(*tasks)
+    # for _ in range(num_questions):
+    #     await test_generate_questions()
 
 
-# async def append_list_to(data, filename):
-#     async with semaphore:
-#         # Check if file exists
-#         file_exists = os.path.isfile(filename)
+async def append_list_to(data, filename):
+    async with semaphore:
+        # Check if file exists
+        file_exists = os.path.isfile(filename)
         
-#         # Open the file in append mode
-#         with open(filename, 'a') as f:
-#             if not file_exists:
-#                 # If file does not exist, write a header
-#                 f.write(','.join(data) + ',')
-#             else:
-#                 # If file exists, append data on the same line
-#                 f.seek(0, os.SEEK_END)
-#                 f.write(','.join(data) + ',')
+        # Open the file in append mode
+        with open(filename, 'a') as f:
+            if not file_exists:
+                # If file does not exist, write a header
+                f.write(','.join(data) + ',')
+            else:
+                # If file exists, append data on the same line
+                f.seek(0, os.SEEK_END)
+                f.write(','.join(data) + ',')
 
-# async def test_generate_objects(n=10):
-#     import commons.dataset as dataset
-#     prev_used_objects = []
-#     client = get_instructor_client(Provider.OPENROUTER)
-#     async def run_iteration(i):
-#         # use these models because we can specify seed
-#         model_choice = random.choice(dataset.GENERATOR_MODELS)
-#         possible_objects = await _generate_objects_to_visualize(client, model_choice, [])
-#         print("Possible Objects: ", possible_objects)
-#         # print(f"Objects to be excluded in instruction generation: {prev_used_objects}")
-#         sampled_objects = random.sample(possible_objects, random.randint(3, 5))
-#         print(f"Sampled objects: {sampled_objects}")
-#         # prev_used_objects = sampled_objects
-#         await append_list_to(sampled_objects, "sampled_objects_new_version.csv")
-#         # await append_list_to(possible_objects, "sampled_objects_full.csv")
+async def test_generate_objects(n=10):
+    import commons.dataset as dataset
+    prev_used_objects = []
+    client = get_instructor_client(Provider.OPENROUTER)
+    async def run_iteration(i):
+        # use these models because we can specify seed
+        # model_choice = random.choice(dataset.GENERATOR_MODELS)
+        # possible_objects = await _generate_objects_to_visualize(client, model_choice, [])
+        # print("Possible Objects: ", possible_objects)
+        # sampled_objects = random.sample(possible_objects, random.randint(3, 5))
+        n = random.randint(4, 6)
+        sampled_objects = get_random_object_words(n)
+        print(f"Sampled objects: {sampled_objects}")
+        # prev_used_objects = sampled_objects
+        await append_list_to(sampled_objects, "sampled_objects_wordnet_100_iterations.csv")
+        # await append_list_to(possible_objects, "sampled_objects_full.csv")
 
         
-#     tasks = [run_iteration(i) for i in range(n)]
-#     results = await asyncio.gather(*tasks)
+    tasks = [run_iteration(i) for i in range(n)]
+    results = await asyncio.gather(*tasks)
 
 # async def main():
 #     await test_generate_objects(100)
