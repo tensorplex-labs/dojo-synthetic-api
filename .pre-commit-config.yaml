@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+        stages: [push]
+      - id: end-of-file-fixer
+        stages: [push]
+      - id: check-yaml
+        stages: [push]
+      - id: check-added-large-files
+        stages: [push]
+      - id: check-toml
+        stages: [push]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.4.10
+    hooks:
+      # Run the linter.
+      - id: ruff
+        args: [--fix]
+        types_or: [python, pyi, jupyter]
+        stages: [push]
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [python, pyi, jupyter]
+        stages: [push]
+  - repo: local
+    hooks:
+      - id: check-identities
+        name: check-identities
+        entry: .githooks/check_identities.sh
+        stages: [commit, push]
+        language: script
