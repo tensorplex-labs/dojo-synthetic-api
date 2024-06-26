@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append("./")
 import asyncio
 import json
 import os
@@ -16,16 +19,17 @@ from tenacity import (
     RetryError,
     stop_after_attempt,
 )
-
-from commons.dataset import GENERATOR_MODELS
+from loguru import logger
+from commons.dataset import GENERATOR_MODELS, ANSWER_MODELS
 from commons.dataset.prompt_builders import (
     Language,
     additional_notes_for_question_prompt,
     build_code_answer_prompt,
     build_code_generation_question_prompt,
     build_python_fix_prompt,
-    build_python_review_prompt,
+    build_python_review_prompt
 )
+from commons.interpreter import fix_code
 from commons.llm.openai_proxy import (
     Provider,
     get_instructor_client,
@@ -82,7 +86,7 @@ class ErrorAnswer(BaseModel):
 
 
 async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
-    """Ensure that necessary files appended for python"""
+    """Ensure that necessary files appended for python and javascript"""
     result_object = await append_codesandbox_files(result_object)
     # result_object = escape_double_quotes_in_files(result_object)
     return result_object
@@ -98,8 +102,27 @@ def escape_double_quotes_in_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
 
 
 async def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    print("in javascript")
-    package_json_content = json.dumps({"dependencies": {"three": "latest"}}, indent=4)
+    package_json_content = json.dumps(
+        {
+            "name": "javascript",
+            "version": "1.0.0",
+            "description": "The JavaScript template",
+            "scripts": {
+                "start": "parcel ./index.html",
+                "build": "parcel build ./index.html"
+            },
+            "devDependencies": {
+                "parcel": "^2.0.0",
+                "babel-eslint": "^10.1.0",
+                "eslint": "^7.2.0"
+            },
+            "keywords": [
+                "css",
+                "javascript"
+            ]
+        }, 
+        indent=4
+    )
 
     package_json_file = FileObject(
         filename="package.json",
@@ -193,6 +216,8 @@ async def generate_question(
     global used_objects
     global previous_coding_question
 
+    used_models = set()
+    # try generating until max_retries, then switch models
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
@@ -242,7 +267,17 @@ async def generate_question(
                 previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
-        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts")
+        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
+        used_models.add(model)
+        remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
+        # return if no models remaining
+        if not remaining_models:
+            logger.error("No generator models left to try.")
+            return None, None
+        new_model = random.choice(remaining_models)
+        return await generate_question(client, new_model)
+    except Exception as e:
+        print(f"Error occurred while generating question: {e}")
 
     return None, None
 
@@ -256,10 +291,11 @@ async def generate_answer(
     code: str | None = None,
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
+    import commons.dataset as dataset
     print(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
         raise ValueError("Both error and code must be provided or neither")
-
+    
     messages = [
         {
             "role": "system",
@@ -272,32 +308,50 @@ async def generate_answer(
             ),
         },
     ]
-
+    
     if err and code:
         err_prompt = await build_err_prompt(client, model, code, err, question)
         messages.append({"role": "system", "content": err_prompt})
         logger.info(err_prompt)
-
+        
     kwargs = {
         "response_model": CodeAnswer,
         "model": model,
         "messages": messages,
-        "temperature": 0.1,
+        "temperature": 0.0,
         "max_tokens": 8192,
         "top_p": random.uniform(0.9, 1.0),
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
+        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
+
+    MAX_RETRIES = 5
+
+    used_models = set()
+    # try generating until max retries, then switch models
     try:
-        completion = await client.chat.completions.create(**kwargs)
-        # print(f"Generated completion: {completion}")
-        return model, completion
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
+        ):
+            with attempt:
+                completion = await client.chat.completions.create(**kwargs)
+                # print(f"Generated completion: {completion}")
+                return model, completion
+    except RetryError:
+        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
+        used_models.add(model)
+        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
+        # return if no models remaining
+        if not remaining_models:
+            logger.error("No answer models left to try.")
+            return model, None
+        new_model = random.choice(remaining_models)
+        return await generate_answer(client, new_model, question)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
-        pass
 
     return model, None
-
 
 async def build_err_prompt(
     client: AsyncOpenAI | instructor.AsyncInstructor,
@@ -342,6 +396,77 @@ async def build_err_prompt(
     return build_python_fix_prompt(code=code, err=err)
 
 
+async def build_2_prompt_responses_pairs():
+    import commons.dataset as dataset
+
+    client = get_instructor_client(Provider.OPENROUTER)
+    # use these models because we can specify seed
+    model_choice = random.choice(dataset.GENERATOR_MODELS)
+    prompt, kwargs = await generate_question(client, model_choice)
+    if not prompt or not kwargs:
+        logger.info("Failed to generate question...")
+        return []
+
+    # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
+    # randomly sampled from pool of models
+    answer_models = dataset.ANSWER_MODELS
+    num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
+    selected_models = random.sample(
+        answer_models, min(num_answer_models, len(answer_models))
+    )
+
+    prompt_responses_pairs = []
+    for enable_agent_code_fix in [True, False]:
+        results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
+            *[
+                generate_answer(client, ans_model, prompt)
+                for ans_model in selected_models
+            ]
+        )
+
+        # parse code responses
+        responses = []
+        for model, result in results:
+            if not result:
+                continue
+            # result = parse_code_response(result)
+            if enable_agent_code_fix:
+                supported_languages = ["javascript"]
+                for i, file in enumerate(result.files):
+                    if file.language.lower() not in supported_languages:
+                        continue
+                    lang, fixed_code = await fix_code(file.content, model)
+                    if fixed_code:
+                        result.files[i].content = fixed_code
+
+            formatted_files = [
+                {
+                    "filename": file.filename,
+                    "content": file.content,
+                    "language": file.language,
+                }
+                for file in result.files
+            ]
+            responses.append(
+                {
+                    "model": model,
+                    "completion": {
+                        "files": formatted_files,
+                        "installation_commands": result.installation_commands,
+                        "additional_notes": result.additional_notes,
+                    },
+                }
+            )
+        prompt_responses_pairs.append(
+            {
+                "prompt": prompt
+                + "\n[DEBUGGING] Is agent code fix enabled? "
+                + str(enable_agent_code_fix),
+                "responses": responses,
+            }
+        )
+    return prompt_responses_pairs
+
 async def generate_answer_with_feedback(
     client: AsyncOpenAI | instructor.AsyncInstructor,
     model: str,
@@ -358,14 +483,13 @@ async def generate_answer_with_feedback(
             return model, None
 
         try:
-            print("executing")
+            # print("executing")
             return model, await parse_code_response(result)
         except ExecutionError as e:
             err = e.err
             previous_code = e.code
 
-
-async def build_prompt_responses_pair(language: Language, generator_model=None):
+async def build_prompt_responses_pair(language : Language, generator_model=None):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
@@ -374,7 +498,8 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
     prompt, kwargs = await generate_question(client, model_choice, language)
     if not prompt or not kwargs:
         logger.info("Failed to generate question...")
-        return None
+        raise RuntimeError("Error generating prompt-response pair")
+        # return None
 
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
     # randomly sampled from pool of models
@@ -383,6 +508,14 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
     selected_models = random.sample(
         answer_models, min(num_answer_models, len(answer_models))
     )
+    
+    # check if enough answer models are specified 
+    if len(answer_models) < num_answer_models:
+        logger.warning(
+            f"Number of answer models is less than the specified number of models: {num_answer_models}"
+        )
+        raise RuntimeError("Error generating prompt-response pair")
+    
     tasks = []
     for ans_model in selected_models:
         if language == Language.JAVASCRIPT:
@@ -392,13 +525,23 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
                 generate_answer_with_feedback(client, ans_model, prompt, language)
             )
 
-    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(*tasks)
+    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(tasks)
 
     # parse code responses
     responses = []
     for model, result in results:
         if not result:
-            continue
+            raise RuntimeError("Error generating prompt-response pair")
+
+        if language == Language.JAVASCRIPT:
+            result = parse_code_response(result)
+        # supported_languages = ["javascript", "html"]
+        # for i, file in enumerate(result.files):
+        #     if file.language.lower() not in supported_languages:
+        #         continue
+        #     lang, fixed_code = await fix_code(file.content, model)
+        #     if fixed_code:
+        #         result.files[i].content = fixed_code
 
         formatted_files = [
             {
@@ -418,6 +561,7 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
                 },
             }
         )
+
     return {"prompt": prompt, "responses": responses}
 
 
