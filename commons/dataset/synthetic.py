@@ -19,15 +19,14 @@ from tenacity import (
     RetryError,
     stop_after_attempt,
 )
-from loguru import logger
-from commons.dataset import GENERATOR_MODELS, ANSWER_MODELS
+from commons.dataset import GENERATOR_MODELS
 from commons.dataset.prompt_builders import (
     Language,
     additional_notes_for_question_prompt,
     build_code_answer_prompt,
     build_code_generation_question_prompt,
     build_python_fix_prompt,
-    build_python_review_prompt
+    build_python_review_prompt,
 )
 from commons.interpreter import fix_code
 from commons.llm.openai_proxy import (
@@ -109,19 +108,16 @@ async def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
             "description": "The JavaScript template",
             "scripts": {
                 "start": "parcel ./index.html",
-                "build": "parcel build ./index.html"
+                "build": "parcel build ./index.html",
             },
             "devDependencies": {
                 "parcel": "^2.0.0",
                 "babel-eslint": "^10.1.0",
-                "eslint": "^7.2.0"
+                "eslint": "^7.2.0",
             },
-            "keywords": [
-                "css",
-                "javascript"
-            ]
-        }, 
-        indent=4
+            "keywords": ["css", "javascript"],
+        },
+        indent=4,
     )
 
     package_json_file = FileObject(
@@ -267,7 +263,9 @@ async def generate_question(
                 previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
-        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
+        logger.error(
+            f"Failed to generate question after {MAX_RETRIES} attempts. Switching model."
+        )
         used_models.add(model)
         remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
         # return if no models remaining
@@ -292,10 +290,11 @@ async def generate_answer(
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     import commons.dataset as dataset
+
     print(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
         raise ValueError("Both error and code must be provided or neither")
-    
+
     messages = [
         {
             "role": "system",
@@ -308,12 +307,12 @@ async def generate_answer(
             ),
         },
     ]
-    
+
     if err and code:
         err_prompt = await build_err_prompt(client, model, code, err, question)
         messages.append({"role": "system", "content": err_prompt})
         logger.info(err_prompt)
-        
+
     kwargs = {
         "response_model": CodeAnswer,
         "model": model,
@@ -339,7 +338,9 @@ async def generate_answer(
                 # print(f"Generated completion: {completion}")
                 return model, completion
     except RetryError:
-        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
+        logger.error(
+            f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
+        )
         used_models.add(model)
         remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
         # return if no models remaining
@@ -352,6 +353,7 @@ async def generate_answer(
         print(f"Error occurred while generating code answer: {e}")
 
     return model, None
+
 
 async def build_err_prompt(
     client: AsyncOpenAI | instructor.AsyncInstructor,
@@ -467,6 +469,7 @@ async def build_2_prompt_responses_pairs():
         )
     return prompt_responses_pairs
 
+
 async def generate_answer_with_feedback(
     client: AsyncOpenAI | instructor.AsyncInstructor,
     model: str,
@@ -489,7 +492,8 @@ async def generate_answer_with_feedback(
             err = e.err
             previous_code = e.code
 
-async def build_prompt_responses_pair(language : Language, generator_model=None):
+
+async def build_prompt_responses_pair(language: Language, generator_model=None):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
@@ -508,14 +512,14 @@ async def build_prompt_responses_pair(language : Language, generator_model=None)
     selected_models = random.sample(
         answer_models, min(num_answer_models, len(answer_models))
     )
-    
-    # check if enough answer models are specified 
+
+    # check if enough answer models are specified
     if len(answer_models) < num_answer_models:
         logger.warning(
             f"Number of answer models is less than the specified number of models: {num_answer_models}"
         )
         raise RuntimeError("Error generating prompt-response pair")
-    
+
     tasks = []
     for ans_model in selected_models:
         if language == Language.JAVASCRIPT:
