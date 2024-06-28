@@ -1,32 +1,32 @@
+import asyncio
+import json
 import os
+import random
 import re
 import sys
-import json
-import asyncio
-import random
 import textwrap
 import traceback
-import instructor
 from typing import Dict, List, Optional, Tuple
-from openai import AsyncOpenAI
+
+import instructor
 from dotenv import load_dotenv
+from loguru import logger
+from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
     RetryError,
     stop_after_attempt,
 )
-from loguru import logger
-from commons.dataset import GENERATOR_MODELS, ANSWER_MODELS
+
+from commons.dataset import GENERATOR_MODELS
 from commons.interpreter import fix_code
 
 sys.path.append("./")
 from commons.llm.openai_proxy import (
     Provider,
-    get_async_openai_client,
     get_instructor_client,
 )
-from commons.utils.utils import generate_simple_json
 
 load_dotenv()
 
@@ -94,19 +94,16 @@ def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
                 "description": "The JavaScript template",
                 "scripts": {
                     "start": "parcel ./index.html",
-                    "build": "parcel build ./index.html"
+                    "build": "parcel build ./index.html",
                 },
                 "devDependencies": {
                     "parcel": "^2.0.0",
                     "babel-eslint": "^10.1.0",
-                    "eslint": "^7.2.0"
+                    "eslint": "^7.2.0",
                 },
-                "keywords": [
-                    "css",
-                    "javascript"
-                ]
-            }, 
-            indent=4
+                "keywords": ["css", "javascript"],
+            },
+            indent=4,
         )
 
         package_json_file = FileObject(
@@ -148,6 +145,7 @@ async def _generate_objects_to_visualize(
 
 used_objects = []
 previous_coding_question = ""
+used_models = set()
 
 
 async def generate_question(
@@ -158,8 +156,8 @@ async def generate_question(
     MAX_RETRIES = 5
     global used_objects
     global previous_coding_question
+    global used_models
 
-    used_models = set()
     # try generating until max_retries, then switch models
     try:
         async for attempt in AsyncRetrying(
@@ -202,7 +200,9 @@ async def generate_question(
                 previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
-        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
+        logger.error(
+            f"Failed to generate question after {MAX_RETRIES} attempts. Switching model."
+        )
         used_models.add(model)
         remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
         # return if no models remaining
@@ -265,6 +265,7 @@ async def generate_answer(
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     import commons.dataset as dataset
+
     print(f"Generating code answer with model: {model}")
     kwargs = {
         "response_model": CodeAnswer,
@@ -288,7 +289,6 @@ async def generate_answer(
 
     MAX_RETRIES = 5
 
-    used_models = set()
     # try generating until max retries, then switch models
     try:
         async for attempt in AsyncRetrying(
@@ -299,7 +299,9 @@ async def generate_answer(
                 # print(f"Generated completion: {completion}")
                 return model, completion
     except RetryError:
-        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
+        logger.error(
+            f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
+        )
         used_models.add(model)
         remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
         # return if no models remaining
@@ -465,9 +467,13 @@ async def build_2_prompt_responses_pairs():
 async def build_prompt_responses_pair(generator_model=None):
     import commons.dataset as dataset
 
+    global used_models
+
     client = get_instructor_client(Provider.OPENROUTER)
     # use these models because we can specify seed
     model_choice = generator_model or random.choice(dataset.GENERATOR_MODELS)
+    # initialise to empty set
+    used_models = set()
     prompt, kwargs = await generate_question(client, model_choice)
     if not prompt or not kwargs:
         logger.info("Failed to generate question...")
@@ -481,14 +487,16 @@ async def build_prompt_responses_pair(generator_model=None):
     selected_models = random.sample(
         answer_models, min(num_answer_models, len(answer_models))
     )
-    
-    # check if enough answer models are specified 
+
+    # check if enough answer models are specified
     if len(answer_models) < num_answer_models:
         logger.warning(
             f"Number of answer models is less than the specified number of models: {num_answer_models}"
         )
         raise RuntimeError("Error generating prompt-response pair")
 
+    # initialise to empty set
+    used_models = set()
     results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
         *[generate_answer(client, ans_model, prompt) for ans_model in selected_models]
     )
