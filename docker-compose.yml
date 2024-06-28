@@ -9,6 +9,11 @@ networks:
 services:
   redis:
     image: "redis/redis-stack-server:latest"
+    environment:
+      # CHANGE THE <PASSWORD> TO A PASSWORD YOU WANT TO USE
+      # the end result should look like this for example:
+      # --requirepass MyStrongPassword --user default on >MyStrongPassword ~* allcommands
+      REDIS_ARGS: "--requirepass <PASSWORD> --user default on ><PASSWORD> ~* allcommands"
 
     ports:
       - "127.0.0.1:6379:6379"
