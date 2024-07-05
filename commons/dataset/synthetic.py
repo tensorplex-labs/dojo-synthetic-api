@@ -1,11 +1,11 @@
-import sys
-
-sys.path.append("./")
 import asyncio
 import json
 import os
 import random
 import re
+import sys
+sys.path.append("./")
+import textwrap
 import traceback
 from typing import Dict, List, Optional, Tuple, cast
 
@@ -19,6 +19,7 @@ from tenacity import (
     RetryError,
     stop_after_attempt,
 )
+
 from commons.dataset import GENERATOR_MODELS
 from commons.dataset.prompt_builders import (
     Language,
@@ -100,7 +101,7 @@ def escape_double_quotes_in_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     return codeanswer_object
 
 
-async def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
+def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     package_json_content = json.dumps(
         {
             "name": "javascript",
@@ -127,6 +128,7 @@ async def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     )
     codeanswer_object.files.append(package_json_file)
     return codeanswer_object
+
 
 
 async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
@@ -165,7 +167,7 @@ async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
         file.language.lower() == "python" for file in codeanswer_object.files
     )
     if javascript_file_detected:
-        return await handle_javascript_files(codeanswer_object)
+        return handle_javascript_files(codeanswer_object)
     elif python_file_detected:
         return await handle_python_files(codeanswer_object)
     else:
@@ -201,6 +203,7 @@ async def _generate_objects_to_visualize(
 
 used_objects = []
 previous_coding_question = ""
+used_models = set()
 
 
 async def generate_question(
@@ -211,8 +214,8 @@ async def generate_question(
     MAX_RETRIES = 5
     global used_objects
     global previous_coding_question
+    global used_models
 
-    used_models = set()
     # try generating until max_retries, then switch models
     try:
         async for attempt in AsyncRetrying(
@@ -327,7 +330,6 @@ async def generate_answer(
 
     MAX_RETRIES = 5
 
-    used_models = set()
     # try generating until max retries, then switch models
     try:
         async for attempt in AsyncRetrying(
@@ -496,9 +498,13 @@ async def generate_answer_with_feedback(
 async def build_prompt_responses_pair(language: Language, generator_model=None):
     import commons.dataset as dataset
 
+    global used_models
+
     client = get_instructor_client(Provider.OPENROUTER)
     # use these models because we can specify seed
     model_choice = generator_model or random.choice(dataset.GENERATOR_MODELS)
+    # initialise to empty set
+    used_models = set()
     prompt, kwargs = await generate_question(client, model_choice, language)
     if not prompt or not kwargs:
         logger.info("Failed to generate question...")
@@ -520,6 +526,8 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
         )
         raise RuntimeError("Error generating prompt-response pair")
 
+    # initialise to empty set
+    used_models = set()
     tasks = []
     for ans_model in selected_models:
         if language == Language.JAVASCRIPT:
