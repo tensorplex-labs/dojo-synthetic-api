@@ -4,8 +4,8 @@ import os
 import random
 import re
 import sys
+
 sys.path.append("./")
-import textwrap
 import traceback
 from typing import Dict, List, Optional, Tuple, cast
 
@@ -128,7 +128,6 @@ def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     )
     codeanswer_object.files.append(package_json_file)
     return codeanswer_object
-
 
 
 async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
