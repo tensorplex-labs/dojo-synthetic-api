@@ -1,4 +1,7 @@
 import base64
+import sys
+
+sys.path.append("./")
 import json
 import os
 import re
@@ -269,6 +272,7 @@ class PythonExecutor:
                 self.close_sandbox()
                 raise e
             except Exception as e:
+                logger.exception(e)
                 self.close_sandbox()
 
                 if retry_count < MAX_RETRIES - 1:
@@ -290,16 +294,16 @@ if __name__ == "__main__":
     test_code = """
 import plotly.express as px
 fig = px.scatter(x=range(10), y=range(10))
-fig.show()"""
-    for _ in range(5):
-        executor = PythonExecutor(code=test_code, debug=True)
-        try:
-            output = executor.main()
-        except ExecutionError as e:
-            print(e.err)
-            del executor
-            continue
+fig.write_html('plot.html')"""
+    # for _ in range(5):
+    executor = PythonExecutor(code=test_code, debug=True)
+    try:
+        output = executor.main()
+    except ExecutionError as e:
+        print(e.err)
         del executor
-        if output is not None:
-            with open("output.html", "w") as f:
-                f.write(output)
+
+    del executor
+    if output is not None:
+        with open("output.html", "w") as f:
+            f.write(output)
