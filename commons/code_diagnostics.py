@@ -35,6 +35,7 @@ class CodeDiagnostics:
             logger.info(f"Got code diagnostics: {diagnostics}")
         return diagnostics
 
+
 ############################# QUICKLINT ######################################
 async def diagnostics_quicklint(
     code_to_analyze: Annotated[str, "Code to be analyzed"],
