@@ -3,9 +3,6 @@ import json
 import os
 import random
 import re
-import sys
-
-sys.path.append("./")
 import traceback
 from typing import Dict, List, Optional, Tuple, cast
 
@@ -311,7 +308,7 @@ async def generate_answer(
     ]
 
     if err and code:
-        err_prompt = await build_err_prompt(client, model, code, err, question)
+        err_prompt = await generate_python_fix_prompt(client, model, code, err, question)
         messages.append({"role": "system", "content": err_prompt})
         logger.info(err_prompt)
 
@@ -356,7 +353,7 @@ async def generate_answer(
     return model, None
 
 
-async def build_err_prompt(
+async def generate_python_fix_prompt(
     client: AsyncOpenAI | instructor.AsyncInstructor,
     model: str,
     code: str,
