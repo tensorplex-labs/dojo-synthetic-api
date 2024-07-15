@@ -308,7 +308,9 @@ async def generate_answer(
     ]
 
     if err and code:
-        err_prompt = await generate_python_fix_prompt(client, model, code, err, question)
+        err_prompt = await generate_python_fix_prompt(
+            client, model, code, err, question
+        )
         messages.append({"role": "system", "content": err_prompt})
         logger.info(err_prompt)
 
