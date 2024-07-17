@@ -26,7 +26,6 @@ from commons.dataset.prompt_builders import (
     build_python_fix_prompt,
     build_python_review_prompt,
 )
-from commons.interpreter import fix_code
 from commons.llm.openai_proxy import (
     Provider,
     get_instructor_client,
