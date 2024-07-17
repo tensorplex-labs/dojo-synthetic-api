@@ -161,9 +161,10 @@ async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     )
     if python_file_detected:
         codeanswer_object = await handle_python_files(codeanswer_object)
-    
+
     # changed to always run this since handle_python_files returns html which needs the parcel stuff
     return handle_javascript_files(codeanswer_object)
+
 
 async def _generate_objects_to_visualize(
     client: instructor.AsyncInstructor, model: str, prev_used_objects: list[str]
@@ -391,7 +392,8 @@ async def generate_python_fix_prompt(
 
     return build_python_fix_prompt(code=code, err=err)
 
-async def build_2_prompt_responses_pairs(language : Language):
+
+async def build_2_prompt_responses_pairs(language: Language):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
@@ -468,12 +470,12 @@ async def generate_answer_with_feedback(
     model: str,
     question: str,
     language: Language,
-    max_attempts: int = 3 
+    max_attempts: int = 3,
 ) -> Tuple[str, CodeAnswer | None]:
     previous_code = None
     err = None
     attempt_count = 0
-    previous_err = None 
+    previous_err = None
 
     while attempt_count < max_attempts:
         model, result = await generate_answer(
@@ -487,12 +489,12 @@ async def generate_answer_with_feedback(
         except ExecutionError as e:
             err = e.err
             previous_code = e.code
-            
+
             if err == previous_err:
                 attempt_count += 1
             else:
-                attempt_count = 0 
-                previous_err = err 
+                attempt_count = 0
+                previous_err = err
 
     return model, None
 

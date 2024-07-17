@@ -108,16 +108,18 @@ class PythonExecutor:
         def replacement_func(match):
             full_match = match.group(0)
             args = match.group(2)
-            
+
             # Check if include_plotlyjs is already present
             include_plotlyjs_pattern = r'include_plotlyjs\s*=\s*(["\']?)([^,\'"]+)\1'
             include_plotlyjs_match = re.search(include_plotlyjs_pattern, args)
-            
+
             if include_plotlyjs_match:
                 current_value = include_plotlyjs_match.group(2)
-                if current_value.lower() != 'cdn':
+                if current_value.lower() != "cdn":
                     # Replace the existing include_plotlyjs value with 'cdn'
-                    args = re.sub(include_plotlyjs_pattern, "include_plotlyjs='cdn'", args)
+                    args = re.sub(
+                        include_plotlyjs_pattern, "include_plotlyjs='cdn'", args
+                    )
                     return f"{match.group(1)}{args})"
                 else:
                     return full_match  # Return unchanged if already includes cdn
@@ -130,7 +132,7 @@ class PythonExecutor:
 
         pattern = r"(fig\.write_html\s*\()([^)]*)\)"
         return re.sub(pattern, replacement_func, code)
-    
+
     def preprocess_code(self):
         self.code = self.replace_mpld3_show(self.code)
         self.code = self.modify_plotly_to_html(self.code)
@@ -140,18 +142,20 @@ class PythonExecutor:
         kernel_id = sandbox.notebook.create_kernel(cwd="/home/user")
         self.sandbox = sandbox
         self.kernel_id = kernel_id
-        
+
         watch_tmp = False
         packages = " ".join(get_packages(self.code))
-        
+
         if "bokeh" in packages:
             watch_tmp = True
-        
+
         if "ipywidgets" in packages:
             raise ExecutionError("ipywidgets is not supported", self.code)
 
         logger.debug(f"Installing packages {packages}")
-        sandbox.notebook.exec_cell(f"!pip install {packages}", kernel_id=kernel_id, timeout = 300)
+        sandbox.notebook.exec_cell(
+            f"!pip install {packages}", kernel_id=kernel_id, timeout=300
+        )
         self.start_watcher(watch_tmp=watch_tmp)
 
     def execute(self):
