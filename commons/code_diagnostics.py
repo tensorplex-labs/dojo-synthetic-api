@@ -1,27 +1,38 @@
 import asyncio
-import subprocess
 import json
 import time
+import uuid
 from typing import Annotated
 
 from loguru import logger
-import uuid
+
+from commons.utils.python_executor import PythonExecutor
 
 
 class CodeDiagnostics:
     @staticmethod
     async def diagnostics(
         code_to_analyze: Annotated[str, "Code to be analyzed"],
+        language: Annotated[str, "Language of the code"],
     ) -> str:
-        diagnostics = ""
-        logger.info(f"Code to analyze: {code_to_analyze}")
-        # disabled quicklint for now because trying to figure out if tsserver is better
-        # ql_diag = await diagnostics_quicklint(code_to_analyze)
-        tsserver_diag = await tsserver_diagnostics(code=code_to_analyze)
-        if tsserver_diag:
-            diagnostics += "\n".join(tsserver_diag)
-        # diagnostics += ql_diag
-        logger.info(f"Got code diagnostics: {diagnostics}")
+        if language == "python":
+            executor = PythonExecutor(code=code_to_analyze)
+            try:
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, executor.main)
+            except Exception as e:
+                logger.error(f"Error occurred while executing Python code: {e}")
+                return str(e)
+        else:
+            diagnostics = ""
+            logger.info(f"Code to analyze: {code_to_analyze}")
+            # disabled quicklint for now because trying to figure out if tsserver is better
+            # ql_diag = await diagnostics_quicklint(code_to_analyze)
+            tsserver_diag = await tsserver_diagnostics(code=code_to_analyze)
+            if tsserver_diag:
+                diagnostics += "\n".join(tsserver_diag)
+            # diagnostics += ql_diag
+            logger.info(f"Got code diagnostics: {diagnostics}")
         return diagnostics
 
 
