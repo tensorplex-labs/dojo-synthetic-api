@@ -43,7 +43,6 @@ def get_packages(code: str) -> set[str]:
         node_iter.visit(ast.parse(replaced_code))
     except SyntaxError as e:
         print("Syntax Error in", code)
-        print(replaced_code)
         raise ExecutionError(str(e), code)
 
     # return modules not part of the standard library

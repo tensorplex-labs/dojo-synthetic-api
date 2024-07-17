@@ -156,19 +156,14 @@ async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
 
 
 async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    javascript_file_detected = any(
-        file.language.lower() == "javascript" for file in codeanswer_object.files
-    )
     python_file_detected = any(
         file.language.lower() == "python" for file in codeanswer_object.files
     )
-    if javascript_file_detected:
-        return handle_javascript_files(codeanswer_object)
-    elif python_file_detected:
-        return await handle_python_files(codeanswer_object)
-    else:
-        return codeanswer_object
-
+    if python_file_detected:
+        codeanswer_object = await handle_python_files(codeanswer_object)
+    
+    # changed to always run this since handle_python_files returns html which needs the parcel stuff
+    return handle_javascript_files(codeanswer_object)
 
 async def _generate_objects_to_visualize(
     client: instructor.AsyncInstructor, model: str, prev_used_objects: list[str]
@@ -272,7 +267,7 @@ async def generate_question(
             logger.error("No generator models left to try.")
             return None, None
         new_model = random.choice(remaining_models)
-        return await generate_question(client, new_model)
+        return await generate_question(client, new_model, language)
     except Exception as e:
         print(f"Error occurred while generating question: {e}")
 
@@ -324,7 +319,6 @@ async def generate_answer(
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
-        kwargs["seed"] = random.randint(0, 1e9)  # needed for OpenAI
 
     MAX_RETRIES = 5
 
@@ -348,7 +342,7 @@ async def generate_answer(
             logger.error("No answer models left to try.")
             return model, None
         new_model = random.choice(remaining_models)
-        return await generate_answer(client, new_model, question)
+        return await generate_answer(client, new_model, question, langauge)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
 
@@ -397,14 +391,13 @@ async def generate_python_fix_prompt(
 
     return build_python_fix_prompt(code=code, err=err)
 
-
-async def build_2_prompt_responses_pairs():
+async def build_2_prompt_responses_pairs(language : Language):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
     # use these models because we can specify seed
     model_choice = random.choice(dataset.GENERATOR_MODELS)
-    prompt, kwargs = await generate_question(client, model_choice)
+    prompt, kwargs = await generate_question(client, model_choice, language)
     if not prompt or not kwargs:
         logger.info("Failed to generate question...")
         return []
@@ -421,7 +414,7 @@ async def build_2_prompt_responses_pairs():
     for enable_agent_code_fix in [True, False]:
         results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(
             *[
-                generate_answer(client, ans_model, prompt)
+                generate_answer(client, ans_model, prompt, language)
                 for ans_model in selected_models
             ]
         )
@@ -475,10 +468,14 @@ async def generate_answer_with_feedback(
     model: str,
     question: str,
     language: Language,
+    max_attempts: int = 3 
 ) -> Tuple[str, CodeAnswer | None]:
     previous_code = None
     err = None
-    while True:
+    attempt_count = 0
+    previous_err = None 
+
+    while attempt_count < max_attempts:
         model, result = await generate_answer(
             client, model, question, language, previous_code, err
         )
@@ -486,11 +483,18 @@ async def generate_answer_with_feedback(
             return model, None
 
         try:
-            # print("executing")
             return model, await parse_code_response(result)
         except ExecutionError as e:
             err = e.err
             previous_code = e.code
+            
+            if err == previous_err:
+                attempt_count += 1
+            else:
+                attempt_count = 0 
+                previous_err = err 
+
+    return model, None
 
 
 async def build_prompt_responses_pair(language: Language, generator_model=None):
@@ -535,7 +539,7 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
                 generate_answer_with_feedback(client, ans_model, prompt, language)
             )
 
-    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(tasks)
+    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(*tasks)
 
     # parse code responses
     responses = []
@@ -544,7 +548,7 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
             raise RuntimeError("Error generating prompt-response pair")
 
         if language == Language.JAVASCRIPT:
-            result = parse_code_response(result)
+            result = await parse_code_response(result)
         # supported_languages = ["javascript", "html"]
         # for i, file in enumerate(result.files):
         #     if file.language.lower() not in supported_languages:
@@ -598,7 +602,7 @@ async def test_generate_questions(language: Language):
 
 
 async def main():
-    language = Language("Javascript")
+    language = Language("Python")
     responses = await build_prompt_responses_pair(language=language)
     with open("output.json", "w") as f:
         json.dump(responses, f, indent=4)

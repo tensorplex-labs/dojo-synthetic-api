@@ -103,21 +103,55 @@ class PythonExecutor:
         # print("Code preprocessed")
         # print(self.code)
 
+    @staticmethod
+    def modify_plotly_to_html(code: str):
+        def replacement_func(match):
+            full_match = match.group(0)
+            args = match.group(2)
+            
+            # Check if include_plotlyjs is already present
+            include_plotlyjs_pattern = r'include_plotlyjs\s*=\s*(["\']?)([^,\'"]+)\1'
+            include_plotlyjs_match = re.search(include_plotlyjs_pattern, args)
+            
+            if include_plotlyjs_match:
+                current_value = include_plotlyjs_match.group(2)
+                if current_value.lower() != 'cdn':
+                    # Replace the existing include_plotlyjs value with 'cdn'
+                    args = re.sub(include_plotlyjs_pattern, "include_plotlyjs='cdn'", args)
+                    return f"{match.group(1)}{args})"
+                else:
+                    return full_match  # Return unchanged if already includes cdn
+            else:
+                # Add include_plotlyjs='cdn' if it's not present
+                if args.strip():
+                    return f"{match.group(1)}{args}, include_plotlyjs='cdn')"
+                else:
+                    return f"{match.group(1)}include_plotlyjs='cdn')"
+
+        pattern = r"(fig\.write_html\s*\()([^)]*)\)"
+        return re.sub(pattern, replacement_func, code)
+    
     def preprocess_code(self):
         self.code = self.replace_mpld3_show(self.code)
+        self.code = self.modify_plotly_to_html(self.code)
 
     def initialize_sandbox(self):
-        watch_tmp = False
-        packages = " ".join(get_packages(self.code))
-        if "bokeh" in packages:
-            watch_tmp = True
-
         sandbox = CodeInterpreter(cwd="/home/user")
         kernel_id = sandbox.notebook.create_kernel(cwd="/home/user")
-        logger.debug(f"Installing packages {packages}")
-        sandbox.notebook.exec_cell(f"!pip install {packages}", kernel_id=kernel_id)
         self.sandbox = sandbox
         self.kernel_id = kernel_id
+        
+        watch_tmp = False
+        packages = " ".join(get_packages(self.code))
+        
+        if "bokeh" in packages:
+            watch_tmp = True
+        
+        if "ipywidgets" in packages:
+            raise ExecutionError("ipywidgets is not supported", self.code)
+
+        logger.debug(f"Installing packages {packages}")
+        sandbox.notebook.exec_cell(f"!pip install {packages}", kernel_id=kernel_id, timeout = 300)
         self.start_watcher(watch_tmp=watch_tmp)
 
     def execute(self):
@@ -219,7 +253,7 @@ class PythonExecutor:
             return self.created_files[keys[0]]
         else:
             raise ExecutionError(
-                "Visualisation must be saved to an external file", self.code
+                "Visualisation must be saved to an external html file", self.code
             )
 
         ## Uncomment this block to handle kernel outputs
@@ -291,17 +325,14 @@ class PythonExecutor:
 
 
 if __name__ == "__main__":
-    test_code = """
-import plotly.express as px
-fig = px.scatter(x=range(10), y=range(10))
-fig.write_html('plot.html')"""
+    test_code = "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Mock data\nage_groups = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100']\npeople_counts = [150, 200, 340, 300, 320, 280, 220, 190, 100, 60]\nmedian_income = [30000, 32000, 34000, 36000, 38000, 40000, 42000, 44000, 46000, 48000]\naverage_education_level = ['Elementary', 'Middle School', 'High School', 'College', 'Bachelor', 'Master', 'PhD', 'PhD', 'PhD', 'PhD']\n\nfig, ax = plt.subplots()\nrects = ax.bar(age_groups, people_counts)\n\n# Adding interactivity\ndef on_click(event):\n    bar = rects.patches\n    for i, rect in enumerate(bar):\n        if rect.contains(event)[0]:\n            print(f'Age Group: {age_groups[i]}\\nMedian Income: {median_income[i]}\\nEducation Level: {average_education_level[i]}')\n\ndef hover(event):\n    ax.set_title(f'Hovering over: {event.xdata} age group')\n\nfig.canvas.mpl_connect('button_press_event', on_click)\nfig.canvas.mpl_connect('motion_notify_event', hover)\n\nplt.show()"
     # for _ in range(5):
     executor = PythonExecutor(code=test_code, debug=True)
+    output = None
     try:
         output = executor.main()
     except ExecutionError as e:
         print(e.err)
-        del executor
 
     del executor
     if output is not None:
