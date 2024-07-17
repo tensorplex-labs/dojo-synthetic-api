@@ -1,0 +1,28 @@
+version: "3.5"
+
+services:
+  enterprise-gateway:
+    image: elyra/enterprise-gateway:dev
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - "EG_DOCKER_NETWORK=enterprise-gateway_default"
+      - "EG_KERNEL_LAUNCH_TIMEOUT=60"
+      - "EG_KERNEL_INFO_TIMEOUT=60"
+      - "EG_CULL_IDLE_TIMEOUT=3600"
+      - "EG_ALLOWED_KERNELS=r_docker,python_docker,python_tf_docker,python_tf_gpu_docker,scala_docker"
+      - "EG_MIRROR_WORKING_DIRS=False"
+      - "EG_RESPONSE_PORT=8877"
+      - "KG_PORT=8888"
+    ports:
+      - 8888:8888
+      - 8877:8877
+    networks:
+      - default
+    labels:
+      app: "enterprise-gateway"
+      component: "enterprise-gateway"
+
+networks:
+  default:
+    driver: bridge

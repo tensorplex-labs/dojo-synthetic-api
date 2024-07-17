@@ -1,8 +1,10 @@
 import asyncio
 import json
+import random
 from typing import Optional
 
 from commons.cache import RedisCache
+from commons.dataset.prompt_builders import Language
 from commons.dataset.synthetic import (
     build_prompt_responses_pair,
 )
@@ -34,7 +36,8 @@ async def execute_python_code(background_tasks: BackgroundTasks):
             except json.JSONDecodeError:
                 result = {}
         else:
-            result = await build_prompt_responses_pair()
+            language = random.choice(list(Language))
+            result = await build_prompt_responses_pair(language)
 
         background_tasks.add_task(generator.arun)
 
@@ -89,7 +92,8 @@ class SyntheticGenerator:
                 num_keys = await cache.redis.llen(QUEUE_KEY)
                 if num_keys < TARGET_SIZE:
                     # TODO restore once done with testing agent
-                    responses = await build_prompt_responses_pair()
+                    language = random.choice(list(Language))
+                    responses = await build_prompt_responses_pair(language)
                     # responses = await build_2_prompt_responses_pairs()
                     await cache.redis.rpush(QUEUE_KEY, json.dumps(responses))
         except Exception as exc:
