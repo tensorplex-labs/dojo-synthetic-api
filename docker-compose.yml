@@ -7,33 +7,43 @@ networks:
     driver: bridge
 
 services:
-  redis:
-    image: "redis/redis-stack-server:latest"
+  redis-service:
+    env_file:
+      - .env
+    image: redis/redis-stack-server:7.4.0-v0
     environment:
-      # CHANGE THE <PASSWORD> TO A PASSWORD YOU WANT TO USE
-      # the end result should look like this for example:
-      # --requirepass MyStrongPassword --user default on >MyStrongPassword ~* allcommands
-      REDIS_ARGS: "--requirepass <PASSWORD> --user default on ><PASSWORD> ~* allcommands"
-
+      # CHANGE THE PASSWORD TO A PASSWORD YOU WANT TO USE
+      REDIS_ARGS: "--requirepass ${REDIS_PASSWORD} --user ${REDIS_USERNAME} on >${REDIS_PASSWORD} ~* allcommands"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    expose:
+      - 6379
+    volumes:
+      - redis-data:/data
     ports:
       - "127.0.0.1:6379:6379"
     networks:
       - dojo-synthetic-api-network
-    volumes:
-      - redis-data:/data
 
   dojo-synthetic-api:
     build: .
     ports:
       - "127.0.0.1:5003:5003"
+    env_file:
+      - .env
     environment:
-      - REDIS_HOST=redis
+      - REDIS_HOST=redis-service
       - REDIS_PORT=6379
       - REDIS_DB=0
-      - REDIS_PASSWORD=<CHANGE TO THE PASSWORD YOU SET ABOVE PLEASE> # CHANGE
-      - REDIS_USER=default
-      - OPENROUTER_API_KEY=<PLEASE GET A OPENROUTER APIKEY> # CHANGE
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_USER=${REDIS_USERNAME}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - E2B_API_KEY=${E2B_API_KEY}
     networks:
       - dojo-synthetic-api-network
     depends_on:
-      - redis
+      redis-service:
+        condition: service_healthy
