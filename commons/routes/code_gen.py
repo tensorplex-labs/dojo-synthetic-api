@@ -1,14 +1,12 @@
-import os
-import sys
 import asyncio
-from aiofiles.os import remove as aio_remove
-from fastapi import APIRouter
-from pydantic import BaseModel, Field
+import os
 from typing import Optional
 
-sys.path.append("./")
+from aiofiles.os import remove as aio_remove
 from commons.utils.aws_s3_helper import S3Helper
 from commons.utils.sandbox import execute_code_sandboxed
+from fastapi import APIRouter
+from pydantic import BaseModel, Field
 
 code_gen_router = APIRouter(prefix="/api")
 

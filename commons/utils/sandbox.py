@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def execute_code_sandboxed(code: str) -> str:
+async def execute_code_sandboxed(code: str) -> tuple[str | None, str | None]:
     """
     Executes the code using RestrictedPython and returns the path to the generated file.
     """

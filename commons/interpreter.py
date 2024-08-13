@@ -1,15 +1,22 @@
-from enum import Enum
-from dotenv import load_dotenv
 import asyncio
-from autogen import AssistantAgent, UserProxyAgent, register_function
+from enum import Enum
+
+from autogen import (
+    AssistantAgent,
+    GroupChat,
+    GroupChatManager,
+    UserProxyAgent,
+    register_function,
+)
+from autogen.code_utils import extract_code
+from dotenv import load_dotenv
 from loguru import logger
+
 from commons.code_diagnostics import CodeDiagnostics
 from commons.llm.openai_proxy import (
     Provider,
     get_openai_kwargs,
 )
-from autogen.code_utils import extract_code
-from autogen import GroupChat, GroupChatManager
 
 load_dotenv()
 
@@ -137,18 +144,18 @@ def build_manager_prompt():
     return prompt
 
 
-def _is_termination_msg(message):
+def _is_termination_msg(message: dict):
     """Check if a message is a termination message."""
     if isinstance(message, dict):
-        message = message.get("content")
-        if message is None:
+        message_content: str | None = message.get("content")
+        if message_content is None:
             return False
-        return message.rstrip().endswith(EOS_TOKEN)
+        return message_content.rstrip().endswith(EOS_TOKEN)
 
 
 # TODO specify the model according to build_prompt_responses_pair
 def build_autogen_llm_config(
-    model_name: str = "meta-llama/llama-3-8b-instruct",
+    model_name: str = "openrouter/auto",
     provider: Provider = Provider.OPENROUTER,
 ) -> dict:
     """NOTE you must ensure that the model name goes according to the API Provider"""
@@ -306,13 +313,13 @@ async def agent_code(problem: str):
     )
     logger.info("Conversation ENDED")
 
-    # for message in reversed(chat_result.chat_history):
-    #     if message["role"] == "user" and has_code(message["content"]):
-    #         updated_code = extract_code(message["content"])
-    #         if updated_code:
-    #             logger.success("Successfully parsed code")
-    #             lang, fixed_code = updated_code[0]
-    #             return lang, fixed_code
+    for message in reversed(chat_result.chat_history):
+        if message["role"] == "user" and has_code(message["content"]):
+            updated_code = extract_code(message["content"])
+            if updated_code:
+                logger.success("Successfully parsed code")
+                lang, fixed_code = updated_code[0]
+                return lang, fixed_code
     return None, None
 
 
@@ -416,10 +423,12 @@ if __name__ == "__main__":
     #     """
 
     problem = """
-Create an interactive visualization of a Solar System featuring models of a Dodecagon-shaped spaceship, a Circle-shaped planet, an Ellipse-shaped asteroid, and a Decagon-shaped space station using only JavaScript, HTML, and CSS. The visualization must meet the following interaction requirements: 1) The spaceship should move along a path when clicked on, visualized by a moving animation. 2) The planet should change color when hovered over, indicating it's selected. 3) The asteroid should be able to be moved around the screen with a drag-and-drop functionality. 4) The space station should increase and decrease in size when double clicked, simulating a zoom in and out effect. Ensure your solution consists of separate index.html, styles.css, and script.js files. No external libraries or frameworks are allowed. Your implementation should provide a clear mental model of how these objects interact within the context of a Solar System.
+Create an interactive line plot in Python that visualizes the number of daily visitors to a website. The user should be able to interact with the plot in the following ways: 1) Use a dropdown menu to select the website for which the data should be displayed. 2) Hover over a point to display a tooltip with the exact number of visitors for that day. 3) Use a slider to change the time period for which the data is displayed (e.g., last week, last month, last year). 4) Click on a point to display a modal window with detailed information about the visitors (e.g., country, device type, etc.). The plot should initially display data for the last month. Note: - The plot should be implemented in Python. - Mock or generate sample website visitor data within the code. - The output should include main.py and requirements.txt files. - The interactive plot should be viewable in a web browser or a GUI window. - The plot should be saved to an external file.
 Note:
-- The visualization should be implemented in JavaScript with HTML and CSS.
-- Ensure that the output has both index.js and index.html files
+- The plot should be implemented in Python.
+- Any required data must be mocked or generated within the code.
+- Ensure that the output has both main.py and requirements.txt files
+- The plot should be saved to an external file.
     """
     # asyncio.run(fix_code(js_code, "openai/gpt-4-turbo"))
     asyncio.run(agent_code(problem))

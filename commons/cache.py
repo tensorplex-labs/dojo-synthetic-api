@@ -1,8 +1,8 @@
-from typing import Optional
-from redis import asyncio as aioredis
 import json
 import os
-import asyncio
+from typing import Optional
+
+from redis import asyncio as aioredis
 
 
 def build_redis_url() -> str:
@@ -50,7 +50,6 @@ class RedisCache:
 
     async def close(self):
         if self.redis:
-            self.redis.close()
             await self.redis.aclose()
 
     async def check_num_keys(self, key):
