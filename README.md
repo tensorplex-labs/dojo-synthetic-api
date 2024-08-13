@@ -1,9 +1,20 @@
 # dojo-synthetic-api
 
-## Run with uvicorn
+Before running the synthetic data api, you will need the following keys:
+
+- Openrouter (from https://openrouter.ai/)
+- E2B (from https://e2b.dev/)
+
+Copy the .env.example file to a .env file and fill in the blanks, here we will use Openrouter as our LLM API provider.
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 5003 --workers 4
+cp .env.example .env
+
+# env vars that need to be filled
+REDIS_USERNAME=
+REDIS_PASSWORD=
+OPENROUTER_API_KEY=
+E2B_API_KEY=
 ```
 
 ## Run with docker-compose
