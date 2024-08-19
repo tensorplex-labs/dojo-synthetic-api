@@ -2,7 +2,7 @@ FROM python:3.11-slim-buster as builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential gcc
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential gcc curl
 
 COPY requirements.txt ./
 
@@ -12,6 +12,10 @@ RUN pip install --upgrade pip && \
 FROM python:3.11-slim-buster
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /root/.local /root/.local
 
