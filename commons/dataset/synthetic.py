@@ -1,35 +1,33 @@
-import os
-import re
-import sys
-from enum import Enum
-import json
 import asyncio
+import json
+import os
 import random
+import re
 import textwrap
 import traceback
-import instructor
+from enum import Enum
 from typing import Dict, List, Optional, Tuple
-from openai import AsyncOpenAI
+
+import instructor
 from dotenv import load_dotenv
+from loguru import logger
+from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
     RetryError,
     stop_after_attempt,
 )
-from loguru import logger
-from commons.dataset import GENERATOR_MODELS, ANSWER_MODELS
-from commons.interpreter import fix_code
 
-sys.path.append("./")
+from commons.dataset import GENERATOR_MODELS
+from commons.interpreter import fix_code
 from commons.llm.openai_proxy import (
     Provider,
-    get_async_openai_client,
     get_instructor_client,
 )
-from commons.utils.utils import generate_simple_json
 
 load_dotenv()
+
 
 # Levels of Prompt Augmentation
 # from least to most depreciated
@@ -38,10 +36,12 @@ class AugmentationLevel(Enum):
     REMOVE_REQUIREMENTS = 1
     CHANGE_REQUIREMENTS = 2
     CHANGE_ANIMATION_OBJECT = 3
-    
+
+
 class PromptResponseMode(Enum):
     SINGLE_MODEL_MULTIPLE_AUGMENTATION = 0
     MULTIPLE_MODELS_NO_AUGMENTATION = 1
+
 
 def log_retry_info(retry_state):
     """Meant to be used with tenacity's before_sleep callback"""
@@ -106,19 +106,16 @@ def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
                 "description": "The JavaScript template",
                 "scripts": {
                     "start": "parcel ./index.html",
-                    "build": "parcel build ./index.html"
+                    "build": "parcel build ./index.html",
                 },
                 "devDependencies": {
                     "parcel": "^2.0.0",
                     "babel-eslint": "^10.1.0",
-                    "eslint": "^7.2.0"
+                    "eslint": "^7.2.0",
                 },
-                "keywords": [
-                    "css",
-                    "javascript"
-                ]
-            }, 
-            indent=4
+                "keywords": ["css", "javascript"],
+            },
+            indent=4,
         )
 
         package_json_file = FileObject(
@@ -214,7 +211,9 @@ async def generate_question(
                 previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
-        logger.error(f"Failed to generate question after {MAX_RETRIES} attempts. Switching model.")
+        logger.error(
+            f"Failed to generate question after {MAX_RETRIES} attempts. Switching model."
+        )
         used_models.add(model)
         remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
         # return if no models remaining
@@ -273,23 +272,28 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
 
 
 async def generate_answer(
-    client: AsyncOpenAI, model: str, question: str, level: AugmentationLevel, top_p: float = None, seed: float = None
+    client: AsyncOpenAI,
+    model: str,
+    question: str,
+    level: AugmentationLevel,
+    top_p: float = None,
+    seed: float = None,
 ) -> Tuple[str, Optional[CodeAnswer]]:
     """Generates a coding question answer for a given coding question."""
     question = await augment_question(client, model, question, level)
     import commons.dataset as dataset
+
     print(f"Generating code answer with model: {model}")
-    
+
     # MULTI MODEL CASE
     if top_p == None and seed == None:
         top_p = random.uniform(0.9, 1.0)
         seed = random.randint(0, 1e9)
-        
+
     # AUGMENTATIONS (TESTING ONLY)
     if level != AugmentationLevel.ORIGINAL:
         model += str(level)
-        
-    
+
     kwargs = {
         "response_model": CodeAnswer,
         "model": model,
@@ -323,7 +327,9 @@ async def generate_answer(
                 # print(f"Generated completion: {completion}")
                 return model, completion
     except RetryError:
-        logger.error(f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model.")
+        logger.error(
+            f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
+        )
         used_models.add(model)
         remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
         # return if no models remaining
@@ -368,14 +374,22 @@ def build_code_answer_prompt(question) -> str:
         )
     )
 
+
 async def augment_question(
-    client: instructor.AsyncInstructor, model: str, question: str, augmentation_level: AugmentationLevel
+    client: instructor.AsyncInstructor,
+    model: str,
+    question: str,
+    augmentation_level: AugmentationLevel,
 ):
-    """ Augment the question with the given model and augmentation level."""
-    logger.info(f"Augmenting question with model and augmentation: {model}, {augmentation_level}")
+    """Augment the question with the given model and augmentation level."""
+    logger.info(
+        f"Augmenting question with model and augmentation: {model}, {augmentation_level}"
+    )
     augmentation_prompt = ""
     if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
-        augmentation_prompt = f"Please remove any 1 requirement from the following question: {question}"
+        augmentation_prompt = (
+            f"Please remove any 1 requirement from the following question: {question}"
+        )
     elif augmentation_level == AugmentationLevel.CHANGE_REQUIREMENTS:
         augmentation_prompt = f"Please change all the requirements from the following question. Do not change the animation object or the number of requirements: {question}"
     elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
@@ -383,7 +397,6 @@ async def augment_question(
     else:
         return question
 
-      
     kwargs = {
         "response_model": CodingQuestion,
         "model": model,
@@ -402,7 +415,9 @@ async def augment_question(
     completion = await client.chat.completions.create(**kwargs)
     # logger.success(f"Got objects to visualize, completion={completion=}")
     logger.success(f"Original question: {question}")
-    logger.success(f"Augmented question and level:  {augmentation_level}, {completion.question}")
+    logger.success(
+        f"Augmented question and level:  {augmentation_level}, {completion.question}"
+    )
     return completion.question
 
 
@@ -523,7 +538,10 @@ async def build_2_prompt_responses_pairs():
     return prompt_responses_pairs
 
 
-async def build_prompt_responses_pair(generator_model=None, mode:PromptResponseMode=PromptResponseMode.MULTIPLE_MODELS_NO_AUGMENTATION):
+async def build_prompt_responses_pair(
+    generator_model=None,
+    mode: PromptResponseMode = PromptResponseMode.MULTIPLE_MODELS_NO_AUGMENTATION,
+):
     import commons.dataset as dataset
 
     client = get_instructor_client(Provider.OPENROUTER)
@@ -547,15 +565,18 @@ async def build_prompt_responses_pair(generator_model=None, mode:PromptResponseM
         # suffle augmentation levels for random selection
         augmentation_levels = list(AugmentationLevel)
         random.shuffle(augmentation_levels)
-        
+
         top_p = random.uniform(0.9, 1.0)
         seed = random.randint(0, 1e9)
-        
+
         # single model, multiple levels of augmentation
         results: List[Tuple[str, str]] = await asyncio.gather(
-            *[generate_answer(client, selected_model, prompt, level, top_p, seed) for level in augmentation_levels]
+            *[
+                generate_answer(client, selected_model, prompt, level, top_p, seed)
+                for level in augmentation_levels
+            ]
         )
-    
+
     # multiple models, no augmentation
     elif mode == PromptResponseMode.MULTIPLE_MODELS_NO_AUGMENTATION:
         num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
@@ -563,11 +584,12 @@ async def build_prompt_responses_pair(generator_model=None, mode:PromptResponseM
             answer_models, min(num_answer_models, len(answer_models))
         )
         results: List[Tuple[str, str]] = await asyncio.gather(
-            *[generate_answer(client, ans_model, prompt, AugmentationLevel.ORIGINAL) for ans_model in selected_models]
+            *[
+                generate_answer(client, ans_model, prompt, AugmentationLevel.ORIGINAL)
+                for ans_model in selected_models
+            ]
         )
 
-        
-    
     # parse code responses
     responses = []
     for model, result in results:
