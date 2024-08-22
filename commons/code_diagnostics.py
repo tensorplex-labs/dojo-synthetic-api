@@ -6,7 +6,7 @@ from typing import Annotated
 
 from loguru import logger
 
-from commons.utils.python_executor import PythonExecutor
+from commons.executor.python_executor import PythonExecutor
 
 
 class CodeDiagnostics:

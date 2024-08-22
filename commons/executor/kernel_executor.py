@@ -12,7 +12,7 @@ from tornado.escape import json_encode, url_escape
 from tornado.httpclient import HTTPRequest
 from tornado.websocket import WebSocketClientConnection, websocket_connect
 
-from commons.utils.utils import get_packages
+from commons.executor.utils import get_packages
 
 load_dotenv()
 

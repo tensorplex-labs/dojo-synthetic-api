@@ -1,5 +1,5 @@
-from commons.utils.python_executor import PythonExecutor
-from commons.utils.utils import ExecutionError
+from commons.executor.python_executor import PythonExecutor
+from commons.executor.utils import ExecutionError
 
 
 def test_code_executor():

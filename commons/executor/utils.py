@@ -2,7 +2,6 @@ import ast
 from sys import stdlib_module_names
 
 from dotenv import load_dotenv
-from pydantic import BaseModel
 
 load_dotenv()
 
@@ -11,15 +10,6 @@ class ExecutionError(Exception):
     def __init__(self, err: str, code: str) -> None:
         self.err = err
         self.code = code
-
-
-def generate_simple_json(model: BaseModel) -> dict:
-    schema = model.model_json_schema()
-    descriptions = {
-        field: schema["properties"][field]["description"]
-        for field in schema["properties"]
-    }
-    return descriptions
 
 
 def get_packages(code: str) -> set[str]:
@@ -42,9 +32,9 @@ def get_packages(code: str) -> set[str]:
 
     try:
         node_iter.visit(ast.parse(replaced_code))
-    except SyntaxError as e:
+    except SyntaxError as err:
         print("Syntax Error in", code)
-        raise ExecutionError(str(e), code)
+        raise ExecutionError(str(err), code) from err
 
     # return modules not part of the standard library
     return modules - stdlib_module_names

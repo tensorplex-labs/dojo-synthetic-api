@@ -7,8 +7,8 @@ from loguru import logger
 from pydantic import BaseModel
 
 from commons.cache import RedisCache
-from commons.dataset.prompt_builders import Language
-from commons.dataset.synthetic import (
+from commons.prompt_builders import Language
+from commons.synthetic import (
     build_prompt_responses_pair,
 )
 

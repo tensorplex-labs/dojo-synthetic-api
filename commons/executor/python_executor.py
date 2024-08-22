@@ -14,7 +14,7 @@ from e2b_code_interpreter import CodeInterpreter
 from e2b_code_interpreter.models import Result
 from loguru import logger
 
-from commons.utils.utils import ExecutionError, get_packages
+from commons.executor.utils import ExecutionError, get_packages
 
 load_dotenv()
 
