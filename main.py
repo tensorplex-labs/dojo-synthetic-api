@@ -59,7 +59,7 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
 
 
 @asynccontextmanager
-async def startup_lifespan(app: FastAPI):
+async def startup_lifespan(app: FastAPI):  # noqa: ARG001
     await generator.arun()
     await cache.connect()
     yield

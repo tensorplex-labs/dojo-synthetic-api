@@ -1,10 +1,12 @@
+import json
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+
 from commons.dataset import GENERATOR_MODELS
-import os
-import json
-import numpy as np
-import matplotlib.pyplot as plt
 
 directory = "commons/dataset/sample_synthetic_bank"
 sentences = []
@@ -13,7 +15,7 @@ for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
         
         # Read the JSON file
-        with open(file_path, "r") as file:
+        with open(file_path) as file:
             json_data = json.load(file)
             
             # Append each question-model pair to sentences list

@@ -55,7 +55,7 @@ class DiscoveryService:
 
         live_validator_urls = [
             build_url(ip, DEFAULT_PORT)
-            for ip, alive in zip(validator_ips, is_validator_axon_alive)
+            for ip, alive in zip(validator_ips, is_validator_axon_alive, strict=False)
             if alive
         ]
         self._validator_urls = live_validator_urls

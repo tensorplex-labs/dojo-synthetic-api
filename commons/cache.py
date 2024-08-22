@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Optional
 
 from redis import asyncio as aioredis
 
@@ -24,7 +23,7 @@ class RedisCache:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(RedisCache, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance.redis = None
             # loop = asyncio.get_running_loop()
             # loop.run_until_complete(cls._instance.connect())
@@ -40,7 +39,7 @@ class RedisCache:
             await self.connect()
         await self.redis.set(key, json.dumps(value))
 
-    async def get(self, key: str) -> Optional[dict]:
+    async def get(self, key: str) -> dict | None:
         if self.redis is None:
             await self.connect()
         value = await self.redis.get(key)

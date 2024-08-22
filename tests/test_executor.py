@@ -1,8 +1,5 @@
-import sys
-
-sys.path.append("./")
-from commons.utils.utils import ExecutionError
 from commons.utils.python_executor import PythonExecutor
+from commons.utils.utils import ExecutionError
 
 
 def test_code_executor():
@@ -32,9 +29,11 @@ fig.show()
         executor.main()
     except Exception as e:
         assert isinstance(e, ExecutionError)
-        
+
+
 def test_plotly_regex():
-    test_code = ["""
+    test_code = [
+        """
 import plotly.express as px
 import pandas as pd
 
@@ -47,7 +46,7 @@ df = pd.DataFrame({
 fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 fig.write_html("fig.html", include_plotlyjs='cdn')
 """,
-"""
+        """
 import plotly.express as px
 import pandas as pd
 
@@ -60,7 +59,7 @@ df = pd.DataFrame({
 fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 fig.write_html("fig.html")
 """,
-"""
+        """
 import plotly.express as px
 import pandas as pd
 
@@ -72,8 +71,9 @@ df = pd.DataFrame({
 
 fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 fig.write_html("fig.html", include_plotlyjs=False)
-"""]
-    
+""",
+    ]
+
     expected_code = """
 import plotly.express as px
 import pandas as pd

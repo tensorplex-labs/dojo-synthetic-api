@@ -1,5 +1,5 @@
-from enum import Enum
 import textwrap
+from enum import Enum
 
 
 class Language(Enum):
@@ -31,12 +31,10 @@ def build_code_answer_prompt(question: str, include_few_shot_examples: bool) -> 
 
     few_shot_examples_section = ""
     if include_few_shot_examples:
-        few_shot_examples_section = """
+        few_shot_examples_section = f"""
     Few-shot Example Outputs:
-    {few_shot_examples}
-    """.format(
-            few_shot_examples=few_shot_example_outputs()
-        )
+    {few_shot_example_outputs()}
+    """
 
     return textwrap.dedent(
         CODE_ANS_PROMPT.format(

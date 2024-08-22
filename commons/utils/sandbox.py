@@ -1,11 +1,11 @@
+import importlib
+import logging
 import os
 import uuid
-import logging
-import importlib
-from RestrictedPython import compile_restricted
-from RestrictedPython.Guards import safe_builtins
-from RestrictedPython.Eval import default_guarded_getitem
 
+from RestrictedPython import compile_restricted
+from RestrictedPython.Eval import default_guarded_getitem
+from RestrictedPython.Guards import safe_builtins
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

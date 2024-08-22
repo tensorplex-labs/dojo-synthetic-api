@@ -1,12 +1,12 @@
 import asyncio
 import os
-from typing import Optional
 
 from aiofiles.os import remove as aio_remove
-from commons.utils.aws_s3_helper import S3Helper
-from commons.utils.sandbox import execute_code_sandboxed
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
+
+from commons.utils.aws_s3_helper import S3Helper
+from commons.utils.sandbox import execute_code_sandboxed
 
 code_gen_router = APIRouter(prefix="/api")
 
@@ -17,8 +17,8 @@ class PythonCodeGenRequest(BaseModel):
 
 class PythonCodeGenResponse(BaseModel):
     success: bool
-    body: Optional[dict] = None
-    error: Optional[str] = None
+    body: dict | None = None
+    error: str | None = None
 
 
 @code_gen_router.post("/codegen-python", response_model=PythonCodeGenResponse)

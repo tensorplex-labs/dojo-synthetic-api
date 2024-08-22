@@ -1,8 +1,9 @@
-import os
 import asyncio
+import os
+
 import aiobotocore
-from dotenv import load_dotenv
 from aiobotocore.session import AioSession
+from dotenv import load_dotenv
 
 load_dotenv()
 

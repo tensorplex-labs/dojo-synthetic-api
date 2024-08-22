@@ -1,23 +1,20 @@
 import base64
-import sys
-
-sys.path.append("./")
 import json
 import os
 import re
 import time
 from collections import defaultdict
-from typing import Any, DefaultDict, List, Optional
+from typing import Any, DefaultDict, List
 
 import httpx
 import pandas as pd
 from dotenv import load_dotenv
+from e2b.sandbox.filesystem_watcher import FilesystemEvent
 from e2b_code_interpreter import CodeInterpreter
 from e2b_code_interpreter.models import Result
 from loguru import logger
 
 from commons.utils.utils import ExecutionError, get_packages
-from e2b.sandbox.filesystem_watcher import FilesystemEvent
 
 load_dotenv()
 
@@ -81,8 +78,8 @@ def run_once(f):
 class PythonExecutor:
     def __init__(
         self,
-        code: Optional[str] = None,
-        file: Optional[str] = None,
+        code: str | None = None,
+        file: str | None = None,
         debug: bool = False,
     ):
         if code is None and file is None:
@@ -94,7 +91,7 @@ class PythonExecutor:
         if code is not None:
             self.code = code
         elif file is not None:
-            with open(file, "r") as f:
+            with open(file) as f:
                 self.code = f.read()
 
         self.created_files: DefaultDict[str, Any] = defaultdict(list)
@@ -249,7 +246,7 @@ class PythonExecutor:
         watcher.add_event_listener(lambda event: download_file(event))
         watcher.start()
 
-    def handle_responses(self, results: List[Result]) -> str:
+    def handle_responses(self, results: List[Result]) -> str:  # noqa: ARG002
         if len(self.created_files) != 0:
             # print(self.created_files.keys())
             keys = list(self.created_files.keys())
@@ -260,7 +257,7 @@ class PythonExecutor:
                 "Visualisation must be saved to an external html file", self.code
             )
 
-        ## Uncomment this block to handle kernel outputs
+        # # Uncomment this block to handle kernel outputs
         # return self.handle_output(results)
 
     def handle_output(self, results: List[Result]):

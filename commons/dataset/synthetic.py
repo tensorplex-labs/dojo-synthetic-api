@@ -4,7 +4,7 @@ import os
 import random
 import re
 import traceback
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Tuple, cast
 
 import instructor
 from dotenv import load_dotenv
@@ -63,7 +63,7 @@ class CodeAnswer(BaseModel):
     installation_commands: str = Field(
         description="Terminal commands for the code to be able to run to install any third-party packages for the code to be able to run"
     )
-    additional_notes: Optional[str] = Field(
+    additional_notes: str | None = Field(
         description="Any additional notes or comments about the code solution"
     )
 
@@ -73,10 +73,10 @@ class ErrorAnswer(BaseModel):
     solution: str = Field(
         description="The solution to the problem in the code solution"
     )
-    changes: Optional[str] = Field(
+    changes: str | None = Field(
         description="Any changes that can be made to the code solution to fit the requirements"
     )
-    reasoning: Optional[str] = Field(
+    reasoning: str | None = Field(
         description="The reasoning behind the solution to the problem in the code solution"
     )
 
@@ -199,7 +199,7 @@ used_models = set()
 
 async def generate_question(
     client: instructor.AsyncInstructor, model: str, language: Language
-) -> tuple[Optional[str], Optional[Dict]]:
+) -> tuple[str | None, Dict | None]:
     logger.info(f"Generating question with model: {model}")
 
     MAX_RETRIES = 5
@@ -281,7 +281,7 @@ async def generate_answer(
     langauge: Language,
     err: str | None = None,
     code: str | None = None,
-) -> Tuple[str, Optional[CodeAnswer]]:
+) -> Tuple[str, CodeAnswer | None]:
     """Generates a coding question answer for a given coding question."""
     import commons.dataset as dataset
 

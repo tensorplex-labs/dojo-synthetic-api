@@ -1,10 +1,10 @@
 import os
-import instructor
 
-from strenum import StrEnum
+import instructor
 from dotenv import load_dotenv
-from openai import AsyncOpenAI, OpenAI
 from instructor import Mode
+from openai import AsyncOpenAI, OpenAI
+from strenum import StrEnum
 
 load_dotenv()
 # import instructor

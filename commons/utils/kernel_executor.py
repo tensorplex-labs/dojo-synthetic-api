@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from datetime import datetime
-from typing import Dict, Iterable, List, Literal, Optional, Union, cast
+from typing import Dict, Iterable, List, Literal, cast
 from uuid import uuid4
 
 import httpx
@@ -83,16 +83,16 @@ class Message(BaseModel):
     msg_type: str
     parent_header: Dict[str, str]
     metadata: Dict
-    content: Union[
-        ExecutionStateContent,
-        ExecutionRequestContent,
-        StreamContent,
-        ShellContent,
-        CodeResult,
-        ErrorContent,
-        CommContent,
-        CommMsg,
-    ]
+    content: (
+        ExecutionStateContent
+        | ExecutionRequestContent
+        | StreamContent
+        | ShellContent
+        | CodeResult
+        | ErrorContent
+        | CommContent
+        | CommMsg
+    )
     channel: Literal["iopub", "shell"]
 
 
@@ -115,9 +115,7 @@ class PythonExecutor:
         self.config = config
 
     async def _upgrade_request(self) -> HTTPRequest:
-        url = "{ws_url}/api/kernels/{kernel_id}/channels".format(
-            ws_url=self.config.ws_url, kernel_id=url_escape(self.kernel_id)
-        )
+        url = f"{self.config.ws_url}/api/kernels/{url_escape(self.kernel_id)}/channels"
         request = HTTPRequest(url, method="GET")
         return request
 
@@ -283,7 +281,7 @@ class GatewayClient:
         self.config = Config()
 
     async def get_executor(
-        self, env_vars: Optional[Dict[str, str]] = None
+        self, env_vars: Dict[str, str] | None = None
     ) -> PythonExecutor:
         request_body: Dict[str, str | Dict[str, str]] = {"name": "python"}
         if env_vars is not None:
@@ -296,15 +294,15 @@ class GatewayClient:
                 response = await client.request(
                     "POST", "/api/kernels", json=request_body
                 )
-            except httpx.ConnectError:
-                raise Exception("Is docker running?")
+            except httpx.ConnectError as err:
+                raise Exception("Is docker running?") from err
             kernel_info = response.json()
 
         try:
             kernel_id = kernel_info["id"]
-        except KeyError:
+        except KeyError as err:
             print(kernel_info)
-            raise Exception("Kernel ID not found in response")
+            raise Exception("Kernel ID not found in response") from err
 
         return PythonExecutor(kernel_id, self.config)
 
@@ -314,7 +312,7 @@ if __name__ == "__main__":
     env_vars = {"KERNEL_USERNAME": "jovyan"}
     executor = asyncio.run(client.get_executor())
 
-    with open("plot_test.py", "r") as file:
+    with open("plot_test.py") as file:
         code = file.read()
 
     htmls = asyncio.run(executor.execute_code(code))

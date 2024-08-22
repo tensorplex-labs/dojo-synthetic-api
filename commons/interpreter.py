@@ -31,7 +31,7 @@ UNDERSTOOD_PROMPT = "Yes I have understood the task, and I am ready to plan."
 ACCEPTED_PROMPT = (
     "Yes the code under review is accepted, as it meets the acceptance criteria."
 )
-SDLC_PROMPT = """
+SDLC_PROMPT = f"""
 The following is the flow of a software engineer completing a coding problem.
 There are certain checkpoints in the process where the software engineer may
 need to repeat actions up till the checkpoint in order to successfully complete the task.
@@ -45,7 +45,7 @@ need to repeat actions up till the checkpoint in order to successfully complete 
 - Software Engineer may also generate a plan and list of requirements to complete the task.
 
 Checkpoint 1:
-- Software Engineer: Understood the task? Reply with "{checkpoint_1}" to proceed to the next step, otherwise continue to seek understanding and clarification.
+- Software Engineer: Understood the task? Reply with "{UNDERSTOOD_PROMPT}" to proceed to the next step, otherwise continue to seek understanding and clarification.
 
 3. Planning (task_id: planning)
 - Software Engineer decides on a priority and a list of tasks to complete the coding task.
@@ -70,23 +70,17 @@ Checkpoint 1:
 - The Engineering Manager may highlight any issues to the Software Engineer to address before the code is accepted and merged.
 
 Checkpoint 2:
-- Engineering manager: Code review completed? Reply with "{checkpoint_2}" to proceed to the next step, otherwise continue to review the code.
+- Engineering manager: Code review completed? Reply with "{ACCEPTED_PROMPT}" to proceed to the next step, otherwise continue to review the code.
 
 8. Acceptance (task_id: acceptance)
 - Engineering Manager accepts the code, and no further coding is required by the Software Engineer.
 
 
-""".format(
-    checkpoint_1=UNDERSTOOD_PROMPT,
-    checkpoint_2=ACCEPTED_PROMPT,
-)
+"""
 
 
 def build_flow_and_role_prompt(role: str):
-    return "Based on your understanding of the software development flow outlined below, you are the {role}.\n\nSoftware Development Flow:\n{dev_flow}".format(
-        role=role,
-        dev_flow=SDLC_PROMPT,
-    )
+    return f"Based on your understanding of the software development flow outlined below, you are the {role}.\n\nSoftware Development Flow:\n{SDLC_PROMPT}"
 
 
 def build_swe_prompt(problem: str):
@@ -209,7 +203,7 @@ def has_code(message):
     if not message:
         return False
     code_blocks = extract_code(message)
-    for lang, code in code_blocks:
+    for lang, _ in code_blocks:
         if lang.lower() in ["bash", "shell", "sh", "python", "javascript"]:
             return True
     return False
