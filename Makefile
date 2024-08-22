@@ -3,11 +3,11 @@ PRECOMMIT_VERSION="3.7.1"
 .PHONY: hooks
 
 hooks:
-	@echo "Grabbing pre-commit version ${PRECOMMIT_VERSION} and installing pre-commit hooks"
-	if [ ! -f pre-commit.pyz ]; then \
-		wget -O pre-commit.pyz https://github.com/pre-commit/pre-commit/releases/download/v${PRECOMMIT_VERSION}/pre-commit-${PRECOMMIT_VERSION}.pyz; \
+	if ! command -v pre-commit >/dev/null 2>&1; then \
+		echo "Install pre-commit first"; \
+		exit 1; \
 	fi
-	python3 pre-commit.pyz clean
-	python3 pre-commit.pyz uninstall --hook-type pre-commit --hook-type pre-push
-	python3 pre-commit.pyz gc
-	python3 pre-commit.pyz install --hook-type pre-commit --hook-type pre-push
+	pre-commit clean
+	pre-commit uninstall --hook-type pre-commit --hook-type pre-push
+	pre-commit gc
+	pre-commit install --hook-type pre-commit --hook-type pre-push
