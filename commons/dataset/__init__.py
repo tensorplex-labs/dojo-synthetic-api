@@ -1,15 +1,7 @@
-__version__ = "0.0.1"
-version_split = __version__.split(".")
-__spec_version__ = (
-    (1000 * int(version_split[0]))
-    + (10 * int(version_split[1]))
-    + (1 * int(version_split[2]))
-)
-
 VALIDATOR_MIN_STAKE = 20_000
 
 GENERATOR_MODELS = [
-    # COMMENTED OUT THESE MODELS BECUASE NOT WORKING / NOT STABLE
+    # COMMENTED OUT THESE MODELS BECAUSE NOT WORKING / NOT STABLE
     # "openai/gpt-3.5-turbo",
     # "openai/gpt-3.5-turbo-0125",
     # "openai/gpt-3.5-turbo-1106",

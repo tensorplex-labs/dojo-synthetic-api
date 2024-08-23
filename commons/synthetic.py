@@ -2,9 +2,8 @@ import asyncio
 import json
 import os
 import random
-import re
 import traceback
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Tuple, cast
 
 import instructor
 from dotenv import load_dotenv
@@ -18,7 +17,13 @@ from tenacity import (
 )
 
 from commons.dataset import GENERATOR_MODELS
-from commons.dataset.prompt_builders import (
+from commons.executor.python_executor import PythonExecutor
+from commons.executor.utils import ExecutionError
+from commons.llm.openai_proxy import (
+    Provider,
+    get_instructor_client,
+)
+from commons.prompt_builders import (
     Language,
     additional_notes_for_question_prompt,
     build_code_answer_prompt,
@@ -26,12 +31,6 @@ from commons.dataset.prompt_builders import (
     build_python_fix_prompt,
     build_python_review_prompt,
 )
-from commons.llm.openai_proxy import (
-    Provider,
-    get_instructor_client,
-)
-from commons.utils.python_executor import PythonExecutor
-from commons.utils.utils import ExecutionError
 
 load_dotenv()
 
@@ -63,7 +62,7 @@ class CodeAnswer(BaseModel):
     installation_commands: str = Field(
         description="Terminal commands for the code to be able to run to install any third-party packages for the code to be able to run"
     )
-    additional_notes: Optional[str] = Field(
+    additional_notes: str | None = Field(
         description="Any additional notes or comments about the code solution"
     )
 
@@ -73,10 +72,10 @@ class ErrorAnswer(BaseModel):
     solution: str = Field(
         description="The solution to the problem in the code solution"
     )
-    changes: Optional[str] = Field(
+    changes: str | None = Field(
         description="Any changes that can be made to the code solution to fit the requirements"
     )
-    reasoning: Optional[str] = Field(
+    reasoning: str | None = Field(
         description="The reasoning behind the solution to the problem in the code solution"
     )
 
@@ -86,15 +85,6 @@ async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
     result_object = await append_codesandbox_files(result_object)
     # result_object = escape_double_quotes_in_files(result_object)
     return result_object
-
-
-def escape_double_quotes_in_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    """Escapes double quotes in the content of each file in the CodeAnswer object."""
-    for file in codeanswer_object.files:
-        if "content" in file.model_dump():
-            file.content = re.sub(r'(?<!\\)"', r"\"", file.content)
-            file.content = file.content.replace(r"\'", r"'")
-    return codeanswer_object
 
 
 def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
@@ -199,7 +189,7 @@ used_models = set()
 
 async def generate_question(
     client: instructor.AsyncInstructor, model: str, language: Language
-) -> tuple[Optional[str], Optional[Dict]]:
+) -> tuple[str | None, Dict | None]:
     logger.info(f"Generating question with model: {model}")
 
     MAX_RETRIES = 5
@@ -278,10 +268,10 @@ async def generate_answer(
     client: AsyncOpenAI | instructor.AsyncInstructor,
     model: str,
     question: str,
-    langauge: Language,
+    language: Language,
     err: str | None = None,
     code: str | None = None,
-) -> Tuple[str, Optional[CodeAnswer]]:
+) -> Tuple[str, CodeAnswer | None]:
     """Generates a coding question answer for a given coding question."""
     import commons.dataset as dataset
 
@@ -297,7 +287,7 @@ async def generate_answer(
         {
             "role": "user",
             "content": build_code_answer_prompt(
-                question, langauge.value == Language.JAVASCRIPT
+                question, language.value == Language.JAVASCRIPT
             ),
         },
     ]
@@ -342,7 +332,7 @@ async def generate_answer(
             logger.error("No answer models left to try.")
             return model, None
         new_model = random.choice(remaining_models)
-        return await generate_answer(client, new_model, question, langauge)
+        return await generate_answer(client, new_model, question, language)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
 

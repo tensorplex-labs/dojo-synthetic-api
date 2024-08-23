@@ -1,5 +1,5 @@
-from enum import Enum
 import textwrap
+from enum import Enum
 
 
 class Language(Enum):
@@ -20,7 +20,7 @@ def build_code_answer_prompt(question: str, include_few_shot_examples: bool) -> 
     - Remember to include installation commands for any dependencies required for the code to run
     - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
     - The provided code solution should be directly executable without requiring modifications to run successfully.
-    
+
     {few_shot_examples_section}
 
     Question:
@@ -31,12 +31,10 @@ def build_code_answer_prompt(question: str, include_few_shot_examples: bool) -> 
 
     few_shot_examples_section = ""
     if include_few_shot_examples:
-        few_shot_examples_section = """
+        few_shot_examples_section = f"""
     Few-shot Example Outputs:
-    {few_shot_examples}
-    """.format(
-            few_shot_examples=few_shot_example_outputs()
-        )
+    {few_shot_example_outputs()}
+    """
 
     return textwrap.dedent(
         CODE_ANS_PROMPT.format(
@@ -118,16 +116,16 @@ def build_python_review_prompt(question: str, code: str, error: str):
     You will be provided code along with the error message it causes.
     Your task is to find out if the given code fits the requirements of the task and if not, provide a solution to the software developer.
     You must present your reasoning for the error and the solution as shown in the example.
-    
+
     Original Task:
     {question}
-    
+
     Code:
     {code}
-    
+
     Error:
     {err}
-    
+
     Step 1: Analyze the original task requirements.
     - Identify the key requirements and constraints mentioned in the task description.
     - List the main objectives that the code should achieve.

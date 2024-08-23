@@ -1,16 +1,16 @@
 import asyncio
 import json
 import random
-from typing import Optional
 
-from commons.cache import RedisCache
-from commons.dataset.prompt_builders import Language
-from commons.dataset.synthetic import (
-    build_prompt_responses_pair,
-)
 from fastapi import APIRouter, BackgroundTasks
 from loguru import logger
 from pydantic import BaseModel
+
+from commons.cache import RedisCache
+from commons.prompt_builders import Language
+from commons.synthetic import (
+    build_prompt_responses_pair,
+)
 
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
@@ -21,8 +21,8 @@ QUEUE_KEY = "synthetic:queue"
 
 class SyntheticGenResponse(BaseModel):
     success: bool
-    body: Optional[dict] = None
-    error: Optional[str] = None
+    body: dict | None = None
+    error: str | None = None
 
 
 @synthetic_gen_router.get("/synthetic-gen")
@@ -56,7 +56,7 @@ class SyntheticGenerator:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(SyntheticGenerator, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def run(self):
