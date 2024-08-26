@@ -621,7 +621,9 @@ async def test_generate_questions(language: Language):
 
 async def main():
     language = Language("Python")
-    responses = await build_prompt_responses_pair(language=language)
+    responses = await build_prompt_responses_pair(
+        language=language, response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
+    )
     with open("output.json", "w") as f:
         json.dump(responses, f, indent=4)
 
