@@ -3,6 +3,7 @@ import json
 import os
 import random
 import traceback
+import uuid
 from enum import Enum
 from typing import Dict, List, Tuple, cast
 
@@ -255,7 +256,9 @@ async def generate_question(
                     "top_p": random.uniform(0.9, 1.0),
                     "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
                 }
-                completion = await client.chat.completions.create(**kwargs)
+                completion: CodingQuestion = await client.chat.completions.create(
+                    **kwargs
+                )
                 coding_question = completion.question
                 coding_question = additional_notes_for_question_prompt(
                     coding_question, language
@@ -433,7 +436,7 @@ async def generate_answer_with_feedback(
     return model, None
 
 
-def get_model_ids(response_strategy: ResponseStrategy) -> str | list[str]:
+def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]:
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
     # randomly sampled from pool of models
     if response_strategy == ResponseStrategy.NO_AUGMENTATION:
@@ -506,25 +509,15 @@ async def build_prompt_responses_pair(
     global used_models
 
     client = get_instructor_client(Provider.OPENROUTER)
-    model_choice = random.choice(GENERATOR_MODELS)
+    question_model = random.choice(GENERATOR_MODELS)
     used_models = set()
-    question_prompt, kwargs = await generate_question(client, model_choice, language)
-    if not question_prompt or not kwargs:
-        logger.info("Failed to generate question...")
-        raise RuntimeError("Error generating prompt-response pair")
 
-    used_models = set()
     tasks = []
-    selected_models = get_model_ids(response_strategy)
+    answer_models = get_answer_model_ids(response_strategy)
 
-    async def generate_response(
-        model: str, question: str, augmentation_level: AugmentationLevel | None = None
+    async def _generate_response(
+        model: str, question: str, level: AugmentationLevel | None = None
     ):
-        if augmentation_level:
-            question = await augment_question(
-                client, model, question, augmentation_level
-            )
-
         if language == Language.JAVASCRIPT:
             model, result = await generate_answer(client, model, question, language)
         elif language == Language.PYTHON:
@@ -532,33 +525,34 @@ async def build_prompt_responses_pair(
                 client, model, question, language
             )
 
-        return model, result, augmentation_level
+        return model, result, level
+
+    question_prompt, _ = await generate_question(client, question_model, language)
 
     if response_strategy == ResponseStrategy.NO_AUGMENTATION:
-        for model in selected_models:
-            tasks.append(generate_response(model, question_prompt))
+        for model in answer_models:
+            tasks.append(_generate_response(model, question_prompt))
     elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
+        assert type(answer_models) is str
+
         for level in AugmentationLevel:
-            tasks.append(generate_response(selected_models, question_prompt, level))
+            augmented_question = await augment_question(
+                client, question_model, question_prompt, level
+            )
+            tasks.append(_generate_response(answer_models, augmented_question, level))
 
     results: list[
-        tuple[str, CodeAnswer, AugmentationLevel | None]
+        tuple[str, CodeAnswer | None, AugmentationLevel | None]
     ] = await asyncio.gather(*tasks)
 
     responses = []
-    for model, result, _ in results:
+    synthetic_ground_truth: dict[str, int] = {}
+    for model, result, level in results:
         if not result:
             raise RuntimeError("Error generating prompt-response pair")
 
         if language == Language.JAVASCRIPT:
             result = await parse_code_response(result)
-        # supported_languages = ["javascript", "html"]
-        # for i, file in enumerate(result.files):
-        #     if file.language.lower() not in supported_languages:
-        #         continue
-        #     lang, fixed_code = await fix_code(file.content, model)
-        #     if fixed_code:
-        #         result.files[i].content = fixed_code
 
         formatted_files = [
             {
@@ -568,6 +562,7 @@ async def build_prompt_responses_pair(
             }
             for file in result.files
         ]
+        completion_id = str(uuid.uuid4())
         responses.append(
             {
                 "model": model,
@@ -576,24 +571,18 @@ async def build_prompt_responses_pair(
                     "installation_commands": result.installation_commands,
                     "additional_notes": result.additional_notes,
                 },
+                "cid": completion_id,
             }
         )
 
-    # based on the augmentation levels, provide a ground truth ranking which is a map of model id to augmentation levels
-    augmented_ground_truth: dict[str, dict] = {
-        model: {
-            "name": augmentation_level.name,
-            "rank": AugmentationLevel[augmentation_level.name].value,
-        }
-        if augmentation_level
-        else {}
-        for model, _, augmentation_level in results
-    }
+        if level:
+            logger.debug(f"{model=},{completion_id=}, {level=}")
+            synthetic_ground_truth[completion_id] = level.value
 
     return {
         "prompt": question_prompt,
         "responses": responses,
-        "synthetic_ground_truth": augmented_ground_truth,
+        "ground_truth": synthetic_ground_truth,
     }
 
 
