@@ -1,9 +1,11 @@
+import sys
 from contextlib import asynccontextmanager
 from ipaddress import ip_address, ip_network
 
 import uvicorn
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -11,6 +13,10 @@ from starlette.responses import Response
 from commons.routes.synthetic_gen import cache, generator, synthetic_gen_router
 
 MAX_CONTENT_LENGTH = 1 * 1024 * 1024
+
+# Remove default logger
+logger.remove()
+logger.add(sys.stderr, level="DEBUG", backtrace=True, diagnose=True)
 
 
 class IPFilterMiddleware(BaseHTTPMiddleware):
