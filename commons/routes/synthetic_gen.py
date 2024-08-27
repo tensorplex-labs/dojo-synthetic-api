@@ -1,6 +1,5 @@
 import asyncio
 import json
-import random
 
 from fastapi import APIRouter, BackgroundTasks
 from loguru import logger
@@ -36,7 +35,7 @@ async def execute_python_code(background_tasks: BackgroundTasks):
             except json.JSONDecodeError:
                 result = {}
         else:
-            language = random.choice(list(Language))
+            language = Language.JAVASCRIPT
             result = await build_prompt_responses_pair(language)
 
         background_tasks.add_task(generator.arun)
@@ -92,7 +91,7 @@ class SyntheticGenerator:
                 num_keys = await cache.redis.llen(QUEUE_KEY)
                 if num_keys < TARGET_SIZE:
                     # TODO restore once done with testing agent
-                    language = random.choice(list(Language))
+                    language = Language.JAVASCRIPT
                     responses = await build_prompt_responses_pair(language)
                     # responses = await build_2_prompt_responses_pairs()
                     await cache.redis.rpush(QUEUE_KEY, json.dumps(responses))
