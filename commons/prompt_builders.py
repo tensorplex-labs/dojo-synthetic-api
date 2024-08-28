@@ -107,7 +107,10 @@ def additional_notes_for_question_prompt(prompt: str, language: Language) -> str
     else:
         raise ValueError(f"Unsupported language: {language}")
 
-    return prompt + textwrap.dedent(ADDITIONAL_NOTES)
+    additional_notes = textwrap.dedent(ADDITIONAL_NOTES)
+    if prompt.endswith(additional_notes):
+        return prompt
+    return prompt + additional_notes
 
 
 def build_python_review_prompt(question: str, code: str, error: str):

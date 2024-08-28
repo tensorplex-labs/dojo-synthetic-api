@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from commons.cache import RedisCache
 from commons.prompt_builders import Language
 from commons.synthetic import (
+    ResponseStrategy,
     build_prompt_responses_pair,
 )
 
@@ -36,7 +37,9 @@ async def execute_python_code(background_tasks: BackgroundTasks):
                 result = {}
         else:
             language = Language.JAVASCRIPT
-            result = await build_prompt_responses_pair(language)
+            result = await build_prompt_responses_pair(
+                language, response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
+            )
 
         background_tasks.add_task(generator.arun)
 
@@ -90,13 +93,15 @@ class SyntheticGenerator:
             async with self.semaphore:
                 num_keys = await cache.redis.llen(QUEUE_KEY)
                 if num_keys < TARGET_SIZE:
-                    # TODO restore once done with testing agent
                     language = Language.JAVASCRIPT
-                    responses = await build_prompt_responses_pair(language)
+                    responses = await build_prompt_responses_pair(
+                        language,
+                        response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE,
+                    )
                     # responses = await build_2_prompt_responses_pairs()
                     await cache.redis.rpush(QUEUE_KEY, json.dumps(responses))
         except Exception as exc:
-            logger.error(f"ERROR: {exc}")
+            logger.opt(exception=True).error(f"ERROR: {exc}")
         finally:
             self.todo.task_done()
 

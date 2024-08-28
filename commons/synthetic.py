@@ -3,6 +3,8 @@ import json
 import os
 import random
 import traceback
+import uuid
+from enum import Enum
 from typing import Dict, List, Tuple, cast
 
 import instructor
@@ -16,7 +18,7 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.dataset import GENERATOR_MODELS
+from commons.dataset import ANSWER_MODELS, GENERATOR_MODELS
 from commons.executor.python_executor import PythonExecutor
 from commons.executor.utils import ExecutionError
 from commons.llm.openai_proxy import (
@@ -33,6 +35,10 @@ from commons.prompt_builders import (
 )
 
 load_dotenv()
+
+
+# define some types
+LlmClient = AsyncOpenAI | instructor.AsyncInstructor
 
 
 def log_retry_info(retry_state):
@@ -78,6 +84,18 @@ class ErrorAnswer(BaseModel):
     reasoning: str | None = Field(
         description="The reasoning behind the solution to the problem in the code solution"
     )
+
+
+class AugmentationLevel(Enum):
+    ORIGINAL = 0
+    REMOVE_REQUIREMENTS = 1
+    CHANGE_REQUIREMENTS = 2
+    CHANGE_ANIMATION_OBJECT = 3
+
+
+class ResponseStrategy(Enum):
+    AUGMENTATION_DETERIORIATE = 0
+    NO_AUGMENTATION = 1
 
 
 async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
@@ -156,7 +174,7 @@ async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
 
 
 async def _generate_objects_to_visualize(
-    client: instructor.AsyncInstructor, model: str, prev_used_objects: list[str]
+    client: LlmClient, model: str, prev_used_objects: list[str]
 ):
     class PossibleObjects(BaseModel):
         objects: List[str] = Field(description="List of objects to visualize")
@@ -238,7 +256,9 @@ async def generate_question(
                     "top_p": random.uniform(0.9, 1.0),
                     "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
                 }
-                completion = await client.chat.completions.create(**kwargs)
+                completion: CodingQuestion = await client.chat.completions.create(
+                    **kwargs
+                )
                 coding_question = completion.question
                 coding_question = additional_notes_for_question_prompt(
                     coding_question, language
@@ -265,7 +285,7 @@ async def generate_question(
 
 
 async def generate_answer(
-    client: AsyncOpenAI | instructor.AsyncInstructor,
+    client: LlmClient,
     model: str,
     question: str,
     language: Language,
@@ -340,7 +360,7 @@ async def generate_answer(
 
 
 async def generate_python_fix_prompt(
-    client: AsyncOpenAI | instructor.AsyncInstructor,
+    client: LlmClient,
     model: str,
     code: str,
     err: str,
@@ -383,7 +403,7 @@ async def generate_python_fix_prompt(
 
 
 async def generate_answer_with_feedback(
-    client: AsyncOpenAI | instructor.AsyncInstructor,
+    client: LlmClient,
     model: str,
     question: str,
     language: Language,
@@ -416,65 +436,123 @@ async def generate_answer_with_feedback(
     return model, None
 
 
-async def build_prompt_responses_pair(language: Language, generator_model=None):
-    import commons.dataset as dataset
+def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]:
+    # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
+    # randomly sampled from pool of models
+    if response_strategy == ResponseStrategy.NO_AUGMENTATION:
+        num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
+        selected_models = random.sample(
+            ANSWER_MODELS, min(num_answer_models, len(ANSWER_MODELS))
+        )
 
+        # check if enough answer models are specified
+        if len(ANSWER_MODELS) < num_answer_models:
+            logger.warning(
+                f"Number of answer models is less than the specified number of models: {num_answer_models}"
+            )
+            raise RuntimeError("Error generating prompt-response pair")
+        return selected_models
+
+    elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
+        return random.choice(ANSWER_MODELS)
+
+
+async def augment_question(
+    client: LlmClient,
+    model: str,
+    question: str,
+    augmentation_level: AugmentationLevel,
+) -> str:
+    """Augment the question with the given model and augmentation level."""
+    logger.info(
+        f"Augmenting question with model and augmentation: {model}, {augmentation_level}"
+    )
+    augmentation_prompt = ""
+    if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
+        augmentation_prompt = (
+            f"You must remove any 1 requirement from the following question: {question}"
+        )
+    elif augmentation_level == AugmentationLevel.CHANGE_REQUIREMENTS:
+        augmentation_prompt = f"You must change all the requirements from the following question. Do not change the animation object or the number of requirements: {question}"
+    elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
+        augmentation_prompt = f"You must change the animation object from the following question to something else such that rest of the question does not need to be modified. Make sure the new object does not look like the previous object: {question}"
+    elif augmentation_level == AugmentationLevel.ORIGINAL:
+        return question
+
+    kwargs = {
+        "response_model": CodingQuestion,
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": augmentation_prompt,
+            }
+        ],
+        "temperature": random.uniform(0.0, 0.2),
+        "max_tokens": 8192,
+        "top_p": 0.9,
+    }
+
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, int(1e9))  # needed for OpenAI
+    completion: CodingQuestion = await client.chat.completions.create(**kwargs)
+    logger.success(f"Original question: {question}")
+    logger.success(
+        f"Augmented question and level:  {augmentation_level}, {completion.question}"
+    )
+    return completion.question
+
+
+async def build_prompt_responses_pair(
+    language: Language, response_strategy: ResponseStrategy
+):
     global used_models
 
     client = get_instructor_client(Provider.OPENROUTER)
-    # use these models because we can specify seed
-    model_choice = generator_model or random.choice(dataset.GENERATOR_MODELS)
-    # initialise to empty set
+    question_model = random.choice(GENERATOR_MODELS)
     used_models = set()
-    prompt, kwargs = await generate_question(client, model_choice, language)
-    if not prompt or not kwargs:
-        logger.info("Failed to generate question...")
-        raise RuntimeError("Error generating prompt-response pair")
-        # return None
 
-    # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
-    # randomly sampled from pool of models
-    answer_models = dataset.ANSWER_MODELS
-    num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
-    selected_models = random.sample(
-        answer_models, min(num_answer_models, len(answer_models))
-    )
-
-    # check if enough answer models are specified
-    if len(answer_models) < num_answer_models:
-        logger.warning(
-            f"Number of answer models is less than the specified number of models: {num_answer_models}"
-        )
-        raise RuntimeError("Error generating prompt-response pair")
-
-    # initialise to empty set
-    used_models = set()
     tasks = []
-    for ans_model in selected_models:
+    answer_models = get_answer_model_ids(response_strategy)
+
+    async def _generate_response(
+        model: str, question: str, level: AugmentationLevel | None = None
+    ):
         if language == Language.JAVASCRIPT:
-            tasks.append(generate_answer(client, ans_model, prompt, language))
+            model, result = await generate_answer(client, model, question, language)
         elif language == Language.PYTHON:
-            tasks.append(
-                generate_answer_with_feedback(client, ans_model, prompt, language)
+            model, result = await generate_answer_with_feedback(
+                client, model, question, language
             )
 
-    results: List[Tuple[str, CodeAnswer]] = await asyncio.gather(*tasks)
+        return model, result, level
 
-    # parse code responses
+    question_prompt, _ = await generate_question(client, question_model, language)
+
+    if response_strategy == ResponseStrategy.NO_AUGMENTATION:
+        for model in answer_models:
+            tasks.append(_generate_response(model, question_prompt))
+    elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
+        assert type(answer_models) is str
+
+        for level in AugmentationLevel:
+            augmented_question = await augment_question(
+                client, question_model, question_prompt, level
+            )
+            tasks.append(_generate_response(answer_models, augmented_question, level))
+
+    results: list[
+        tuple[str, CodeAnswer | None, AugmentationLevel | None]
+    ] = await asyncio.gather(*tasks)
+
     responses = []
-    for model, result in results:
+    synthetic_ground_truth: dict[str, int] = {}
+    for model, result, level in results:
         if not result:
             raise RuntimeError("Error generating prompt-response pair")
 
         if language == Language.JAVASCRIPT:
             result = await parse_code_response(result)
-        # supported_languages = ["javascript", "html"]
-        # for i, file in enumerate(result.files):
-        #     if file.language.lower() not in supported_languages:
-        #         continue
-        #     lang, fixed_code = await fix_code(file.content, model)
-        #     if fixed_code:
-        #         result.files[i].content = fixed_code
 
         formatted_files = [
             {
@@ -484,6 +562,7 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
             }
             for file in result.files
         ]
+        completion_id = str(uuid.uuid4())
         responses.append(
             {
                 "model": model,
@@ -492,10 +571,19 @@ async def build_prompt_responses_pair(language: Language, generator_model=None):
                     "installation_commands": result.installation_commands,
                     "additional_notes": result.additional_notes,
                 },
+                "cid": completion_id,
             }
         )
 
-    return {"prompt": prompt, "responses": responses}
+        if level:
+            logger.debug(f"{model=},{completion_id=}, {level=}")
+            synthetic_ground_truth[completion_id] = level.value
+
+    return {
+        "prompt": question_prompt,
+        "responses": responses,
+        "ground_truth": synthetic_ground_truth,
+    }
 
 
 async def test_generate_questions(language: Language):
@@ -522,7 +610,9 @@ async def test_generate_questions(language: Language):
 
 async def main():
     language = Language("Python")
-    responses = await build_prompt_responses_pair(language=language)
+    responses = await build_prompt_responses_pair(
+        language=language, response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
+    )
     with open("output.json", "w") as f:
         json.dump(responses, f, indent=4)
 
