@@ -4,10 +4,10 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential gcc curl
 
-COPY requirements.txt ./
+COPY pyproject.toml ./
 
 RUN pip install --upgrade pip && \
-    pip install --user -r requirements.txt
+    pip install --user .
 
 FROM python:3.11-slim-buster
 
