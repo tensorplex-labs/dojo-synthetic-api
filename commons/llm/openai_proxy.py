@@ -48,11 +48,5 @@ def get_instructor_client(provider: Provider):
 
 
 def get_sync_openai_client(provider: Provider):
-    # known_providers = [provider.value for provider in Provider]
-    # TODO @dev use instructor when bittensor migrates to pydantic v2
-    # if provider in known_providers:
-    #     return instructor.apatch(
-    #         AsyncOpenAI(**get_openai_kwargs(provider)), mode=instructor.Mode.MD_JSON
-    #     )
     kwargs = get_openai_kwargs(provider)
     return OpenAI(api_key=kwargs["api_key"], base_url=kwargs["base_url"])

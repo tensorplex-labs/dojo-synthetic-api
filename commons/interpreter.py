@@ -12,7 +12,7 @@ from autogen.code_utils import extract_code
 from dotenv import load_dotenv
 from loguru import logger
 
-from commons.code_diagnostics import CodeDiagnostics
+from commons.diagnostics.lsp import CodeDiagnostics
 from commons.llm.openai_proxy import (
     Provider,
     get_openai_kwargs,

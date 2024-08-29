@@ -5,7 +5,7 @@ import random
 import traceback
 import uuid
 from enum import Enum
-from typing import Dict, List, Tuple, cast
+from typing import cast
 
 import instructor
 from dotenv import load_dotenv
@@ -18,7 +18,7 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.dataset import ANSWER_MODELS, GENERATOR_MODELS
+from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.executor.python_executor import PythonExecutor
 from commons.executor.utils import ExecutionError
 from commons.llm.openai_proxy import (
@@ -62,7 +62,7 @@ class FileObject(BaseModel):
 
 
 class CodeAnswer(BaseModel):
-    files: List[FileObject] = Field(
+    files: list[FileObject] = Field(
         description="Array of FileObject, that are part of the code solution. Must include index.html, and index.js a Javascript solution"
     )
     installation_commands: str = Field(
@@ -177,7 +177,7 @@ async def _generate_objects_to_visualize(
     client: LlmClient, model: str, prev_used_objects: list[str]
 ):
     class PossibleObjects(BaseModel):
-        objects: List[str] = Field(description="List of objects to visualize")
+        objects: list[str] = Field(description="List of objects to visualize")
 
     logger.info(f"Generating objects to use for question with model: {model}")
     kwargs = {
@@ -207,7 +207,7 @@ used_models = set()
 
 async def generate_question(
     client: instructor.AsyncInstructor, model: str, language: Language
-) -> tuple[str | None, Dict | None]:
+) -> tuple[str | None, dict | None]:
     logger.info(f"Generating question with model: {model}")
 
     MAX_RETRIES = 5
@@ -291,9 +291,9 @@ async def generate_answer(
     language: Language,
     err: str | None = None,
     code: str | None = None,
-) -> Tuple[str, CodeAnswer | None]:
+) -> tuple[str, CodeAnswer | None]:
     """Generates a coding question answer for a given coding question."""
-    import commons.dataset as dataset
+    import commons.config as config
 
     print(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
@@ -346,7 +346,7 @@ async def generate_answer(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
         )
         used_models.add(model)
-        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
+        remaining_models = [m for m in config.ANSWER_MODELS if m not in used_models]
         # return if no models remaining
         if not remaining_models:
             logger.error("No answer models left to try.")
@@ -408,7 +408,7 @@ async def generate_answer_with_feedback(
     question: str,
     language: Language,
     max_attempts: int = 3,
-) -> Tuple[str, CodeAnswer | None]:
+) -> tuple[str, CodeAnswer | None]:
     previous_code = None
     err = None
     attempt_count = 0

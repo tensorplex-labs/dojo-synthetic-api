@@ -6,11 +6,11 @@ from loguru import logger
 from pydantic import BaseModel
 
 from commons.cache import RedisCache
-from commons.prompt_builders import Language
-from commons.synthetic import (
+from commons.llm.code_generator import (
     ResponseStrategy,
     build_prompt_responses_pair,
 )
+from commons.prompt_builders import Language
 
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
