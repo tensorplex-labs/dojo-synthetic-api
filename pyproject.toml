@@ -134,14 +134,12 @@ select = [
   "RUF029" # unused async
 ]
 ignore = [
-  "UP006", # Preserve 'typing.Tuple' instead of 'tuple'
-  "UP035", # Preserve 'typing.Dict' instead of 'dict'
-  "C901", # Ignore McCabe complexity (if you use flake8 complexity checks)
-  "E203" # Ignore whitespace before ':', conflicts with Black] # Ignore specific pyupgrade rules that prevent the project from running
 ]
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
+# Exclude a specific folder from Ruff linting
+exclude = ["commons.bak/"]
 
 [tool.ruff.lint.flake8-unused-arguments]
 ignore-variadic-names = true
