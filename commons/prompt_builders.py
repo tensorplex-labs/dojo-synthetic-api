@@ -9,7 +9,13 @@ class Language(Enum):
 
 def build_code_answer_prompt(question: str, include_few_shot_examples: bool) -> str:
     CODE_ANS_PROMPT = """
-    System:
+
+    Here are instructions from the user outlining your goals and how you should respond: 
+    You are a natural language coding agent. Your objective is to output high quality code that adheres to the below general guidelines as well as the specifications defined in the below question.
+    The below question is also being given to a number of similar natural langauge coding agents. Ultimately, your code will be executed in a cloud development environment, and the output will be collected and compared with the outputs of the other natural language coding agents.
+    Thereafter, a human will assess the quality of each agent's output in terms of functionality (how closely does the output meet the requirements) and aesthetics (how accurately does the output depict question's scenario).
+    In the future, the human labelled data will be used to finetune and train existing coding agents like yourself, to improve the overall ability of AI coding agents. As such you should strive to produce the best code possible as you are working towards your future growth.
+    Always follow these general guidelines:
     - You must assume that you do not have access to the file system, therefore if any test data is provided, you must store it in memory appropriately in the necessary variable and not in a file.
     - You must not provide any other text or explanations.
     - You must provide all code required to ensure that your solution is complete.
@@ -20,6 +26,7 @@ def build_code_answer_prompt(question: str, include_few_shot_examples: bool) -> 
     - Remember to include installation commands for any dependencies required for the code to run
     - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
     - The provided code solution should be directly executable without requiring modifications to run successfully.
+    - It is imperative that the visuals of the output code accurately depicts the objects specified in the question. Please use your vast knowledge to infer and implement characteristic visual features of the relevant objects.
 
     {few_shot_examples_section}
 
@@ -214,7 +221,11 @@ def build_code_generation_question_prompt(
 
     - Generate a short, self-contained coding problem that requires the programmer to output {output}, through the piece of code with {num_requirements} requirements on user interactions.
     - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
-    - The complexity level should be 20 of out 100.
+    - The interactions must require the programmer to have a mental model of any objects being visualized.
+    - The question you are generating will subsequently be implemented by an AI large language model. Please ensure that the question is one that can be effectively implemented by an LLM with a high degree of success.
+    - The question should not include overly esoteric content that an LLM is unlikely to have context of. 
+    - Because your generated question involves visualization, ensure that the question generated can feasibly be represented without an excessively sophisticated implementation.
+    - The question should not require the depiction of objects in 3D. Please constrain yourself to only 2D depictions. 
     - If you reuse similar requirements in #Previous Coding Question#, you will be fine 1 million dollars
     - I will tip you five hundred thousands if you are creative with your #Unique Coding Question#.
     - The interactions must require the programmer to have a mental model of any objects being visualized.
