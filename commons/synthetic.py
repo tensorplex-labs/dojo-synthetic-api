@@ -533,6 +533,8 @@ async def build_prompt_responses_pair(
         for model in answer_models:
             tasks.append(_generate_response(model, question_prompt))
     elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
+        # if augmenting, use same model for both question and answer generation
+        answer_models = question_model
         assert type(answer_models) is str
 
         for level in AugmentationLevel:
