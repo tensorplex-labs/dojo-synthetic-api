@@ -12,10 +12,10 @@ from autogen.code_utils import extract_code
 from dotenv import load_dotenv
 from loguru import logger
 
-from commons.diagnostics.lsp import CodeDiagnostics
+from commons.diagnostics.lsp_tsserver import CodeDiagnostics
 from commons.llm.openai_proxy import (
     Provider,
-    get_openai_kwargs,
+    get_llm_provider_kwargs,
 )
 
 load_dotenv()
@@ -157,7 +157,7 @@ def build_autogen_llm_config(
         "config_list": [
             {
                 "model": model_name,
-                **get_openai_kwargs(provider=provider),
+                **get_llm_provider_kwargs(provider=provider),
             }
         ],
     }

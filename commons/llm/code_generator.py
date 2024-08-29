@@ -19,13 +19,11 @@ from tenacity import (
 )
 
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
-from commons.executor.python_executor import PythonExecutor
-from commons.executor.utils import ExecutionError
 from commons.llm.openai_proxy import (
     Provider,
     get_instructor_client,
 )
-from commons.prompt_builders import (
+from commons.llm.prompts import (
     Language,
     additional_notes_for_question_prompt,
     build_code_answer_prompt,
@@ -100,7 +98,7 @@ class ResponseStrategy(Enum):
 
 async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
     """Ensure that necessary files appended for python and javascript"""
-    result_object = await append_codesandbox_files(result_object)
+    result_object = await handle_javascript_files(result_object)
     # result_object = escape_double_quotes_in_files(result_object)
     return result_object
 
@@ -132,45 +130,6 @@ def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     )
     codeanswer_object.files.append(package_json_file)
     return codeanswer_object
-
-
-async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    print("in python")
-    main_file: FileObject | None = None
-    for file in codeanswer_object.files:
-        if file.language.lower() == "python" and file.filename == "main.py":
-            main_file = file
-            break
-
-    if not main_file:
-        logger.info("No main.py file found in code answer of Python code")
-        logger.info(codeanswer_object)
-        raise Exception("No main.py file found in code answer of Python code")
-
-    executor = PythonExecutor(code=main_file.content)
-    try:
-        loop = asyncio.get_event_loop()
-        html = await loop.run_in_executor(None, executor.main)
-    except ExecutionError as e:
-        logger.error(f"Error occurred while executing Python code: {e}")
-        raise e
-
-    codeanswer_object.files = [
-        FileObject(filename="index.html", content=html, language="html")
-    ]
-
-    return codeanswer_object
-
-
-async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    python_file_detected = any(
-        file.language.lower() == "python" for file in codeanswer_object.files
-    )
-    if python_file_detected:
-        codeanswer_object = await handle_python_files(codeanswer_object)
-
-    # changed to always run this since handle_python_files returns html which needs the parcel stuff
-    return handle_javascript_files(codeanswer_object)
 
 
 async def _generate_objects_to_visualize(
@@ -402,40 +361,6 @@ async def generate_python_fix_prompt(
     return build_python_fix_prompt(code=code, err=err)
 
 
-async def generate_answer_with_feedback(
-    client: LlmClient,
-    model: str,
-    question: str,
-    language: Language,
-    max_attempts: int = 3,
-) -> tuple[str, CodeAnswer | None]:
-    previous_code = None
-    err = None
-    attempt_count = 0
-    previous_err = None
-
-    while attempt_count < max_attempts:
-        model, result = await generate_answer(
-            client, model, question, language, previous_code, err
-        )
-        if result is None:
-            return model, None
-
-        try:
-            return model, await parse_code_response(result)
-        except ExecutionError as e:
-            err = e.err
-            previous_code = e.code
-
-            if err == previous_err:
-                attempt_count += 1
-            else:
-                attempt_count = 0
-                previous_err = err
-
-    return model, None
-
-
 def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]:
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
     # randomly sampled from pool of models
@@ -518,13 +443,7 @@ async def build_prompt_responses_pair(
     async def _generate_response(
         model: str, question: str, level: AugmentationLevel | None = None
     ):
-        if language == Language.JAVASCRIPT:
-            model, result = await generate_answer(client, model, question, language)
-        elif language == Language.PYTHON:
-            model, result = await generate_answer_with_feedback(
-                client, model, question, language
-            )
-
+        model, result = await generate_answer(client, model, question, language)
         return model, result, level
 
     question_prompt, _ = await generate_question(client, question_model, language)
@@ -606,16 +525,3 @@ async def test_generate_questions(language: Language):
     # Write the JSON string to a file
     with open("output.json", "w") as file:
         file.write(json_data)
-
-
-async def main():
-    language = Language("Python")
-    responses = await build_prompt_responses_pair(
-        language=language, response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
-    )
-    with open("output.json", "w") as f:
-        json.dump(responses, f, indent=4)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -10,7 +10,7 @@ from commons.llm.code_generator import (
     ResponseStrategy,
     build_prompt_responses_pair,
 )
-from commons.prompt_builders import Language
+from commons.llm.prompts import Language
 
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()

@@ -103,14 +103,6 @@ def additional_notes_for_question_prompt(prompt: str, language: Language) -> str
         - The visualization should be implemented in JavaScript with HTML and CSS.
         - Ensure that the output has both index.js and index.html files
         """
-    elif language == Language.PYTHON:
-        ADDITIONAL_NOTES = """
-        Note:
-        - The plot should be implemented in Python.
-        - Any required data must be mocked or generated within the code.
-        - Ensure that the output has both main.py and requirements.txt files
-        - The plot should be saved to an html file without losing any interactivity.
-        """
     else:
         raise ValueError(f"Unsupported language: {language}")
 
@@ -211,10 +203,6 @@ def build_code_generation_question_prompt(
     visualization of one of the following objects: {objects}
     """
 
-    PYTHON_OUTPUT = """
-    an interactive plot
-    """
-
     CODE_GEN_PROMPT = """
     System:
     You are an expert question generator.
@@ -243,9 +231,8 @@ def build_code_generation_question_prompt(
     if language == Language.JAVASCRIPT:
         output = JAVASCRIPT_OUTPUT.format(objects=", ".join(sampled_objects))
         language_requirement = "Javascript with HTML and CSS"
-    elif language == Language.PYTHON:
-        output = PYTHON_OUTPUT
-        language_requirement = "Python"
+    else:
+        raise ValueError(f"Unsupported language: {language}")
 
     return textwrap.dedent(
         CODE_GEN_PROMPT.format(
