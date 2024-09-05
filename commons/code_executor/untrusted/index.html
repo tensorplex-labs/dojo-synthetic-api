@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Visualization</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+        }
+
+        #solar-system {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="solar-system"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        function logErrorToServer(errorData) {
+            fetch('/log-error', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(errorData),
+            }).catch(console.error);
+        }
+
+        window.onerror = function (message, source, lineno, colno, error) {
+            const errorData = { type: 'error', message, source, lineno, colno, error: error.toString() };
+            logErrorToServer(errorData);
+            console.error(`Client error: \${error}, message: \${message} at \${source} line: \${lineno} col:\${colno}`);
+        };
+
+        window.onunhandledrejection = function (event) {
+            const errorData = { type: 'unhandledRejection', reason: event.reason.toString() };
+            logErrorToServer(errorData);
+            console.error("Unhandled Rejection (window): " + JSON.stringify(event));
+        };
+    </script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solar-system') });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+        scene.add(sun);
+
+        const planets = [
+            { name: 'Mercury', radius: 0.5, distance: 10, color: 0x8a8a8a },
+            { name: 'Venus', radius: 0.8, distance: 15, color: 0xe39e1c },
+            { name: 'Earth', radius: 1, distance: 20, color: 0x6b93d6 },
+            { name: 'Mars', radius: 0.7, distance: 25, color: 0xc1440e },
+            { name: 'Jupiter', radius: 2, distance: 35, color: 0xd8ca9d },
+            { name: 'Saturn', radius: 1.8, distance: 45, color: 0xead6b8 },
+            { name: 'Uranus', radius: 1.3, distance: 55, color: 0xd1e7e7 },
+            { name: 'Neptune', radius: 1.2, distance: 65, color: 0x5b5ddf }
+        ];
+
+        planets.forEach(planet => {
+            const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
+            const material = new THREE.MeshBasicMaterial({ color: planet.color });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.x = planet.distance;
+            scene.add(mesh);
+        });
+
+        camera.position.z = 100;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            planets.forEach((planet, index) => {
+                const mesh = scene.children[index + 1];
+                mesh.position.x = Math.cos(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
+                mesh.position.z = Math.sin(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
+            });
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // intentional typo here to test uncaught error
+        window.addEventListener('resize', ( => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>
