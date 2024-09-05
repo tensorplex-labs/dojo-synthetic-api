@@ -51,7 +51,7 @@ app.use(express.static("/untrusted"));
 app.use(express.json());
 
 // Define the client-side error logging script
-// Define the client-side error logging script
+// TODO fix uncaught type errors on client siode
 const errorLoggingScript = `
 <script>
 function logErrorToServer(errorData) {
@@ -65,16 +65,39 @@ function logErrorToServer(errorData) {
 }
 
 window.onerror = function (message, source, lineno, colno, error) {
-  const errorData = { type: 'error', message, source, lineno, colno, error: error.toString() };
+  const errorData = {
+    type: 'error',
+    message,
+    source,
+    lineno,
+    colno,
+    error: error.toString(),
+    stack: error.stack
+  };
   logErrorToServer(errorData);
   console.error(\`Client error: \${error}, message: \${message} at \${source} line: \${lineno} col:\${colno}\`);
 };
 
 window.onunhandledrejection = function (event) {
-  const errorData = { type: 'unhandledRejection', reason: event.reason.toString() };
+  const errorData = {
+    type: 'unhandledRejection',
+    reason: event.reason.toString(),
+    stack: event.reason.stack
+  };
   logErrorToServer(errorData);
   console.error("Unhandled Rejection (window): " + JSON.stringify(event));
 };
+
+// Add a specific handler for TypeError
+window.addEventListener('error', function(event) {
+  const errorData = {
+    type: 'TypeError',
+    message: event.error.message,
+    stack: event.error.stack
+  };
+  logErrorToServer(errorData);
+  console.error("Uncaught TypeError: " + event.error.message);
+});
 </script>
 `;
 
@@ -84,6 +107,8 @@ app.get("/", (req, res) => {
     let html = fs.readFileSync("/untrusted/index.html", "utf8");
     logger.info("Original HTML length:", html.length);
     // html = html.replace("</head>", `${errorLoggingScript}</head>`);
+    // TODO not working atm for some reason, but we can directly append it inside the LLM response
+
     html = html.replace("</body>", `${errorLoggingScript}</body>`);
     logger.info("Modified HTML length:", html.length);
     logger.info("Modified HTML:", html);
@@ -104,10 +129,16 @@ app.post("/log-error", (req, res) => {
   const errorData = req.body;
   if (errorData.type === "error") {
     logger.error(
-      `Client Error: ${errorData.message} at ${errorData.source} line: ${errorData.lineno} col: ${errorData.colno}\nError: ${errorData.error}`
+      `Client Error: ${errorData.message} at ${errorData.source} line: ${errorData.lineno} col: ${errorData.colno}\nError: ${errorData.error}\nStack: ${errorData.stack}`
     );
   } else if (errorData.type === "unhandledRejection") {
-    logger.error(`Client Unhandled Rejection: ${errorData.reason}`);
+    logger.error(
+      `Client Unhandled Rejection: ${errorData.reason}\nStack: ${errorData.stack}`
+    );
+  } else if (errorData.type === "TypeError") {
+    logger.error(
+      `Client Uncaught TypeError: ${errorData.message}\nStack: ${errorData.stack}`
+    );
   }
   res.sendStatus(200);
 });

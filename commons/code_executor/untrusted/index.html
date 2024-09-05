@@ -1,101 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
+<script>
+    function logErrorToServer(errorData) {
+        fetch('/log-error', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(errorData),
+        }).catch(console.error);
+    }
+
+    window.onerror = function (message, source, lineno, colno, error) {
+        const errorData = {
+            type: 'error',
+            message,
+            source,
+            lineno,
+            colno,
+            error: error.toString(),
+            stack: error.stack
+        };
+        logErrorToServer(errorData);
+        console.error(`Client error: \${error}, message: \${message} at \${source} line: \${lineno} col:\${colno}`);
+    };
+
+    window.onunhandledrejection = function (event) {
+        const errorData = {
+            type: 'unhandledRejection',
+            reason: event.reason.toString(),
+            stack: event.reason.stack
+        };
+        logErrorToServer(errorData);
+        console.error("Unhandled Rejection (window): " + JSON.stringify(event));
+    };
+
+    window.addEventListener('error', function (event) {
+        if (event.error) {
+            const errorData = {
+                type: event.error.name || 'Error',
+                message: event.error.message,
+                stack: event.error.stack,
+                source: event.filename,
+                lineno: event.lineno,
+                colno: event.colno
+            };
+            logErrorToServer(errorData);
+            console.error(`Uncaught ${errorData.type}: ${errorData.message}`);
+        } else {
+            // Handle cases where event.error is not available (e.g., script errors)
+            const errorData = {
+                type: 'ScriptError',
+                message: event.message,
+                source: event.filename,
+                lineno: event.lineno,
+                colno: event.colno
+            };
+            logErrorToServer(errorData);
+            console.error(`Script Error: ${errorData.message}`);
+        }
+    }, true);
+</script>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar System Visualization</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overflow: hidden;
-        }
 
-        #solar-system {
-            width: 100vw;
-            height: 100vh;
-        }
-    </style>
+</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rubik's Cube Simulator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+    }
+
+    #info {
+        position: absolute;
+        top: 10px;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-family: Arial, sans-serif;
+        pointer-events: none;
+    }
+
+    #controls {
+        position: absolute;
+        bottom: 10px;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-family: Arial, sans-serif;
+    }
+
+    button {
+        margin: 5px;
+        padding: 5px 10px;
+        font-size: 16px;
+    }
+</style>
 </head>
 
 <body>
-    <canvas id="solar-system"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <div id="info">Rubik's Cube Simulator<br>Use mouse to rotate the view</div>
+    <div id="controls">
+        <button onclick="rotateFace('U')">U</button>
+        <button onclick="rotateFace('D')">D</button>
+        <button onclick="rotateFace('L')">L</button>
+        <button onclick="rotateFace('R')">R</button>
+        <button onclick="rotateFace('F')">F</button>
+        <button onclick="rotateFace('B')">B</button>
+        <button onclick="scramble()">Scramble</button>
+        <button onclick="reset()">Reset</button>
+    </div>
     <script>
-        function logErrorToServer(errorData) {
-            fetch('/log-error', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(errorData),
-            }).catch(console.error);
-        }
+        let scene, camera, renderer, cube;
+        const cubelets = [];
+        const rotationSpeed = Math.PI / 2;
+        let isRotating = false;
 
-        window.onerror = function (message, source, lineno, colno, error) {
-            const errorData = { type: 'error', message, source, lineno, colno, error: error.toString() };
-            logErrorToServer(errorData);
-            console.error(`Client error: \${error}, message: \${message} at \${source} line: \${lineno} col:\${colno}`);
-        };
-
-        window.onunhandledrejection = function (event) {
-            const errorData = { type: 'unhandledRejection', reason: event.reason.toString() };
-            logErrorToServer(errorData);
-            console.error("Unhandled Rejection (window): " + JSON.stringify(event));
-        };
-    </script>
-    <script>
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solar-system') });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
-        const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-        scene.add(sun);
-
-        const planets = [
-            { name: 'Mercury', radius: 0.5, distance: 10, color: 0x8a8a8a },
-            { name: 'Venus', radius: 0.8, distance: 15, color: 0xe39e1c },
-            { name: 'Earth', radius: 1, distance: 20, color: 0x6b93d6 },
-            { name: 'Mars', radius: 0.7, distance: 25, color: 0xc1440e },
-            { name: 'Jupiter', radius: 2, distance: 35, color: 0xd8ca9d },
-            { name: 'Saturn', radius: 1.8, distance: 45, color: 0xead6b8 },
-            { name: 'Uranus', radius: 1.3, distance: 55, color: 0xd1e7e7 },
-            { name: 'Neptune', radius: 1.2, distance: 65, color: 0x5b5ddf }
-        ];
-
-        planets.forEach(planet => {
-            const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-            const material = new THREE.MeshBasicMaterial({ color: planet.color });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.x = planet.distance;
-            scene.add(mesh);
-        });
-
-        camera.position.z = 100;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            planets.forEach((planet, index) => {
-                const mesh = scene.children[index + 1];
-                mesh.position.x = Math.cos(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-                mesh.position.z = Math.sin(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-            });
-            renderer.render(scene, camera);
-        }
-
+        init();
         animate();
 
-        // intentional typo here to test uncaught error
-        window.addEventListener('resize', ( => {
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createCube();
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            controls.enableZoom = true;
+
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function createCube() {
+            cube = new THREE.Group();
+            const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xffa500, 0xffffff];
+            const size = 1;
+            const gap = 0.1;
+
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    for (let z = -1; z <= 1; z++) {
+                        const cubelet = createCubelet(size, gap, x, y, z, colors);
+                        cube.add(cubelet);
+                        cubelets.push(cubelet);
+                    }
+                }
+            }
+
+            scene.add(cube);
+        }
+
+        function createCubelet(size, gap, x, y, z, colors) {
+            const geometry = new THREE.BoxGeometry(size, size, size);
+            const materials = [];
+
+            for (let i = 0; i < 6; i++) {
+                const color = (x === -1 && i === 0) || (x === 1 && i === 1) ||
+                    (y === -1 && i === 2) || (y === 1 && i === 3) ||
+                    (z === -1 && i === 4) || (z === 1 && i === 5)
+                    ? colors[i] : 0x000000;
+                materials.push(new THREE.MeshBasicMaterial({ color: color }));
+            }
+
+            const cubelet = new THREE.Mesh(geometry, materials);
+            cubelet.position.set(x * (size + gap), y * (size + gap), z * (size + gap));
+            return cubelet;
+        }
+
+        function rotateFace(face) {
+            if (isRotating) return;
+            isRotating = true;
+
+            const axis = face === 'U' || face === 'D' ? 'y' :
+                face === 'L' || face === 'R' ? 'x' : 'z';
+            const direction = face === 'U' || face === 'L' || face === 'F' ? 1 : -1;
+            const selector = (cubelet) => {
+                if (axis === 'y') return Math.round(cubelet.position.y) === (face === 'U' ? 1 : -1);
+                if (axis === 'x') return Math.round(cubelet.position.x) === (face === 'R' ? 1 : -1);
+                return Math.round(cubelet.position.z) === (face === 'F' ? 1 : -1);
+            };
+
+            const faceGroup = new THREE.Group();
+            cubelets.filter(selector).forEach(cubelet => {
+                faceGroup.attach(cubelet);
+            });
+            cube.add(faceGroup);
+
+            const targetRotation = direction * Math.PI / 2;
+            let currentRotation = 0;
+
+            function animate() {
+                if (currentRotation < Math.abs(targetRotation)) {
+                    const delta = rotationSpeed * (1000 / 60) / 1000;
+                    currentRotation += delta;
+                    faceGroup.rotation[axis] += direction * delta;
+                    requestAnimationFrame(animate);
+                } else {
+                    faceGroup.rotation[axis] = targetRotation;
+                    cubelets.forEach(cubelet => {
+                        cube.attach(cubelet);
+                    });
+                    cube.remove(faceGroup);
+                    isRotating = false;
+                }
+            }
+
+            animate();
+        }
+
+        function scramble() {
+            const faces = ['U', 'D', 'L', 'R', 'F', 'B'];
+            const moves = 20;
+            let count = 0;
+
+            function doMove() {
+                if (count < moves) {
+                    const face = faces[Math.floor(Math.random() * faces.length)];
+                    rotateFace(face);
+                    count++;
+                    setTimeout(doMove, 500);
+                }
+            }
+
+            doMove();
+        }
+
+        function reset() {
+            scene.remove(cube);
+            cubelets.length = 0;
+            createCube();
+        }
+
+        function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
     </script>
 </body>
 

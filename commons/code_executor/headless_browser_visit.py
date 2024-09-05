@@ -6,7 +6,7 @@ from pyppeteer.page import Page
 
 
 async def visit_page():
-    browser: Browser = await launch()
+    browser: Browser = await launch(headless=True)
     page: Page = await browser.newPage()
     await page.goto("http://localhost:3000", {"waitUntil": "networkidle0"})
     await browser.close()
