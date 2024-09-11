@@ -64,19 +64,19 @@ function logErrorToServer(errorData) {
   }).catch(console.error);
 }
 
-window.onerror = function (message, source, lineno, colno, error) {
-  const errorData = {
-    type: 'error',
-    message,
-    source,
-    lineno,
-    colno,
-    error: error.toString(),
-    stack: error.stack
-  };
-  logErrorToServer(errorData);
-  console.error(\`Client error: \${error}, message: \${message} at \${source} line: \${lineno} col:\${colno}\`);
-};
+// window.onerror = function (message, source, lineno, colno, error) {
+//   const errorData = {
+//     type: 'error',
+//     message,
+//     source,
+//     lineno,
+//     colno,
+//     error: error.toString(),
+//     stack: error.stack
+//   };
+//   logErrorToServer(errorData);
+//   console.error(\`Client error: \${error}, message: \${message} at \${source} line: \${lineno} col:\${colno}\`);
+// };
 
 window.onunhandledrejection = function (event) {
   const errorData = {
@@ -117,6 +117,17 @@ app.get("/", (req, res) => {
     } else {
       logger.info("Error logging script not found in HTML");
     }
+
+    // Set headers to prevent caching
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("Clear-Site-Data", '"cache"');
+
     res.send(html);
   } catch (error) {
     console.error("Server error:", error);
@@ -126,20 +137,7 @@ app.get("/", (req, res) => {
 
 // Add new endpoint for client-side error logging
 app.post("/log-error", (req, res) => {
-  const errorData = req.body;
-  if (errorData.type === "error") {
-    logger.error(
-      `Client Error: ${errorData.message} at ${errorData.source} line: ${errorData.lineno} col: ${errorData.colno}\nError: ${errorData.error}\nStack: ${errorData.stack}`
-    );
-  } else if (errorData.type === "unhandledRejection") {
-    logger.error(
-      `Client Unhandled Rejection: ${errorData.reason}\nStack: ${errorData.stack}`
-    );
-  } else if (errorData.type === "TypeError") {
-    logger.error(
-      `Client Uncaught TypeError: ${errorData.message}\nStack: ${errorData.stack}`
-    );
-  }
+  logger.error(`Client Error occurred: ${JSON.stringify(req.body, null, 2)}`);
   res.sendStatus(200);
 });
 
