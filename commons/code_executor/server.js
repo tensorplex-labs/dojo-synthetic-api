@@ -39,8 +39,6 @@ fs.access(logFilePath, fs.constants.F_OK | fs.constants.W_OK, (err) => {
     } else {
       console.error(`Cannot access log file: ${err.message}`);
     }
-  } else {
-    logger.info("Log file exists and is writable");
   }
 });
 

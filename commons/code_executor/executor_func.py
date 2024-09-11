@@ -8,8 +8,9 @@ import uuid
 from asyncio import CancelledError
 
 from bs4 import BeautifulSoup
-from headless_browser_visit import visit_page
 from loguru import logger
+
+from .headless_browser_visit import visit_page
 
 
 def handle_cancelled_error(func):
@@ -64,7 +65,7 @@ def _check_docker_image_exists(image_name: str = IMAGE_NAME):
 with open(FILE_DIR + "/errorLogging.js") as f:
     error_logging_js = f.read()
 
-logger.debug(f"Error logging js:{error_logging_js}")
+logger.debug(f"Error logging js:\n{error_logging_js}")
 
 
 def inject_error_logging_js(html_code: str) -> str:
@@ -81,7 +82,7 @@ def inject_error_logging_js(html_code: str) -> str:
     return str(soup)
 
 
-def run_sandbox(html_code: str):
+def run_sandbox(html_code: str, run_uuid: str):
     executor_dir = os.path.dirname(os.path.abspath(__file__))
     # inject
     modified_code = inject_error_logging_js(html_code)
@@ -89,8 +90,6 @@ def run_sandbox(html_code: str):
     with open(executor_dir + "/untrusted/index.html", "w") as f:
         f.write(modified_code)
 
-    # Generate a unique identifier for this sandbox run
-    run_uuid = str(uuid.uuid4())
     try:
         run_sandbox_cmd = shlex.split(
             f"docker run --rm --name web-sandbox-container-{run_uuid} -p 3000:3000 -v {executor_dir}/untrusted:/untrusted {IMAGE_FULL_NAME}"
@@ -98,12 +97,15 @@ def run_sandbox(html_code: str):
 
         subprocess.run(run_sandbox_cmd, check=True)
     except subprocess.CalledProcessError as e:
-        logger.error(
-            f"Error running the sandbox via subprocess. Command failed with return code {e.returncode}. Error output: {e.stderr}"
-        )
         if e.returncode == 130:
             logger.warning("Docker container was terminated by SIGINT (Ctrl+C)")
             return
+        elif e.returncode == 143:
+            logger.warning("Docker container was terminated by SIGTERM")
+            return
+        logger.error(
+            f"Error running the sandbox via subprocess. Command failed with return code {e.returncode}. Error output: {e.stderr}"
+        )
         raise
     except Exception as e:
         logger.error(f"Error running the sandbox via subprocess, error: {e}")
@@ -119,7 +121,10 @@ async def get_feedback(html_code: str, browser_delay: int = 5) -> str:
     else:
         _build_docker_image()
 
-    asyncio.create_task(asyncio.to_thread(run_sandbox, html_code))
+    run_uuid = str(uuid.uuid4())
+    sandbox_task = asyncio.create_task(
+        asyncio.to_thread(run_sandbox, html_code, run_uuid)
+    )
 
     # visit the webpage
     await asyncio.sleep(browser_delay)
@@ -130,9 +135,26 @@ async def get_feedback(html_code: str, browser_delay: int = 5) -> str:
     with open(feedback_log_file) as f:
         log_content = f.read()
 
+    logger.info(f"Reading code feedback from log file, content: {log_content}")
+
     # clear the app.log to prepare for the next run
     os.remove(feedback_log_file)
     open(feedback_log_file, "w").close()
+    try:
+        # Cancel the sandbox task to stop the subprocess.run call
+        sandbox_task.cancel()
+        await sandbox_task
+    except asyncio.CancelledError:
+        logger.info("Sandbox task cancelled successfully")
+    except Exception as e:
+        logger.error(f"Error while cancelling sandbox task: {e}")
+
+    try:
+        stop_sandbox_cmd = shlex.split(f"docker stop web-sandbox-container-{run_uuid}")
+        subprocess.run(stop_sandbox_cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error stopping the Docker container: {e}")
+
     return log_content
 
 
@@ -228,7 +250,7 @@ async def main():
     sandbox_code = inject_error_logging_js(html_code)
     logger.info(f"Sandboxed code: {sandbox_code}")
 
-    feedback = await get_feedback(html_code)
+    feedback = await get_feedback(sandbox_code)
     logger.info(feedback)
     pass
 
