@@ -70,7 +70,10 @@ THREE_JS_FIXED_IMPORTS_EXAMPLE = """
 
 PROMPT = """
 Your task is to fix the code given the following code and the error message & diagnostics.
-If there is nothing left to fix, simply output "{EOS_TOKEN}".
+- If there are no errors or nothing left to fix, simply output "{end_token}".
+- For example to fix import errors, you should only use the import statements from CDNs like <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/<library_version_number>/three.min.js"></script> inside the <head> tag.
+- You may also use unpkg.com and jsdelivr.net CDNs.
+- Make sure you provide full code, do not leave out any details for brevity. Details in the example below have been omitted only for brevity but you must not leave out any details in your own output.
 
 Code:
 {code}
@@ -78,17 +81,16 @@ Code:
 Error:
 {error}
 
-For example to fix import errors, you should only use the import statements from CDNs like <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/<library_version_number>/three.min.js"></script> inside the <head> tag.
+For example:
+Error: three.js cannot be imported.
 
-You must understand that if CDN script is separated from the functions that imports a library, threejs for example, then the main Javascript tag that contains the functions, logic and components cannot find THREE
-
+Part of original code:
 ```html
 {bad_example}
 ... # other code ...
 ```
 
-Solution:
-
+Fixed code:
 ```html
 <script>
 {fixed_example}
@@ -226,7 +228,7 @@ def build_messages_single_turn(code, error):
         {
             "role": "system",
             "content": PROMPT.format(
-                EOS_TOKEN=EOS_TOKEN,
+                end_token=EOS_TOKEN,
                 code=code,
                 error=error,
                 bad_example=THREE_JS_BADEXAMPLE.replace("{", "{{").replace("}", "}}"),
