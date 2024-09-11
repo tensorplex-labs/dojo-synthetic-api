@@ -1,5 +1,4 @@
 untrusted/*
-!untrusted/index.html
 
 pre-commit.pyz
 .DS_Store
