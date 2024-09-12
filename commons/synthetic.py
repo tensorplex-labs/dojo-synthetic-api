@@ -44,6 +44,14 @@ load_dotenv()
 LlmClient = AsyncOpenAI | instructor.AsyncInstructor
 
 
+def log_llm_usage(completion):
+    return {
+        "input": completion.usage.prompt_tokens,
+        "output": completion.usage.completion_tokens,
+        "unit": "TOKENS",
+    }
+
+
 def log_retry_info(retry_state):
     """Meant to be used with tenacity's before_sleep callback"""
     logger.warning(
@@ -176,7 +184,7 @@ async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     return handle_javascript_files(codeanswer_object)
 
 
-@observe(as_type="generation")
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def _generate_objects_to_visualize(
     client: LlmClient, model: str, prev_used_objects: list[str], topic: Topics
 ):
@@ -264,19 +272,18 @@ async def _generate_objects_to_visualize(
         **kwargs
     )
 
+    kwargs_clone = kwargs.copy()
+    kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
     langfuse_context.update_current_observation(
-        input={
+        input=kwargs_clone.pop("messages"),
+        model=model,
+        output=response_model.model_dump(),
+        usage=log_llm_usage(completion),
+        metadata={
             "blacklist": blacklist,
             "prev_used_objects": prev_used_objects,
             "topic": topic,
-            **kwargs,
-        },
-        output=response_model.objects,
-        model=model,
-        usage={
-            "input": completion.usage.prompt_tokens,
-            "output": completion.usage.completion_tokens,
-            "unit": "tokens",
+            **kwargs_clone,
         },
     )
     logger.success(f"Got objects to visualize, completion={response_model=}")
@@ -288,7 +295,7 @@ previous_coding_question = ""
 used_models = set()
 
 
-@observe(as_type="generation")
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def generate_question(
     client: instructor.AsyncInstructor, model: str, language: Language, _topic: Topics
 ) -> tuple[str | None, Dict | None]:
@@ -378,21 +385,22 @@ async def generate_question(
                     coding_question, language
                 )
 
+                kwargs_clone = kwargs.copy()
+                kwargs_clone["response_model"] = kwargs[
+                    "response_model"
+                ].model_json_schema()
                 langfuse_context.update_current_observation(
-                    input={
+                    input=kwargs_clone.pop("messages"),
+                    model=model,
+                    output=response_model.model_dump(),
+                    usage=log_llm_usage(completion),
+                    metadata={
                         "language": language,
                         "topic": _topic,
                         "used_objects": used_objects,
                         "used_models": used_models,
                         "previous_coding_question": previous_coding_question,
-                        **kwargs,
-                    },
-                    output=response_model,
-                    model=model,
-                    usage={
-                        "input": completion.usage.prompt_tokens,
-                        "output": completion.usage.completion_tokens,
-                        "unit": "tokens",
+                        **kwargs_clone,
                     },
                 )
                 logger.success(f"Generated question: {coding_question}")
@@ -416,7 +424,7 @@ async def generate_question(
     return None, None
 
 
-@observe(as_type="generation")
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def generate_answer(
     client: LlmClient,
     model: str,
@@ -477,25 +485,27 @@ async def generate_answer(
                     response_model,
                     completion,
                 ) = await client.chat.completions.create_with_completion(**kwargs)
+
+                kwargs_clone = kwargs.copy()
+                kwargs_clone["response_model"] = kwargs[
+                    "response_model"
+                ].model_json_schema()
                 langfuse_context.update_current_observation(
-                    input={
+                    input=kwargs_clone.pop("messages"),
+                    model=model,
+                    output=response_model.model_dump(),
+                    usage=log_llm_usage(completion),
+                    metadata={
                         "question": question,
                         "language": language,
                         "err": err,
                         "code": code,
                         "topic": topic,
-                        **kwargs,
-                    },
-                    model=model,
-                    output=response_model,
-                    usage={
-                        "input": completion.usage.prompt_tokens,
-                        "output": completion.usage.completion_tokens,
-                        "unit": "tokens",
+                        **kwargs_clone,
                     },
                 )
                 # logger.warning(f"@@@ answer completion: {completion} \n")
-                return model, completion
+                return model, response_model
     except RetryError:
         logger.error(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
@@ -612,7 +622,7 @@ def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]
         return random.choice(ANSWER_MODELS)
 
 
-@observe(as_type="generation")
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def augment_question(
     client: LlmClient,
     model: str,
@@ -631,14 +641,6 @@ async def augment_question(
     </system>
     """
 
-    langfuse_context.update_current_observation(
-        input={
-            "topic": topic,
-            "question": question,
-            "augmentation_level": augmentation_level,
-        },
-        model=model,
-    )
     if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"You must remove any 1 requirement from the following question: {question}. Ensure that the requirement you remove will not break the functionality of the remaining requirements."
     elif augmentation_level == AugmentationLevel.CHANGE_REQUIREMENTS:
@@ -651,6 +653,13 @@ async def augment_question(
         else:
             augmentation_prompt = f"Here is a generated coding question: {question}. \n change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question."
     elif augmentation_level == AugmentationLevel.ORIGINAL:
+        langfuse_context.update_current_observation(
+            metadata={
+                "topic": topic,
+                "question": question,
+                "augmentation_level": augmentation_level,
+            }
+        )
         return question
 
     kwargs = {
@@ -673,18 +682,18 @@ async def augment_question(
         **kwargs
     )
 
+    kwargs_clone = kwargs.copy()
+    kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
     langfuse_context.update_current_observation(
-        input={
+        input=kwargs_clone.pop("messages"),
+        model=model,
+        output=response_model.model_dump(),
+        usage=log_llm_usage(completion),
+        metadata={
             "topic": topic,
             "question": question,
             "augmentation_level": augmentation_level,
-            **kwargs,
-        },
-        model=model,
-        usage={
-            "input": completion.usage.prompt_tokens,
-            "output": completion.usage.completion_tokens,
-            "unit": "tokens",
+            **kwargs_clone,
         },
     )
     logger.success(f"Original question: {question}")
@@ -697,7 +706,8 @@ async def augment_question(
 last_topic = []  # global var used to track last used topic.
 
 
-@observe(as_type="generation")
+# use trace to avoid double dipping cost logging on nested observations
+@observe(as_type="trace")
 async def build_prompt_responses_pair(
     language: Language, response_strategy: ResponseStrategy
 ):
