@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple, cast
 
 import instructor
 from dotenv import load_dotenv
+from langfuse.decorators import langfuse_context, observe
 from loguru import logger
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
@@ -173,6 +174,7 @@ async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     return handle_javascript_files(codeanswer_object)
 
 
+@observe(as_type="generation")
 async def _generate_objects_to_visualize(
     client: LlmClient, model: str, prev_used_objects: list[str]
 ):
@@ -195,9 +197,23 @@ async def _generate_objects_to_visualize(
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
-    completion = await client.chat.completions.create(**kwargs)
-    logger.success(f"Got objects to visualize, completion={completion=}")
-    return completion.objects
+
+    # > CompletionUsage(completion_tokens=9, prompt_tokens=82, total_tokens=91)
+    possible_objects, completion = await client.chat.completions.create_with_completion(
+        **kwargs
+    )
+    langfuse_context.update_current_observation(
+        input=kwargs.get("messages"),
+        model=model,
+        output=possible_objects.objects,
+        metadata=kwargs,
+        usage={
+            "input": completion.usage.prompt_tokens,
+            "output": completion.usage.completion_tokens,
+        },
+    )
+    logger.success(f"Got objects to visualize, completion={possible_objects=}")
+    return possible_objects.objects
 
 
 used_objects = []
@@ -205,6 +221,7 @@ previous_coding_question = ""
 used_models = set()
 
 
+@observe(as_type="generation")
 async def generate_question(
     client: instructor.AsyncInstructor, model: str, language: Language
 ) -> tuple[str | None, Dict | None]:
@@ -256,15 +273,39 @@ async def generate_question(
                     "top_p": random.uniform(0.9, 1.0),
                     "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
                 }
-                completion: CodingQuestion = await client.chat.completions.create(
-                    **kwargs
-                )
-                coding_question = completion.question
+
+                (
+                    response_model,
+                    completion,
+                ) = await client.chat.completions.create_with_completion(**kwargs)
                 coding_question = additional_notes_for_question_prompt(
-                    coding_question, language
+                    response_model.question, language
                 )
+
+                kwargs_clone = kwargs.copy()
+                kwargs_clone["used_objects"] = used_objects
+                kwargs_clone["previous_coding_question"] = previous_coding_question
+                kwargs_clone["used_models"] = used_models
+                kwargs_clone["current_coding_question_raw"] = response_model.question
+                kwargs_clone["current_coding_question_full"] = coding_question
+                kwargs_clone["possible_objects"] = possible_objects
+                kwargs_clone["sampled_objects"] = sampled_objects
+                kwargs_clone["attempt_number"] = attempt.retry_state.attempt_number
+
+                langfuse_context.update_current_observation(
+                    input=kwargs.get("messages"),
+                    model=model,
+                    output=response_model,
+                    metadata=kwargs_clone,
+                    usage={
+                        "input": completion.usage.prompt_tokens,
+                        "output": completion.usage.completion_tokens,
+                    },
+                )
+
                 logger.success(f"Generated question: {coding_question}")
                 previous_coding_question = coding_question
+
                 return coding_question, kwargs
     except RetryError:
         logger.error(
@@ -284,6 +325,7 @@ async def generate_question(
     return None, None
 
 
+@observe(as_type="generation")
 async def generate_answer(
     client: LlmClient,
     model: str,
@@ -338,9 +380,24 @@ async def generate_answer(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
         ):
             with attempt:
-                completion = await client.chat.completions.create(**kwargs)
+                (
+                    response_model,
+                    completion,
+                ) = await client.chat.completions.create_with_completion(**kwargs)
+
+                langfuse_context.update_current_observation(
+                    input=kwargs.get("messages"),
+                    model=model,
+                    output=response_model,
+                    metadata=kwargs,
+                    usage={
+                        "input": completion.usage.prompt_tokens,
+                        "output": completion.usage.completion_tokens,
+                    },
+                )
+
                 # print(f"Generated completion: {completion}")
-                return model, completion
+                return model, response_model
     except RetryError:
         logger.error(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
@@ -457,6 +514,7 @@ def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]
         return random.choice(ANSWER_MODELS)
 
 
+@observe(as_type="generation")
 async def augment_question(
     client: LlmClient,
     model: str,
@@ -495,14 +553,30 @@ async def augment_question(
 
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, int(1e9))  # needed for OpenAI
-    completion: CodingQuestion = await client.chat.completions.create(**kwargs)
+
+    response_model, completion = await client.chat.completions.create_with_completion(
+        **kwargs
+    )
+
+    langfuse_context.update_current_observation(
+        input=kwargs.get("messages", [{}])[-1].get("content"),
+        model=model,
+        output=response_model.question,
+        metadata=kwargs,
+        usage={
+            "input": completion.usage.prompt_tokens,
+            "output": completion.usage.completion_tokens,
+        },
+    )
+
     logger.success(f"Original question: {question}")
     logger.success(
-        f"Augmented question and level:  {augmentation_level}, {completion.question}"
+        f"Augmented question and level:  {augmentation_level}, {response_model.question}"
     )
-    return completion.question
+    return response_model.question
 
 
+@observe(as_type="generation")
 async def build_prompt_responses_pair(
     language: Language, response_strategy: ResponseStrategy
 ):
@@ -579,11 +653,15 @@ async def build_prompt_responses_pair(
             logger.debug(f"{model=},{completion_id=}, {level=}")
             synthetic_ground_truth[completion_id] = level.value
 
-    return {
+    output = {
         "prompt": question_prompt,
         "responses": responses,
         "ground_truth": synthetic_ground_truth,
     }
+    langfuse_context.update_current_observation(
+        output=output,
+    )
+    return output
 
 
 async def test_generate_questions(language: Language):
