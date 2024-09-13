@@ -360,9 +360,7 @@ async def generate_question(
                         "messages": [
                             {
                                 "role": "system",
-                                "content": build_game_meta_prompt(
-                                    used_objects,
-                                ),
+                                "content": build_game_meta_prompt(),
                             },
                             {
                                 "role": "user",
