@@ -268,9 +268,8 @@ async def _generate_objects_to_visualize(
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
-    response_model, completion = await client.chat.completions.create_with_completion(
-        **kwargs
-    )
+    response_model = await client.chat.completions.create(**kwargs)
+    logger.info(f"@@@ response_model: {response_model}")
 
     kwargs_clone = kwargs.copy()
     kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
@@ -278,7 +277,7 @@ async def _generate_objects_to_visualize(
         input=kwargs_clone.pop("messages"),
         model=model,
         output=response_model.model_dump(),
-        usage=log_llm_usage(completion),
+        # usage=log_llm_usage(response_model.usage),
         metadata={
             "blacklist": blacklist,
             "prev_used_objects": prev_used_objects,
@@ -374,10 +373,7 @@ async def generate_question(
                     }
 
                 logger.info(kwargs["messages"][0])
-                (
-                    response_model,
-                    completion,
-                ) = await client.chat.completions.create_with_completion(**kwargs)
+                response_model = await client.chat.completions.create(**kwargs)
                 coding_question = response_model.question
                 coding_question = additional_notes_for_question_prompt(
                     coding_question, language
@@ -391,7 +387,7 @@ async def generate_question(
                     input=kwargs_clone.pop("messages"),
                     model=model,
                     output=response_model.model_dump(),
-                    usage=log_llm_usage(completion),
+                    # usage=log_llm_usage(response_model.usage),
                     metadata={
                         "language": language,
                         "topic": _topic,
@@ -479,10 +475,7 @@ async def generate_answer(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
         ):
             with attempt:
-                (
-                    response_model,
-                    completion,
-                ) = await client.chat.completions.create_with_completion(**kwargs)
+                response_model = await client.chat.completions.create(**kwargs)
 
                 kwargs_clone = kwargs.copy()
                 kwargs_clone["response_model"] = kwargs[
@@ -492,7 +485,7 @@ async def generate_answer(
                     input=kwargs_clone.pop("messages"),
                     model=model,
                     output=response_model.model_dump(),
-                    usage=log_llm_usage(completion),
+                    # usage=log_llm_usage(response_model.usage),
                     metadata={
                         "question": question,
                         "language": language,
@@ -676,9 +669,7 @@ async def augment_question(
 
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, int(1e9))  # needed for OpenAI
-    response_model, completion = await client.chat.completions.create_with_completion(
-        **kwargs
-    )
+    response_model = await client.chat.completions.create(**kwargs)
 
     kwargs_clone = kwargs.copy()
     kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
@@ -686,7 +677,7 @@ async def augment_question(
         input=kwargs_clone.pop("messages"),
         model=model,
         output=response_model.model_dump(),
-        usage=log_llm_usage(completion),
+        # usage=log_llm_usage(response_model.usage),
         metadata={
             "topic": topic,
             "question": question,
