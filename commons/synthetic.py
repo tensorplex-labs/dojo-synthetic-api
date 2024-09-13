@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple, cast
 
 import instructor
 from dotenv import load_dotenv
+from langfuse.decorators import langfuse_context, observe
 from loguru import logger
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
@@ -41,6 +42,14 @@ load_dotenv()
 
 # define some types
 LlmClient = AsyncOpenAI | instructor.AsyncInstructor
+
+
+def log_llm_usage(completion):
+    return {
+        "input": completion.usage.prompt_tokens,
+        "output": completion.usage.completion_tokens,
+        "unit": "TOKENS",
+    }
 
 
 def log_retry_info(retry_state):
@@ -175,6 +184,7 @@ async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     return handle_javascript_files(codeanswer_object)
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def _generate_objects_to_visualize(
     client: LlmClient, model: str, prev_used_objects: list[str], topic: Topics
 ):
@@ -198,19 +208,19 @@ async def _generate_objects_to_visualize(
     if topic == Topics.ANIMATION:
         prompt = f"""
         Give me a list of 30 tangible objects commonly used for animation coding questions, where the object can be interactively visualized in a basic web app that uses only javascript, HTML and CSS.
-        
+
         Do not include the following: {', '.join(prev_used_objects+blacklist)}. Do not include any objects which are UI elements (such as loading spinners and progress bars.) Do not include any objects which are animals.
-        
-        Output the list as a valid JSON       
+
+        Output the list as a valid JSON
         """
     elif topic == Topics.LANDSCAPES:
         prompt = f"""
         Give me a list of 30 recognizable natural phenomena that can be easily and simply visualized in 3D with a basic web app that uses only javascript, HTML and CSS.
-                
+
         An LLM such as yourself will later have to generate the code for this program. So please ensure that the subject can feasibly be implemented by an LLM.
 
         Do not include the following {', '.join(prev_used_objects+blacklist)}.
-        
+
         Output the list as a valid JSON
     """
     elif topic == Topics.SCIENCE:
@@ -218,13 +228,13 @@ async def _generate_objects_to_visualize(
         Give me a list of 30 science experiments that can be demonstrated with a web app that uses only javascript, HTML and CSS.
 
         The experiments should be simple enough that a high school student could reasonably understand and have knowledge of it.
-        
+
         An LLM such as yourself will later have to generate the code for this program. So please ensure that the subject can feasibly be implemented by an LLM.
 
         Do not include the following: {', '.join(prev_used_objects+blacklist)}.
 
         Please prioritize experiments which are interactive.
-        
+
         Output the list as a valid JSON
     """
     elif topic == Topics.GAMES:
@@ -232,13 +242,13 @@ async def _generate_objects_to_visualize(
         Give me a list of 30 popular video games that can be easily implemented with a web app that uses only javascript, HTML and CSS.
 
         The experiments should be simple enough that a high school student could reasonably understand and have knowledge of it.
-        
+
         An LLM such as yourself will later have to generate the code for this program. So please ensure that the subject can feasibly be implemented by an LLM.
 
         Do not include the following: {', '.join(prev_used_objects+blacklist)}.
 
         Please prioritize experiments which are interactive.
-        
+
         Output the list as a valid JSON
     """
 
@@ -258,9 +268,26 @@ async def _generate_objects_to_visualize(
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
-    completion = await client.chat.completions.create(**kwargs)
-    logger.success(f"Got objects to visualize, completion={completion=}")
-    return completion.objects
+    response_model, completion = await client.chat.completions.create_with_completion(
+        **kwargs
+    )
+
+    kwargs_clone = kwargs.copy()
+    kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
+    langfuse_context.update_current_observation(
+        input=kwargs_clone.pop("messages"),
+        model=model,
+        output=response_model.model_dump(),
+        usage=log_llm_usage(completion),
+        metadata={
+            "blacklist": blacklist,
+            "prev_used_objects": prev_used_objects,
+            "topic": topic,
+            **kwargs_clone,
+        },
+    )
+    logger.success(f"Got objects to visualize, completion={response_model=}")
+    return response_model.objects
 
 
 used_objects = []
@@ -268,6 +295,7 @@ previous_coding_question = ""
 used_models = set()
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def generate_question(
     client: instructor.AsyncInstructor, model: str, language: Language, _topic: Topics
 ) -> tuple[str | None, Dict | None]:
@@ -348,12 +376,32 @@ async def generate_question(
                     }
 
                 logger.info(kwargs["messages"][0])
-                completion: CodingQuestion = await client.chat.completions.create(
-                    **kwargs
-                )
-                coding_question = completion.question
+                (
+                    response_model,
+                    completion,
+                ) = await client.chat.completions.create_with_completion(**kwargs)
+                coding_question = response_model.question
                 coding_question = additional_notes_for_question_prompt(
                     coding_question, language
+                )
+
+                kwargs_clone = kwargs.copy()
+                kwargs_clone["response_model"] = kwargs[
+                    "response_model"
+                ].model_json_schema()
+                langfuse_context.update_current_observation(
+                    input=kwargs_clone.pop("messages"),
+                    model=model,
+                    output=response_model.model_dump(),
+                    usage=log_llm_usage(completion),
+                    metadata={
+                        "language": language,
+                        "topic": _topic,
+                        "used_objects": used_objects,
+                        "used_models": used_models,
+                        "previous_coding_question": previous_coding_question,
+                        **kwargs_clone,
+                    },
                 )
                 logger.success(f"Generated question: {coding_question}")
                 previous_coding_question = coding_question
@@ -376,6 +424,7 @@ async def generate_question(
     return None, None
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def generate_answer(
     client: LlmClient,
     model: str,
@@ -432,9 +481,31 @@ async def generate_answer(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
         ):
             with attempt:
-                completion: CodeAnswer = await client.chat.completions.create(**kwargs)
+                (
+                    response_model,
+                    completion,
+                ) = await client.chat.completions.create_with_completion(**kwargs)
+
+                kwargs_clone = kwargs.copy()
+                kwargs_clone["response_model"] = kwargs[
+                    "response_model"
+                ].model_json_schema()
+                langfuse_context.update_current_observation(
+                    input=kwargs_clone.pop("messages"),
+                    model=model,
+                    output=response_model.model_dump(),
+                    usage=log_llm_usage(completion),
+                    metadata={
+                        "question": question,
+                        "language": language,
+                        "err": err,
+                        "code": code,
+                        "topic": topic,
+                        **kwargs_clone,
+                    },
+                )
                 # logger.warning(f"@@@ answer completion: {completion} \n")
-                return model, completion
+                return model, response_model
     except RetryError:
         logger.error(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
@@ -551,6 +622,7 @@ def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]
         return random.choice(ANSWER_MODELS)
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def augment_question(
     client: LlmClient,
     model: str,
@@ -568,6 +640,7 @@ async def augment_question(
     You are an LLM specializing in modifying existing coding questions to create similar yet distinct versions. Ultimately the new edited questions that you generate will be implemented by a programming agent. As such, use your vast knowledge of UX and software engineering principles to make intelligent yet distinguishable modifications.
     </system>
     """
+
     if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"You must remove any 1 requirement from the following question: {question}. Ensure that the requirement you remove will not break the functionality of the remaining requirements."
     elif augmentation_level == AugmentationLevel.CHANGE_REQUIREMENTS:
@@ -580,6 +653,13 @@ async def augment_question(
         else:
             augmentation_prompt = f"Here is a generated coding question: {question}. \n change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question."
     elif augmentation_level == AugmentationLevel.ORIGINAL:
+        langfuse_context.update_current_observation(
+            metadata={
+                "topic": topic,
+                "question": question,
+                "augmentation_level": augmentation_level,
+            }
+        )
         return question
 
     kwargs = {
@@ -598,17 +678,36 @@ async def augment_question(
 
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, int(1e9))  # needed for OpenAI
-    completion: CodingQuestion = await client.chat.completions.create(**kwargs)
+    response_model, completion = await client.chat.completions.create_with_completion(
+        **kwargs
+    )
+
+    kwargs_clone = kwargs.copy()
+    kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
+    langfuse_context.update_current_observation(
+        input=kwargs_clone.pop("messages"),
+        model=model,
+        output=response_model.model_dump(),
+        usage=log_llm_usage(completion),
+        metadata={
+            "topic": topic,
+            "question": question,
+            "augmentation_level": augmentation_level,
+            **kwargs_clone,
+        },
+    )
     logger.success(f"Original question: {question}")
     logger.success(
-        f"Augmented question and level:  {augmentation_level}, {completion.question}"
+        f"Augmented question and level:  {augmentation_level}, {response_model.question}"
     )
-    return completion.question
+    return response_model.question
 
 
 last_topic = []  # global var used to track last used topic.
 
 
+# use trace to avoid double dipping cost logging on nested observations
+@observe(as_type="trace")
 async def build_prompt_responses_pair(
     language: Language, response_strategy: ResponseStrategy
 ):
@@ -653,6 +752,7 @@ async def build_prompt_responses_pair(
     question_prompt, _ = await generate_question(
         client, question_model, language, selected_topic[0]
     )
+
     assert type(question_prompt) is str
 
     augmented_prompts = []
