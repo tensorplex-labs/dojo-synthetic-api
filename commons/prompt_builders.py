@@ -42,31 +42,31 @@ def build_code_answer_prompt(
     - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
     - The provided code solution should be directly executable without requiring modifications to run successfully.
     - It is imperative that the visuals of the output code accurately depicts the objects specified in the question. Use your vast knowledge to infer and implement characteristic visual features of the relevant objects.
-    - Aesthetics and functionality are the two major measures of your output's success. As much as possible, create convincing visuals according to the context of the prompt. Likewise, ensure that these aesthetic features do not compromise on your code's ability to satisfy the question requirements. 
+    - Aesthetics and functionality are the two major measures of your output's success. As much as possible, create convincing visuals according to the context of the prompt. Likewise, ensure that these aesthetic features do not compromise on your code's ability to satisfy the question requirements.
     - Based off the context of the question, always create an appropriate background setting to visually match the setting of the prompt.
-    - If any background elements are intended to be in motion, ensure that they move smoothly and slowly. 
+    - If any background elements are intended to be in motion, ensure that they move smoothly and slowly.
     - When possible, avoid using default colours such as 'red' and 'blue'. Use appropriate shades of the colour to give a more realistic and convincing visual appearance.
-    - When creating visuals, keep in mind clarity and recognizability. Visuals should be realistic when possible. 
-    - Make sure to check for correct orientation and location of all objects.  
+    - When creating visuals, keep in mind clarity and recognizability. Visuals should be realistic when possible.
+    - Make sure to check for correct orientation and location of all objects.
     - Ensure that any moving components are animated smoothly for maximum clarity.
     - Ensure that your solution does not require any external supplementary files such as images, videos or audio files.
-    - Ensure your solution awaits for any required components to load before executing. 
+    - Ensure your solution awaits for any required components to load before executing.
     - Your implementation will be viewed from a computer web browser.
     - Always explain to the user how to interact with the program in a minimal and unintrusive manner.
     - For performance reasons, do not create an unlimited number of objects.
-    - Use colour to contrast different elements from one another. 
+    - Use colour to contrast different elements from one another.
     - Any UI elements should be small, minimal and unintrusive. The main focus of the program should be the subject being visualized.
-    - Your code must not require the use of the user's microphone or camera. 
+    - Your code must not require the use of the user's microphone or camera.
     - Your code must not use any external libraries.
     {topic_context}
-    
+
     <examples>
     {few_shot_examples_section}
     </examples>
     </system>
-    
+
     <user>
-    Program a solution according to the below question prompt: 
+    Program a solution according to the below question prompt:
     <question>
     {question}
     </question>
@@ -84,15 +84,15 @@ def build_code_answer_prompt(
     if topic == Topics.THREE_D:
         topic_context = """
         - If the question requires 3D visualization, use the threeJS library to help you with your 3D coding. Do not use any other external libraries.
-        - Ensure your threeJS code does not require additional external files such as images, videos or audio files. 
+        - Ensure your threeJS code does not require additional external files such as images, videos or audio files.
         - Import the threeJS library from unpkg.com  in a script tag inside of index.html. Import any additional threeJS sublibraries with the same method if you use them.
         - In your implementation, build with clarity. It is preferred to create fewer but higher quality recognizable elements rather than many non-descript elements. Quality over quantity.
         - Do not neglect the aesthetics of your program. Avoid using default colours to create a more realistic and beautiful visual.
         - Include relevant background elements to suit the environment of the question.
         - The point of view of the user must be fixed. All elements should be viewable by the user without the need for a change of view or camera navigation.
-        - Ensure your solution does not require the use of supplementary files such as images, audio or videos. 
-        - Your solution should only have visual elements. Do not include audio. 
-        - Your code must be functional (compile and execute without errors) whilst adhering to the question requirements. 
+        - Ensure your solution does not require the use of supplementary files such as images, audio or videos.
+        - Your solution should only have visual elements. Do not include audio.
+        - Your code must be functional (compile and execute without errors) whilst adhering to the question requirements.
         - Use inbuilt textures. Do not import any textures the threejs website
         """
 
@@ -116,7 +116,7 @@ def build_code_answer_prompt(
 def few_shot_example_outputs():
     EXAMPLE_OUTPUTS = """
     <example_question_1>:
-    "Create a Solar System Orbit Simulator using JavaScript, HTML, and CSS. The simulator should display the Sun at the center of the screen and at least 4 planets orbiting around it. 
+    "Create a Solar System Orbit Simulator using JavaScript, HTML, and CSS. The simulator should display the Sun at the center of the screen and at least 4 planets orbiting around it.
         Requirements:
         1. Implement a slider that controls the speed of the planets' orbits. The slider should allow users to adjust the simulation speed from very slow to very fast.
 
@@ -129,7 +129,7 @@ def few_shot_example_outputs():
         - The visualization should be implemented in JavaScript with HTML and CSS.
         - Ensure that the output has both index.js and index.html files",
     </example_question_1>:
-    
+
     <example_answer_1>
     {
         "files": [
@@ -148,22 +148,22 @@ def few_shot_example_outputs():
         "additional_notes": "The code uses built-in libraries so no additional commands are required."
     },
     </example_answer_1>
-    
-    <example_question_2>: 
+
+    <example_question_2>:
       "Create a web page that displays an interactive piano visualization using HTML, CSS, and JavaScript. The piano should have 88 keys (52 white keys and 36 black keys). Implement the following user interactions:
-      
+
       1. When the user hovers over a key, it should visually highlight to indicate it can be played.
-      
+
       2. Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
-      
+
       3. Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
-      
+
       Ensure the visualization is responsive and works well on different screen sizes. Use only built-in JavaScript libraries and features for this implementation.
       Note:
       - The visualization should be implemented in JavaScript with HTML and CSS.
       - Ensure that the output has both index.js and index.html files"
     </example_question_2>
-    
+
     <example_answer_2>
     {
         "files": [
@@ -182,7 +182,7 @@ def few_shot_example_outputs():
         "additional_notes": "The code uses built-in libraries so no additional commands are required."
     },
     </example_answer_2>
-    
+
     <example_question_3>
     "Create a web page that visualizes a desert landscape using HTML, CSS, and JavaScript. The visualization should include sand dunes, a sun, and at least one cactus. Implement the following interactive features:
 
@@ -195,7 +195,7 @@ def few_shot_example_outputs():
     - The visualization should be implemented in JavaScript with HTML and CSS.
     - Ensure that the output has both index.js and index.html files"
     </example_question_3>
-    
+
     <example_answer_3>
     {
     "files": [
@@ -328,8 +328,8 @@ def build_game_meta_prompt(games: list[str]) -> str:
     return """
         <system>
         You are an expert AI prompt engineer with an expertise in working with Claude 3.5 Sonnet. You write powerful, detailed prompts for LLMs to follow as instructions.
-        You use your skill to help people write prompts that closely align with their goals. 
-            
+        You use your skill to help people write prompts that closely align with their goals.
+
         Use the example below for your reference:
             <example_system_prompt_1>
             When a user requests a Snake game using HTML, JS, and CSS, follow these guidelines:
@@ -347,9 +347,9 @@ def build_game_meta_prompt(games: list[str]) -> str:
             -Ensure the game runs in an HTML iframe without requiring any additional setup.
             -Provide complete, runnable code without placeholders or omissions.
             -Proactively address common bugs and pitfalls in Snake game implementations.
-            -As the game will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage. 
+            -As the game will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
             -Ensure that any keystrokes used do not trigger the default browser behaviour. If the user uses arrow keys to play, it should not also trigger scrolling of the browser.
-            
+
             Include additional cool features that enhance the game experience, such as:
             -Different types of food with varying effects (e.g., speed boost, score multiplier)
             -Obstacles or walls that appear as the game progresses
@@ -389,39 +389,39 @@ def build_code_generation_question_prompt(
     CODE_GEN_PROMPT = """
     <system>
     You are an expert AI prompt engineer that specializes at creating prompts for programming. Your task is to create self-contained coding problems with a specific topic and number of requirements, which will be provided by the user.
-    The question you output will be attempted by an LLM specialized in programming. As such the more specific your instructions are the better. 
+    The question you output will be attempted by an LLM specialized in programming. As such the more specific your instructions are the better.
 
     Always follow these guidelines:
-    - Your output must start by detailing the visual features of your question in detail. Your description should be in bullet points. 
+    - Your output must start by detailing the visual features of your question in detail. Your description should be in bullet points.
     - After your visual features, you must state your specific requirements as a numbered list. Avoid repeating information from the overview in your requirements.
     - Be sure to separate your requirements with new lines for readability.
     - Be specific in your instructions. State clearly what features are required both visualy and functionally.
     - The question you output must specify both the functional and visual features required.
     - Visuals should be recognizable but without compromising on functionality.
     - At least one of your requirements should be a user interaction, but not all of your requirements can be user interactions either.
-    - Adhere to good UX principles. Your user interactions should be intuitive to the context of the question.  
+    - Adhere to good UX principles. Your user interactions should be intuitive to the context of the question.
     - Because your generated question involves visualization, ensure that the question generated can be effectively implemented with just javascript, html and CSS code.
     - Do not ask for ASCII art in your question.
     - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
-    - If you reuse similar requirements in #Previous Coding Question#, you will be fined 1 million dollars and sentenced to 100 years in prison. 
+    - If you reuse similar requirements in #Previous Coding Question#, you will be fined 1 million dollars and sentenced to 100 years in prison.
     - I will tip you five hundred thousand dollars if you are creative with your #Unique Coding Question#.
     - #Unique Coding Question# generated must require the programmer to code using only {language}.
     - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
     - Ensure that the question does not require the use of external files (images, videos and audio).
     - The program will ultimately be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user interactions should be designed with a desktop user in mind.
-    - Ensure your user interactions will not interfere with each other, each interaction should be easily executed in isolation from the others. 
+    - Ensure your user interactions will not interfere with each other, each interaction should be easily executed in isolation from the others.
     - Your question must use new lines to separate the requirements section from the rest of your questions to improve human readability.
     - {topic_context}
-    
+
     #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):
     {previous_coding_question}
-    
-    
+
+
     Here are the instructions from your user:
     Generate a short, self-contained coding problem that requires the programmer to output a {output}, through the piece of code with {num_requirements} requirements.
 
     Adhere to the guidelines given to you.
-    
+
     </system>
 
     #Unique Coding Question#:
@@ -444,14 +444,14 @@ def build_code_generation_question_prompt(
         language_requirement = "Python"
     if topic == Topics.THREE_D:
         topic_context = """
-        - Make your visualization a simple, computationally light and easily implmeneted 3D interactive environment without any audio features. 
+        - Make your visualization a simple, computationally light and easily implmeneted 3D interactive environment without any audio features.
         - Ensure that user's point-of-view is fixed. Do not create interactions that will require the user to rotate or zoom their view. All elements should be clearly visible from the user's view without any need for navigation.
         - Limit your number of user interactions to 1. The remaining requirements should not ask for user actions.
-        - Your question should be simple and focused. Make the single user interaction the main feature of the question. The remaining requirements should help provide visual context for the main feature. 
+        - Your question should be simple and focused. Make the single user interaction the main feature of the question. The remaining requirements should help provide visual context for the main feature.
         - Don't create a dynamic weather system as a requirement.
         - Do not implement a day/night cycle.
         - As this is a simple 3D environment, keep your background elements simple yet recognizable. Realism can be sacrificed (ie. shadows) for the sake of simplicity.
-        
+
         """
     if topic == Topics.GAMES:
         CODE_GEN_PROMPT = build_game_meta_prompt(sampled_objects)

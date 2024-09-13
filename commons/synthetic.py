@@ -263,7 +263,7 @@ async def _generate_objects_to_visualize(
             }
         ],
         "temperature": random.uniform(0.7, 1.0),
-        "max_tokens": 1024,
+        "max_tokens": 8192,  # 1024
         "top_p": random.uniform(0.9, 1.0),
     }
     if model.startswith("openai"):
@@ -747,6 +747,8 @@ async def build_prompt_responses_pair(
     # selected_topic = random.choices(available_topics, k=1)
     # last_topic = selected_topic
 
+    # change weights accordingly to choose what topic of Tasks to generate.
+    # in prod, we should use the above commented out topic selection instead.
     selected_topic = random.choices(list(Topics), weights=[0, 0, 0, 0, 1], k=1)
     # 2. generate a question using the topic
     question_prompt, _ = await generate_question(
