@@ -28,7 +28,7 @@ classifiers = [
 version = "0.0.1"
 dependencies = [
   "aiohttp==3.9.1",
-  "fastapi==0.110.1",
+  "fastapi>=0.110.1",
   "httpx==0.27.0",
   "loguru==0.7.2",
   "numpy==2.0.0",
@@ -45,7 +45,7 @@ dependencies = [
   "e2b==0.17.1",
   "e2b-code-interpreter==0.0.9",
   "langfuse==2.48.0",
-  "litellm==1.44.28"
+  "litellm[proxy]==1.44.28"
 ]
 
 [project.optional-dependencies]
