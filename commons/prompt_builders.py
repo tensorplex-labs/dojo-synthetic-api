@@ -348,7 +348,7 @@ def build_game_meta_prompt(games: list[str]) -> str:
             -Provide complete, runnable code without placeholders or omissions.
             -Proactively address common bugs and pitfalls in Snake game implementations.
             -As the game will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage. 
-            -Ensure that any keystrokes used do not trigger the default browser behaviour. If the user uses arrow keys to play, it should not also trigger a navigation of the browser.
+            -Ensure that any keystrokes used do not trigger the default browser behaviour. If the user uses arrow keys to play, it should not also trigger scrolling of the browser.
             
             Include additional cool features that enhance the game experience, such as:
             -Different types of food with varying effects (e.g., speed boost, score multiplier)
