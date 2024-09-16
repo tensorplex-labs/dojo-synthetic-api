@@ -68,7 +68,7 @@ class CodingQuestion(BaseModel):
 
 class FileObject(BaseModel):
     filename: str = Field(description="Name of the file")
-    content: str = Field(description="Content of the file which can be code or json")
+    content: str = Field(description="The code contents of the file.")
     language: str = Field(description="Programming language of the file")
 
 
@@ -269,7 +269,7 @@ async def _generate_objects_to_visualize(
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
     response_model = await client.chat.completions.create(**kwargs)
-    logger.info(f"@@@ response_model: {response_model}")
+    # logger.info(f"@@@ response_model: {response_model}")
 
     kwargs_clone = kwargs.copy()
     kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
@@ -495,7 +495,7 @@ async def generate_answer(
                         **kwargs_clone,
                     },
                 )
-                # logger.warning(f"@@@ answer completion: {completion} \n")
+                # logger.warning(f"@@@ generate_answer(): {response_model} \n")
                 return model, response_model
     except RetryError:
         logger.error(
@@ -754,6 +754,8 @@ async def build_prompt_responses_pair(
         # 3. augment questions
         # if augmenting, use same model for both question and answer generation
         answer_models = question_model
+        answer_models = random.choice(ANSWER_MODELS)
+
         assert type(answer_models) is str
 
         for level in AugmentationLevel:
@@ -778,6 +780,7 @@ async def build_prompt_responses_pair(
     synthetic_ground_truth: dict[str, int] = {}
     for model, result, level in results:
         if not result:
+            logger.info(f"@@@@ offending result: {result}, aug_level: {level}")
             raise RuntimeError("Error generating prompt-response pair")
 
         if language == Language.JAVASCRIPT:
