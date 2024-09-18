@@ -28,22 +28,24 @@ classifiers = [
 version = "0.0.1"
 dependencies = [
   "aiohttp==3.9.1",
-  "fastapi==0.110.1",
+  "fastapi>=0.110.1",
   "httpx==0.27.0",
   "loguru==0.7.2",
   "numpy==2.0.0",
-  "openai==1.35.13",
+  "openai>=1.0.0",
   "pydantic==2.8.2",
   "python-dotenv==1.0.1",
   "StrEnum==0.4.15",
   "tenacity==8.5.0",
   "uvicorn==0.22.0",
   "redis==5.0.7",
-  "instructor==1.2.5",
+  "instructor==1.4.1",
   "anthropic==0.25.7",
   "pandas==2.2.2",
   "e2b==0.17.1",
-  "e2b-code-interpreter==0.0.9"
+  "e2b-code-interpreter==0.0.9",
+  "langfuse==2.48.0",
+  "litellm[proxy]==1.44.28"
 ]
 
 [project.optional-dependencies]
