@@ -29,10 +29,10 @@ def build_code_answer_prompt(
         CODE_ANS_PROMPT = f"""
         <system>
         Generate me a game using HTML, JS, and CSS according to these instructions: \n {question}
-        
+
         Here is an example for your reference:
         {games_examples_section}
-        
+
         Answer according to the JSON_SCHEMA:
         </system>
         """
