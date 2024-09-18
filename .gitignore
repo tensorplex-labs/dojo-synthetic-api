@@ -1,4 +1,5 @@
-untrusted/*
+sandbox-workspace/
+!sandbox-workspace/.gitkeep
 
 pre-commit.pyz
 .DS_Store
