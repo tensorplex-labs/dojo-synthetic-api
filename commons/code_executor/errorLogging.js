@@ -1,4 +1,5 @@
 function logErrorToServer(errorData) {
+  // sends errors to endpoint defined in server.js
   fetch("/log-error", {
     method: "POST",
     headers: {
@@ -7,20 +8,6 @@ function logErrorToServer(errorData) {
     body: JSON.stringify(errorData),
   }).catch(console.error);
 }
-
-// window.onerror = function (message, source, lineno, colno, error) {
-//   const errorData = {
-//     type: 'error',
-//     message,
-//     source,
-//     lineno,
-//     colno,
-//     error: error.toString(),
-//     stack: error.stack
-//   };
-//   logErrorToServer(errorData);
-//   console.error(`Client error: ${error}, message: ${message} at ${source} line: ${lineno} col:${colno}`);
-// };
 
 window.onunhandledrejection = function (event) {
   const errorData = {

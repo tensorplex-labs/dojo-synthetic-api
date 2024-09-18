@@ -32,8 +32,6 @@ fs.access(logFilePath, fs.constants.F_OK | fs.constants.W_OK, (err) => {
       fs.writeFile(logFilePath, "", (createErr) => {
         if (createErr) {
           console.error(`Cannot create log file: ${createErr.message}`);
-        } else {
-          logger.info("Log file created and is writable");
         }
       });
     } else {
@@ -62,20 +60,6 @@ function logErrorToServer(errorData) {
   }).catch(console.error);
 }
 
-// window.onerror = function (message, source, lineno, colno, error) {
-//   const errorData = {
-//     type: 'error',
-//     message,
-//     source,
-//     lineno,
-//     colno,
-//     error: error.toString(),
-//     stack: error.stack
-//   };
-//   logErrorToServer(errorData);
-//   console.error(\`Client error: \${error}, message: \${message} at \${source} line: \${lineno} col:\${colno}\`);
-// };
-
 window.onunhandledrejection = function (event) {
   const errorData = {
     type: 'unhandledRejection',
@@ -86,7 +70,6 @@ window.onunhandledrejection = function (event) {
   console.error("Unhandled Rejection (window): " + JSON.stringify(event));
 };
 
-// Add a specific handler for TypeError
 window.addEventListener('error', function(event) {
   const errorData = {
     type: 'TypeError',
@@ -103,13 +86,6 @@ app.get("/", (req, res) => {
   logger.info("Request received");
   try {
     let html = fs.readFileSync("/untrusted/index.html", "utf8");
-    logger.info("Original HTML length:", html.length);
-    // html = html.replace("</head>", `${errorLoggingScript}</head>`);
-    // TODO not working atm for some reason, but we can directly append it inside the LLM response
-
-    html = html.replace("</body>", `${errorLoggingScript}</body>`);
-    logger.info("Modified HTML length:", html.length);
-    logger.info("Modified HTML:", html);
     if (html.includes(errorLoggingScript)) {
       logger.info("Error logging script successfully added");
     } else {
