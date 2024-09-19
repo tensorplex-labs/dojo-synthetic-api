@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
+from commons.dataset.personas import load_persona_dataset
 from commons.routes.synthetic_gen import cache, generator, synthetic_gen_router
 
 MAX_CONTENT_LENGTH = 1 * 1024 * 1024
@@ -66,6 +67,9 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def startup_lifespan(app: FastAPI):  # noqa: ARG001
+    # Load persona dataset
+    # persona_dataset = load_persona_dataset()
+    app.state.persona_dataset = load_persona_dataset()
     await generator.arun()
     await cache.connect()
     yield

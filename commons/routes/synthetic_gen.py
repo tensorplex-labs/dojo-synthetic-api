@@ -15,7 +15,7 @@ from commons.synthetic import (
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
 
-TARGET_SIZE = 1
+TARGET_SIZE = 3
 QUEUE_KEY = "synthetic:queue"
 
 
