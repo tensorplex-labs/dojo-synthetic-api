@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import os
+import socket
 import subprocess
 import sys
 import uuid
@@ -12,6 +13,22 @@ import aiofiles
 import aiofiles.os
 from bs4 import BeautifulSoup
 from loguru import logger
+from pyppeteer import launch
+from pyppeteer.browser import Browser
+from pyppeteer.page import Page
+
+
+async def visit_page(url: str) -> None:
+    try:
+        browser: Browser = await launch(headless=True)
+        page: Page = await browser.newPage()
+        logger.debug(f"Attempting to visit page {url}")
+        await page.goto(url, {"waitUntil": "networkidle0"})
+    except Exception as e:
+        logger.error(f"Error visiting the page: {e}")
+    finally:
+        await browser.close()
+
 
 bad_html_code = """
 <!DOCTYPE html>
@@ -176,11 +193,6 @@ html_code = """
 
 """
 
-try:
-    from .headless_browser_visit import visit_page
-except ImportError:
-    from commons.code_executor.headless_browser_visit import visit_page
-
 
 def handle_cancelled_error(func):
     @functools.wraps(func)
@@ -258,14 +270,25 @@ def inject_error_logging_js(html_code: str) -> str:
     return str(soup)
 
 
-async def run_sandbox(work_dir: str, run_uuid: str) -> Process | None:
+def find_free_port():
+    for port in range(3000, 4000):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("", port))
+                return port
+            except OSError:
+                continue
+    raise OSError("No free ports available in the range 3000-3999")
+
+
+async def run_sandbox(work_dir: str, run_uuid: str, port_number: int) -> Process | None:
     assert os.path.exists(work_dir), f"Work dir {work_dir} does not exist"
     assert os.path.exists(
         os.path.join(work_dir, "index.html")
     ), f"Index html file does not exist in {work_dir}"
 
     try:
-        run_sandbox_cmd = f"docker run --rm --name web-sandbox-container-{run_uuid} -p 3000:3000 -v {work_dir}:/untrusted {IMAGE_FULL_NAME}"
+        run_sandbox_cmd = f"docker run --rm --name web-sandbox-container-{run_uuid} -p {port_number}:3000 -v {work_dir}:/untrusted {IMAGE_FULL_NAME}"
 
         process = await asyncio.create_subprocess_shell(
             run_sandbox_cmd,
@@ -292,9 +315,7 @@ async def run_sandbox(work_dir: str, run_uuid: str) -> Process | None:
     return
 
 
-async def get_feedback(
-    html_code: str, browser_delay: int = 5, preserve_files: bool = True
-) -> str:
+async def get_feedback(html_code: str, preserve_files: bool = True) -> str:
     """
     Retrieves feedback for the given HTML code by executing it in a sandboxed environment.
 
@@ -326,14 +347,16 @@ async def get_feedback(
         modified_code = inject_error_logging_js(html_code)
         await f.write(modified_code)
 
-    sandbox_process = await run_sandbox(run_dir, run_uuid)
+    port_number = find_free_port()
+    sandbox_process = await run_sandbox(run_dir, run_uuid, port_number)
 
     # visit the webpage
-    await asyncio.sleep(browser_delay)
-    await visit_page()
+    page_url = f"http://localhost:{port_number}"
+    await visit_page(page_url)
 
     # read the app.log to feed to the LLM
     log_content: str = ""
+
     async with aiofiles.open(log_file_path) as f:
         log_content = await f.read()
 
@@ -374,30 +397,25 @@ async def ensure_docker_image_built():
             await _build_docker_image()
 
 
+async def test_async_lock_build_docker():
+    async def test_lock():
+        tasks = []
+        for _ in range(5):  # Create 5 concurrent tasks
+            tasks.append(asyncio.create_task(ensure_docker_image_built()))
+
+        await asyncio.gather(*tasks)
+        logger.info("All tasks completed")
+
+    await test_lock()
+
+    pass
+
+
 @handle_cancelled_error
 async def main():
-    # res = _check_docker_image_exists()
-    # logger.info(f"Docker image exists ? {res}")
-    # _build_docker_image()
-    # res = _check_docker_image_exists()
-    # logger.info(f"Docker image exists ? {res}")
-    # sandbox_code = inject_error_logging_js(html_code)
-    # logger.info(f"Sandboxed code: {sandbox_code}")
-
     feedback = await get_feedback(bad_html_code)
     logger.info(feedback)
     # pass
-
-    # async def test_lock():
-    #     tasks = []
-    #     for _ in range(5):  # Create 5 concurrent tasks
-    #         tasks.append(asyncio.create_task(ensure_docker_image_built()))
-
-    #     await asyncio.gather(*tasks)
-    #     logger.info("All tasks completed")
-
-    # # Run the test
-    # await test_lock()
 
     pass
 
