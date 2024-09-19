@@ -366,20 +366,21 @@ async def get_feedback(html_code: str, preserve_files: bool = True) -> str:
         sandbox_process.kill()
     except Exception as e:
         logger.error(f"Error while cancelling sandbox process: {e}")
-        try:
-            stop_sandbox_cmd = f"docker stop web-sandbox-container-{run_uuid}"
-            process = await asyncio.create_subprocess_exec(
-                stop_sandbox_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+
+    try:
+        stop_sandbox_cmd = f"docker stop web-sandbox-container-{run_uuid}"
+        process = await asyncio.create_subprocess_shell(
+            stop_sandbox_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await process.communicate()
+        if process.returncode != 0:
+            logger.error(
+                f"Error stopping the Docker container: {stderr.decode().strip()}"
             )
-            _, stderr = await process.communicate()
-            if process.returncode != 0:
-                logger.error(
-                    f"Error stopping the Docker container: {stderr.decode().strip()}"
-                )
-        except Exception as e:
-            logger.error(f"Error stopping the Docker container: {e}")
+    except Exception as e:
+        logger.error(f"Error stopping the Docker container: {e}")
 
     if not preserve_files:
         # remove the sandbox work dir
