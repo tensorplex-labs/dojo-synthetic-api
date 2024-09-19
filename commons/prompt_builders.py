@@ -27,14 +27,16 @@ def build_code_answer_prompt(
     games_examples_section = ""
     if topic == Topics.GAMES:
         CODE_ANS_PROMPT = f"""
-        <system>
+        <user>
         Generate me a game using HTML, JS, and CSS according to these instructions: \n {question}
         
+        Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
+
         Here is an example for your reference:
         {games_examples_section}
         
         Answer according to the JSON_SCHEMA:
-        </system>
+        </user>
         """
         if include_few_shot_examples:
             games_examples_section = f"""
@@ -254,6 +256,7 @@ def build_game_meta_prompt() -> str:
             -Proactively address common bugs and pitfalls in Snake game implementations.
             -As the game will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
             -Ensure that any keystrokes used do not trigger the default browser behaviour. If the user uses arrow keys to play, it should not also trigger scrolling of the browser.
+            -Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
 
             Include additional cool features that enhance the game experience, such as:
             -Different types of food with varying effects (e.g., speed boost, score multiplier)

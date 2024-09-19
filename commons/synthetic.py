@@ -738,7 +738,9 @@ async def build_prompt_responses_pair(
 
     # change weights accordingly to choose what topic of Tasks to generate.
     # in prod, we should use the above commented out topic selection instead.
-    selected_topic = random.choices(list(Topics), weights=[0, 0, 0, 0, 1], k=1)
+    selected_topic = random.choices(
+        list(Topics), weights=[0.2, 0.2, 0.2, 0.2, 0.2], k=1
+    )
     # 2. generate a question using the topic
     question_prompt, _ = await generate_question(
         client, question_model, language, selected_topic[0]
