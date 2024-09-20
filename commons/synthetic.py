@@ -837,8 +837,7 @@ async def build_prompt_responses_pair(
 
     # change weights accordingly to choose what topic of Tasks to generate.
     # in prod, we should use the above commented out topic selection instead.
-    selected_topic = random.choices(list(Topics), weights=[0, 0, 0, 1, 0], k=1)
-    assert Topics.THREE_D in selected_topic
+    selected_topic = random.choices(list(Topics), weights=[1, 0, 0, 0, 0], k=1)
 
     # 2. generate a question using the topic
     question_prompt, _ = await generate_question(

@@ -8,7 +8,6 @@ from tenacity import AsyncRetrying, RetryError, stop_after_attempt
 
 from commons.code_executor.feedback import get_feedback
 from commons.llm.openai_proxy import Provider, get_openai_kwargs
-from commons.synthetic import FileObject, log_retry_info
 
 kwargs = get_openai_kwargs(Provider.OPENROUTER)
 
@@ -411,6 +410,8 @@ async def code_feedback_loop(
     logger.info(f"Initial feedback: {feedback}")
     state = CodeIterationState()
     state.add_iteration(code=code, error=feedback)
+
+    from commons.synthetic import FileObject, log_retry_info
 
     kwargs = {
         "response_model": FileObject,
