@@ -8,7 +8,7 @@ from tenacity import AsyncRetrying, RetryError, stop_after_attempt
 
 from commons.code_executor.feedback import get_feedback
 from commons.llm.openai_proxy import Provider, get_openai_kwargs
-from commons.synthetic import log_retry_info
+from commons.synthetic import FileObject, log_retry_info
 
 kwargs = get_openai_kwargs(Provider.OPENROUTER)
 
@@ -18,17 +18,151 @@ client = instructor.from_openai(
 )
 
 
-class SingleFileSolution(BaseModel):
-    filename: str
-    content: str
-    language: str
+CLAUDE_3_5_PROMPT = """
+# Code Fixing Agent System Prompt
 
+## Primary Task
+Your primary task is to provide a step-by-step plan to fix given code, taking into account any execution error(s). Always provide full code without omitting any details.
 
-class CodeSolution(BaseModel):
-    files: list[SingleFileSolution]
+## Execution Error Context
+- The code is always a single `index.html` file containing HTML, CSS, and JS code.
+- The `index.html` file is visited on the client-side, and a server-side logger captures it, typically at `localhost:3000` (port range: 3000-3999).
+- Important: Errors located at `localhost:<port_number>` in error logs actually refer to the `index.html` file.
 
+## Fixing Guidelines
 
-EOS_TOKEN = "complete"
+### Module Imports
+1. Use import maps for module imports. Provide them as an inline script tag:
+   ```html
+   <script type="importmap">
+       {
+           "imports": {
+               "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+           }
+       }
+   </script>
+   ```
+2. Ensure consistency in version numbers between parent and child modules.
+3. Use only import statements from CDNs with the following domains:
+   - jsdelivr.net
+   - unpkg.com
+   - cdnjs.com
+
+### General Fixes
+1. Always provide complete, runnable code in your solutions.
+2. Explain each step of your fixing process clearly.
+3. If multiple issues are present, address them in order of significance.
+
+## Problem-Solving Approach
+1. Analyze the given code and error message(s) thoroughly.
+2. Identify the root cause(s) of the error(s).
+3. Develop a step-by-step plan to address each issue.
+4. Implement the fixes, ensuring you follow the fixing guidelines.
+5. Provide the complete, corrected code.
+6. Explain your changes and why they resolve the issue(s).
+
+## Example
+
+Given Code:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="solar-system"></canvas>
+    <script type="module">
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solar-system') });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const controls = new OrbitControls(camera, renderer.domElement);
+    </script>
+</body>
+</html>
+```
+
+Execution Error:
+```
+Uncaught ReferenceError: THREE is not defined
+```
+
+Step-by-step fix:
+
+1. Add import map for Three.js and OrbitControls:
+   ```html
+   <script type="importmap">
+       {
+           "imports": {
+               "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+           }
+       }
+   </script>
+   ```
+
+2. Import Three.js and OrbitControls in the module script:
+   ```javascript
+   import * as THREE from 'three';
+   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+   ```
+
+3. Update the script to use the imported modules.
+
+Fixed Code:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="solar-system"></canvas>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solar-system') });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const controls = new OrbitControls(camera, renderer.domElement);
+    </script>
+</body>
+</html>
+```
+
+Explanation:
+- Added an import map to specify the locations of Three.js and its addons.
+- Imported Three.js and OrbitControls using ES6 module syntax.
+- The code now correctly references the imported modules, resolving the "THREE is not defined" error.
+
+Remember: Always provide full, runnable code and explain your fixes clearly.
+
+"""
+
 
 THREE_JS_BADEXAMPLE = """
 ...
@@ -68,35 +202,50 @@ THREE_JS_FIXED_IMPORTS_EXAMPLE = """
 ...
 """
 
+
 PROMPT = """
-Your task is to fix the code given the following code and the error message & diagnostics.
-- If there are no errors or nothing left to fix, simply output "{end_token}".
-- For example to fix import errors, you should only use the import statements from CDNs like <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/<library_version_number>/three.min.js"></script> inside the <head> tag.
-- You may also use unpkg.com and jsdelivr.net CDNs.
-- Make sure you provide full code, do not leave out any details for brevity. Details in the example below have been omitted only for brevity but you must not leave out any details in your own output.
+<system_prompt_start>
+Your task is to provide a step by step plan to fix the given code, taking into account the execution error(s).
+- Make sure you provide full code and not omit any details.
 
-Code:
-{code}
+<execution_error_context>
+For context, the code is always a single index.html file that contains HTML, CSS, and JS code.
+</execution_error_context>
 
-Error:
-{error}
+<fixing_guidelines>
+- When fixing errors related to importing modules, you must use import maps and provide it as inline script tag like so:
 
-For example:
-Error: three.js cannot be imported.
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+        }
+    }
+</script>
 
-Part of original code:
+- When importing modules, you must ensure that any parent modules use the same version number as the child module for consistency. This is to ensure that the code works as expected.
+- When using import statements, you must use only import statements from CDNs with the domain jsdelivr.net, unpkg.com or cdnjs.com
+</fixing_guidelines>
+
+<example_code_with_error>
+Given Code:
 ```html
 {bad_example}
-... # other code ...
 ```
+
+Execution Error:
+Error: three.js cannot be imported
 
 Fixed code:
 ```html
-<script>
 {fixed_example}
-... # other code ...
 ```
 
+</example_1>
+</system_prompt_end>
+
+Remember to provide full code and not omit any details.
 Let's take a deep breath and think step by step.
 """
 
@@ -190,9 +339,11 @@ class CodeIteration(BaseModel):
     code: str
     error: str | None
     iteration: int
+    # currently unused!!!
     actions: str = Field(
         description="The actions taken at this iteration to solve the problem."
     )
+    # currently unused!!!
     thoughts: str = Field(
         description="The thought process on whether the actions taken solved the problem or not."
     )
@@ -227,21 +378,34 @@ def build_messages_single_turn(code, error):
     return [
         {
             "role": "system",
-            "content": PROMPT.format(
-                end_token=EOS_TOKEN,
-                code=code,
-                error=error,
-                bad_example=THREE_JS_BADEXAMPLE.replace("{", "{{").replace("}", "}}"),
-                fixed_example=THREE_JS_FIXED_IMPORTS_EXAMPLE.replace("{", "{{").replace(
-                    "}", "}}"
-                ),
-            ),
+            "content": CLAUDE_3_5_PROMPT,
+            # "content": PROMPT.format(
+            #     bad_example=THREE_JS_BADEXAMPLE.replace("{", "{{").replace("}", "}}"),
+            #     fixed_example=THREE_JS_FIXED_IMPORTS_EXAMPLE.replace("{", "{{").replace(
+            #         "}", "}}"
+            #     ),
+            # ),
+        },
+        {
+            "role": "user",
+            "content": f"""
+Given Code:
+{code}
+
+Execution Error:
+{error}
+
+Fixed Code:
+            """,
         },
     ]
 
 
 async def code_feedback_loop(
-    code: str, model: str = "anthropic/claude-3.5-sonnet"
+    code: str,
+    model: str = "anthropic/claude-3.5-sonnet",
+    max_iterations: int = 3,
+    max_retries_per_iter: int = 3,
 ) -> tuple[CodeIterationState, list[dict[str, str]]]:
     feedback = await get_feedback(code)
     logger.info(f"Initial feedback: {feedback}")
@@ -249,14 +413,11 @@ async def code_feedback_loop(
     state.add_iteration(code=code, error=feedback)
 
     kwargs = {
-        "response_model": SingleFileSolution,
+        "response_model": FileObject,
         "model": model,
         "temperature": 0.0,
         "max_tokens": 16384,
     }
-    MAX_OPENROUTER_RETRIES = 5
-    MAX_LOOP_ITERATIONS = 3
-    complete = False
 
     # form initial messages array
     message_history = build_messages_single_turn(
@@ -264,10 +425,10 @@ async def code_feedback_loop(
     )
     logger.debug(f"Chat history: {message_history}")
 
-    while not complete and state.current_iteration < MAX_LOOP_ITERATIONS:
+    while state.current_iteration < max_iterations:
         try:
             async for attempt in AsyncRetrying(
-                stop=stop_after_attempt(MAX_OPENROUTER_RETRIES),
+                stop=stop_after_attempt(max_retries_per_iter),
                 before_sleep=log_retry_info,
             ):
                 with attempt:
@@ -276,23 +437,22 @@ async def code_feedback_loop(
                     )
 
                     kwargs["messages"] = messages
-                    completion: CodeIteration = await client.chat.completions.create(
+                    completion: FileObject = await client.chat.completions.create(
                         **kwargs
                     )
                     logger.info(f"Completion: {completion}")
-                    # Assuming the completion contains a flag or content indicating completion
-                    if EOS_TOKEN == completion.content.strip():
-                        complete = True
-                        break
-
-                    # Update state with new code and feedback
                     feedback = await get_feedback(completion.content)
                     state.add_iteration(code=completion.content, error=feedback)
+
+                    if not feedback:
+                        break
+
                     # Update messages for the next iteration
                     message_history.extend(messages)
+
         except RetryError as e:
             logger.error(
-                f"Failed to generate answer after {MAX_OPENROUTER_RETRIES} attempts."
+                f"Failed to generate answer after {max_retries_per_iter} attempts."
             )
             raise e
         except Exception as e:
