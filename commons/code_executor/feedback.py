@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -315,7 +316,7 @@ async def run_sandbox(work_dir: str, run_uuid: str, port_number: int) -> Process
     return
 
 
-async def get_feedback(html_code: str, preserve_files: bool = True) -> str:
+async def get_feedback(html_code: str, preserve_files: bool = False) -> str:
     """
     Retrieves feedback for the given HTML code by executing it in a sandboxed environment.
 
@@ -384,7 +385,7 @@ async def get_feedback(html_code: str, preserve_files: bool = True) -> str:
 
     if not preserve_files:
         # remove the sandbox work dir
-        await aiofiles.os.rmdir(run_dir)
+        await asyncio.to_thread(shutil.rmtree, run_dir, ignore_errors=True)
 
     return log_content
 
@@ -416,7 +417,6 @@ async def test_async_lock_build_docker():
 async def main():
     feedback = await get_feedback(bad_html_code)
     logger.info(feedback)
-    # pass
 
     pass
 
