@@ -20,6 +20,7 @@ from tenacity import (
 )
 
 from commons.dataset import ANSWER_MODELS, GENERATOR_MODELS
+from commons.dataset.personas import get_random_persona
 from commons.executor.python_executor import PythonExecutor
 from commons.executor.utils import ExecutionError
 from commons.llm.openai_proxy import (
@@ -100,7 +101,7 @@ class ErrorAnswer(BaseModel):
 class AugmentationLevel(Enum):
     ORIGINAL = 0
     REMOVE_REQUIREMENTS = 1
-    CHANGE_REQUIREMENTS = 2
+    ADD_REQUIREMENTS = 2
     CHANGE_ANIMATION_OBJECT = 3
 
 
@@ -319,7 +320,11 @@ async def generate_question(
                 )
                 # # randomly select one topic to be used to generate objects + question
                 # selected_topic = random.choices(population=list(Topics), k=1)
+                # attempt to get random persona
+
                 if language == Language.JAVASCRIPT:
+                    persona = get_random_persona()
+                    logger.info(f"@@@@@ persona: {persona}")
                     print("Generating objects to visualize")
                     possible_objects = await _generate_objects_to_visualize(
                         client, model, used_objects, _topic
@@ -342,6 +347,7 @@ async def generate_question(
                                 previous_coding_question,
                                 language,
                                 topic=_topic,
+                                persona=persona,
                             ),
                         }
                     ],
@@ -634,8 +640,8 @@ async def augment_question(
 
     if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"You must remove any 1 requirement from the following question: {question}. Ensure that the requirement you remove will not break the functionality of the remaining requirements."
-    elif augmentation_level == AugmentationLevel.CHANGE_REQUIREMENTS:
-        augmentation_prompt = f"Here is a generated coding question: {question}. \n generate a similar coding question using the same subject. Change only the enumerated requirements from the original question. Do not change the specified subject or the number of requirements. Your new question should implement the same subject as the original question, just with a new set of requirements. Ensure your new requirements are distinct from the original."
+    elif augmentation_level == AugmentationLevel.ADD_REQUIREMENTS:
+        augmentation_prompt = f"Here is a generated coding question: {question}. \n Add a new requirement to the question. Ensure your new requirements are distinct from the existing. Ensure that your new requirement does not break the functionality of the remaining requirements."
     elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
         if topic == Topics.SCIENCE:
             augmentation_prompt = f"Here is a generated coding question: {question}. \n Generate a new coding question similar to the original, but with a similar science experiment that is different from the original. "
@@ -738,9 +744,8 @@ async def build_prompt_responses_pair(
 
     # change weights accordingly to choose what topic of Tasks to generate.
     # in prod, we should use the above commented out topic selection instead.
-    selected_topic = random.choices(
-        list(Topics), weights=[0.2, 0.2, 0.2, 0.2, 0.2], k=1
-    )
+    selected_topic = random.choices(list(Topics), weights=[1, 0, 0, 0, 0], k=1)
+
     # 2. generate a question using the topic
     question_prompt, _ = await generate_question(
         client, question_model, language, selected_topic[0]
@@ -756,7 +761,6 @@ async def build_prompt_responses_pair(
         # 3. augment questions
         # if augmenting, use same model for both question and answer generation
         answer_models = question_model
-        answer_models = random.choice(ANSWER_MODELS)
 
         assert type(answer_models) is str
 
@@ -782,7 +786,6 @@ async def build_prompt_responses_pair(
     synthetic_ground_truth: dict[str, int] = {}
     for model, result, level in results:
         if not result:
-            logger.info(f"@@@@ offending result: {result}, aug_level: {level}")
             raise RuntimeError("Error generating prompt-response pair")
 
         if language == Language.JAVASCRIPT:

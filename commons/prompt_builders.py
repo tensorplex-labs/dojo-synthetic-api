@@ -283,9 +283,12 @@ def build_code_generation_question_prompt(
     previous_coding_question: str,
     language: Language,
     topic: Topics,
+    persona: str | None,
 ) -> str:
     print(f"Generating {topic} question with {num_requirements} requirements")
     # coding_question_json = CodingQuestion.model_json_schema()
+    if persona:
+        return build_question_with_persona(persona, num_requirements)
     JAVASCRIPT_OUTPUT = """
     interactive visualization of one of the following subjects: {objects}
     """
@@ -373,4 +376,47 @@ def build_code_generation_question_prompt(
             previous_coding_question=previous_coding_question,
             topic_context=topic_context,
         )
+    )
+
+
+def build_question_with_persona(persona: str, num_requirements: int):
+    question_prompt = f"""
+    <system>
+    You are an expert AI prompt engineer that specializes at creating prompts for programming. Your task is to create self-contained coding problems that would be useful for the following individual: {persona}
+    The question you output will be attempted by an LLM specialized in programming. As such your requirements should be specific, detailed but also feasible for an LLM to implement effectively.
+
+    Always follow these guidelines:
+    - Your output must start by detailing the visual features of your question in detail. Your description should be in bullet points.
+    - After your visual features, you must state your specific requirements as a numbered list. Avoid repeating information from the overview in your requirements.
+    - Be sure to separate your requirements with new lines for readability.
+    - Be specific in your instructions. State clearly what features are required both visualy and functionally.
+    - The question you output must specify both the functional and visual features required.
+    - Visuals should be recognizable but without compromising on functionality.
+    - At least one of your requirements should be a user interaction, but not all of your requirements can be user interactions either.
+    - Adhere to good UX principles. Your user interactions should be intuitive to the context of the question.
+    - Because your generated question involves visualization, ensure that the question generated can be effectively implemented with just javascript, html and CSS code.
+    - Do not ask for ASCII art in your question.
+    - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
+    - If you reuse similar requirements in #Previous Coding Question#, you will be fined 1 million dollars and sentenced to 100 years in prison.
+    - I will tip you five hundred thousand dollars if you are creative with your #Unique Coding Question#.
+    - #Unique Coding Question# generated must require the programmer to code using only vanilla Javascript, HTML and CSS.
+    - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
+    - Ensure that the question does not require the use of external files (images, videos and audio).
+    - The program will ultimately be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user interactions should be designed with a desktop user in mind.
+    - Ensure your user interactions will not interfere with each other, each interaction should be easily executed in isolation from the others.
+    - Your question must use new lines to separate the requirements section from the rest of your questions to improve human readability.
+
+
+    Here are the instructions from your user:
+    Generate a short, self-contained coding problem that requires the programmer to output a interactive visualization, through the piece of code with {num_requirements} requirements.
+
+    Adhere to the guidelines given to you.
+
+    </system>
+
+    #Unique Coding Question#:
+    """
+
+    return textwrap.dedent(
+        question_prompt.format(num_requirements=num_requirements, persona=persona)
     )
