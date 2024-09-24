@@ -1,12 +1,10 @@
 import asyncio
-import functools
 import os
 import shutil
 import socket
 import subprocess
 import sys
 import uuid
-from asyncio import CancelledError
 from asyncio.subprocess import Process
 from typing import Literal
 
@@ -18,8 +16,29 @@ from pyppeteer import launch
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
+logger.remove()
+logger.add(sys.stdout, level="DEBUG")
 
-async def visit_page(url: str) -> None:
+IMAGE_NAME = "web-sandbox"
+IMAGE_TAG = "latest"
+IMAGE_FULL_NAME = f"{IMAGE_NAME}:{IMAGE_TAG}"
+# location of this file, irrespective of where the code is run from
+FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+SANDBOX_WORK_DIR = FILE_DIR + "/sandbox-workspace"
+lock = asyncio.Lock()
+
+
+async def _visit_page(url: str) -> None:
+    """
+    Visits the given URL using pyppeteer to trigger rendering of the webpage and
+    subsequently loggin
+
+    Args:
+        url (str): The URL to be visited.
+
+    Raises:
+        Exception: If there's an error visiting the page.
+    """
     try:
         browser: Browser = await launch(headless=True)
         page: Page = await browser.newPage()
@@ -31,193 +50,17 @@ async def visit_page(url: str) -> None:
         await browser.close()
 
 
-bad_html_code = """
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar System Visualization</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overflw: hidden;
-        }
-
-        #solar-system {
-            width: 100vw;
-            height: 100vh;
-        }
-    </style>
-</head>
-
-<body>
-    <canvas id="solar-system"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.mjs"></script>
-    <script>
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeigh, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solar-system') });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
-        const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-        scene.add(sun);
-
-        const planets = [
-            { name: 'Mercury', radius: 0.5, distance: 10, color: 0x8a8a8a },
-            { name: 'Venus', radius: 0.8, distance: 15, color: 0xe39e1c },
-            { name: 'Earth', radius: 1, distance: 20, color: 0x6b93d6 },
-            { name: 'Mars', radius: 0.7, distance: 25, color: 0xc1440e },
-            { name: 'Jupiter', radius: 2, distance: 35, color: 0xd8ca9d },
-            { name: 'Saturn', radius: 1.8, distance: 45, color: 0xead6b8 },
-            { name: 'Uranus', radius: 1.3, distance: 55, color: 0xd1e7e7 },
-            { name: 'Neptune', radius: 1.2, distance: 65, color: 0x5b5ddf }
-        ];
-
-        planets.forEach(planet => {
-            const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-            const material = new THREE.MeshBasicMaterrial({ color: planet.color });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.x = planet.distance;
-            scene.add(mesh);
-        });
-
-        camera.position.z = 100;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            planets.forEach((planet, index) => {
-                const mesh = scene.children[index + 1];
-                mesh.position.x = cos(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-                mesh.position.z = sin(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-            });
-            renderer.render(scene, camera);
-        }
-
-        // animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.inerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-
-</html>
-"""
-
-html_code = """
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar System Visualization</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overflow: hidden;
-        }
-
-        #solar-system {
-            width: 100vw;
-            height: 100vh;
-        }
-    </style>
-</head>
-
-<body>
-    <canvas id="solar-system"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solar-system') });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
-        const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-        scene.add(sun);
-
-        const planets = [
-            { name: 'Mercury', radius: 0.5, distance: 10, color: 0x8a8a8a },
-            { name: 'Venus', radius: 0.8, distance: 15, color: 0xe39e1c },
-            { name: 'Earth', radius: 1, distance: 20, color: 0x6b93d6 },
-            { name: 'Mars', radius: 0.7, distance: 25, color: 0xc1440e },
-            { name: 'Jupiter', radius: 2, distance: 35, color: 0xd8ca9d },
-            { name: 'Saturn', radius: 1.8, distance: 45, color: 0xead6b8 },
-            { name: 'Uranus', radius: 1.3, distance: 55, color: 0xd1e7e7 },
-            { name: 'Neptune', radius: 1.2, distance: 65, color: 0x5b5ddf }
-        ];
-
-        planets.forEach(planet => {
-            const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-            const material = new THREE.MeshBasicMaterial({ color: planet.color });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.x = planet.distance;
-            scene.add(mesh);
-        });
-
-        camera.position.z = 100;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            planets.forEach((planet, index) => {
-                const mesh = scene.children[index + 1];
-                mesh.position.x = Math.cos(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-                mesh.position.z = Math.sin(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-            });
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        window.addEventListener('resize', ( => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-
-</html>
-
-"""
-
-
-def handle_cancelled_error(func):
-    @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            return await func(*args, **kwargs)
-        except CancelledError:
-            logger.info(f"Operation cancelled: {func.__name__}")
-
-    return wrapper
-
-
-logger.remove()
-logger.add(sys.stdout, level="DEBUG")
-
-IMAGE_NAME = "web-sandbox"
-IMAGE_TAG = "latest"
-IMAGE_FULL_NAME = f"{IMAGE_NAME}:{IMAGE_TAG}"
-FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-SANDBOX_WORK_DIR = FILE_DIR + "/sandbox-workspace"
-lock = asyncio.Lock()
-
-
 async def _build_docker_image() -> tuple[Literal[True], int]:
+    """
+    Builds the Docker image for the web sandbox on the host machine.
+
+    Raises:
+        e: _description_
+
+    Returns:
+        tuple[Literal[True], int]: True to indicate the image was built successfully,
+        and the return code of the build command.
+    """
     build_cmd = f"docker build -t {IMAGE_FULL_NAME} {FILE_DIR}"
     try:
         logger.debug(f"Trying to run command: {build_cmd}")
@@ -229,6 +72,15 @@ async def _build_docker_image() -> tuple[Literal[True], int]:
 
 
 async def _check_docker_image_exists(image_name: str = IMAGE_NAME) -> tuple[bool, int]:
+    """
+    Checks if the Docker image exists on the host machine.
+
+    Args:
+        image_name (str, optional): The name of the Docker image to check. Defaults to IMAGE_NAME.
+
+    Returns:
+        tuple[bool, int]: True to indicate the image exists, and the return code of the check command.
+    """
     try:
         check_image_cmd = f"docker images -q {image_name}"
         process = await asyncio.create_subprocess_shell(
@@ -257,7 +109,16 @@ with open(FILE_DIR + "/errorLogging.js") as f:
 logger.debug(f"Error logging js:\n{error_logging_js}")
 
 
-def inject_error_logging_js(html_code: str) -> str:
+def _inject_error_logging_js(html_code: str) -> str:
+    """
+    Injects the error logging JavaScript into the HTML code.
+
+    Args:
+        html_code (str): The HTML code to inject the error logging JavaScript into.
+
+    Returns:
+        str: The modified HTML code with the error logging JavaScript injected.
+    """
     soup = BeautifulSoup(html_code, "html.parser")
     html_tag = soup.find("html")
 
@@ -271,7 +132,16 @@ def inject_error_logging_js(html_code: str) -> str:
     return str(soup)
 
 
-def find_free_port():
+def _find_free_port():
+    """
+    Finds a free port in the range 3000-3999, because we want to allow running the feedback loop asynchronously using docker. This means that we might run into cases where port <port_no> is already in use by another container, so we need to dynamically find free ports.
+
+    Raises:
+        OSError: If no free ports are available in the range 3000-3999.
+
+    Returns:
+        int: A free port number in the range 3000-3999.
+    """
     for port in range(3000, 4000):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
@@ -333,7 +203,7 @@ async def get_feedback(html_code: str, preserve_files: bool = False) -> str:
 
     """
 
-    await ensure_docker_image_built()
+    await _ensure_docker_image_built()
 
     run_uuid = str(uuid.uuid4())
     run_dir = os.path.join(SANDBOX_WORK_DIR, f"run_{run_uuid}")
@@ -345,15 +215,18 @@ async def get_feedback(html_code: str, preserve_files: bool = False) -> str:
 
     async with aiofiles.open(index_html_path, "w") as f:
         # inject error logging js for client side
-        modified_code = inject_error_logging_js(html_code)
+        modified_code = _inject_error_logging_js(html_code)
         await f.write(modified_code)
 
-    port_number = find_free_port()
+    # find a free port on the host machine in the range 3000-3999
+    port_number = _find_free_port()
+
+    # run the sandbox
     sandbox_process = await run_sandbox(run_dir, run_uuid, port_number)
 
     # visit the webpage
     page_url = f"http://localhost:{port_number}"
-    await visit_page(page_url)
+    await _visit_page(page_url)
 
     # read the app.log to feed to the LLM
     log_content: str = ""
@@ -364,7 +237,8 @@ async def get_feedback(html_code: str, preserve_files: bool = False) -> str:
         logger.info(f"Reading code feedback from log file, content: {log_content}")
 
     try:
-        sandbox_process.kill()
+        if sandbox_process:
+            sandbox_process.kill()
     except Exception as e:
         logger.error(f"Error while cancelling sandbox process: {e}")
 
@@ -390,36 +264,10 @@ async def get_feedback(html_code: str, preserve_files: bool = False) -> str:
     return log_content
 
 
-async def ensure_docker_image_built():
+async def _ensure_docker_image_built():
     async with lock:
         is_image_exists, _ = await _check_docker_image_exists()
         if is_image_exists:
             logger.debug("Docker image already exists, skipping build")
         else:
             await _build_docker_image()
-
-
-async def test_async_lock_build_docker():
-    async def test_lock():
-        tasks = []
-        for _ in range(5):  # Create 5 concurrent tasks
-            tasks.append(asyncio.create_task(ensure_docker_image_built()))
-
-        await asyncio.gather(*tasks)
-        logger.info("All tasks completed")
-
-    await test_lock()
-
-    pass
-
-
-@handle_cancelled_error
-async def main():
-    feedback = await get_feedback(bad_html_code)
-    logger.info(feedback)
-
-    pass
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
