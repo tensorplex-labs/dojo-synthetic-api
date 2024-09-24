@@ -24,7 +24,7 @@ from commons.executor.python_executor import PythonExecutor
 from commons.executor.utils import ExecutionError
 from commons.llm.llm_api import (
     Provider,
-    get_instructor_client,
+    get_llm_api_client,
 )
 from commons.prompt_builders import (
     Language,
@@ -703,7 +703,7 @@ async def build_prompt_responses_pair(
     global used_models
     global last_topic
 
-    client = get_instructor_client(Provider.OPENROUTER)
+    client = get_llm_api_client(Provider.OPENROUTER)
     question_model = random.choice(GENERATOR_MODELS)
     used_models = set()
 
@@ -824,7 +824,7 @@ async def build_prompt_responses_pair(
 
 async def test_generate_questions(language: Language):
     log_data = []
-    client = get_instructor_client(provider=Provider.OPENROUTER)
+    client = get_llm_api_client(provider=Provider.OPENROUTER)
     selected_topic = random.choices(population=list(Topics), k=1)
     for model in GENERATOR_MODELS:
         result = await generate_question(client, model, language, selected_topic[0])
