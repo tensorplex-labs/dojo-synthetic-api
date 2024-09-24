@@ -6,7 +6,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from commons.dataset import GENERATOR_MODELS
+from commons.config import GENERATOR_MODELS
 
 directory = "commons/dataset/sample_synthetic_bank"
 sentences = []

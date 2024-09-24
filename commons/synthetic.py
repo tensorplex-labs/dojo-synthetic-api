@@ -19,10 +19,10 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.dataset import ANSWER_MODELS, GENERATOR_MODELS
+from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.executor.python_executor import PythonExecutor
 from commons.executor.utils import ExecutionError
-from commons.llm.openai_proxy import (
+from commons.llm.llm_api import (
     Provider,
     get_instructor_client,
 )
@@ -429,7 +429,7 @@ async def generate_answer(
     topic: Topics | None = None,
 ) -> Tuple[str, CodeAnswer | None]:
     """Generates a coding question answer for a given coding question."""
-    import commons.dataset as dataset
+    import commons.config as config
 
     print(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
@@ -502,7 +502,7 @@ async def generate_answer(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
         )
         used_models.add(model)
-        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
+        remaining_models = [m for m in config.ANSWER_MODELS if m not in used_models]
         # return if no models remaining
         if not remaining_models:
             logger.error("No answer models left to try.")
