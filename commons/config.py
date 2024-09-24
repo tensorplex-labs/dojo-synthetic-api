@@ -1,3 +1,58 @@
+import os
+from functools import lru_cache
+
+from dotenv import find_dotenv, load_dotenv
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings
+
+load_dotenv(find_dotenv(".env"))
+
+# TODO continue adding all differrent configs here
+
+
+# we use this instead of the Field(..., env=...) due to some errors in resolving
+# the env variables from pydantic, also due to some pyright parsing issues
+class LangfuseSettings(BaseSettings):
+    public_key: SecretStr = Field(default=os.getenv("LANGFUSE_PUBLIC_KEY", ""))
+    secret_key: SecretStr = Field(default=os.getenv("LANGFUSE_SECRET_KEY", ""))
+    host: str = Field(default="https://us.cloud.langfuse.com")
+
+
+class RedisSettings(BaseSettings):
+    host: str = Field(default=os.getenv("REDIS_HOST", "localhost"))
+    port: int = Field(default=int(os.getenv("REDIS_PORT", "6379")))
+    username: str = Field(default=os.getenv("REDIS_USERNAME", "default"))
+    password: SecretStr = Field(default=os.getenv("REDIS_PASSWORD", ""))
+
+
+class LlmApiSettings(BaseSettings):
+    together_api_key: SecretStr = Field(default=os.getenv("TOGETHER_API_KEY", ""))
+    together_api_base_url: str = Field(default="https://api.together.xyz/v1")
+    openai_api_key: SecretStr = Field(default=os.getenv("OPENAI_API_KEY", ""))
+    openai_api_base_url: str = Field(default="https://api.openai.com/v1")
+    openrouter_api_key: SecretStr = Field(default=os.getenv("OPENROUTER_API_KEY", ""))
+    openrouter_api_base_url: str = Field(default="https://openrouter.ai/api/v1")
+
+
+class SubnetSettings(BaseSettings):
+    validator_min_stake: int = Field(default=20_000)
+
+
+class Settings(BaseSettings):
+    langfuse: LangfuseSettings = LangfuseSettings()
+    redis: RedisSettings = RedisSettings()
+    llm_api: LlmApiSettings = LlmApiSettings()
+
+    class Config:
+        extra = "forbid"
+        case_sensitive = True
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    return Settings()
+
+
 VALIDATOR_MIN_STAKE = 20_000
 
 GENERATOR_MODELS = [
