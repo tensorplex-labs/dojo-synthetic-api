@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Dict, List, Tuple, cast
 
 import instructor
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
@@ -19,6 +20,7 @@ from tenacity import (
     stop_after_attempt,
 )
 
+from commons.code_executor.simple_cot import code_feedback_loop
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.executor.python_executor import PythonExecutor
 from commons.executor.utils import ExecutionError
@@ -695,6 +697,75 @@ async def augment_question(
 last_topic = []  # global var used to track last used topic.
 
 
+def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
+    file_extensions = set(os.path.splitext(file.filename)[1] for file in ans.files)
+    logger.debug(f"file extensions: {file_extensions}")
+    has_js = ".js" in file_extensions
+    has_css = ".css" in file_extensions
+    has_html = ".html" in file_extensions
+
+    if not has_html:
+        raise ValueError("No HTML file found in the CodeAnswer")
+
+    index_html_file = [
+        f for f in ans.files if os.path.splitext(f.filename)[1] == ".html"
+    ]
+    assert len(index_html_file) == 1
+    index_html = index_html_file[0]
+    soup = BeautifulSoup(index_html.content, "html.parser")
+
+    # Ensure we have html and head tags
+    html_tag = soup.find("html")
+    if not html_tag:
+        html_tag = soup.new_tag("html")
+        soup.append(html_tag)
+
+    head_tag = soup.find("head")
+    if not head_tag:
+        head_tag = soup.new_tag("head")
+        html_tag.insert(0, head_tag)
+
+    body_tag = soup.find("body")
+    if not body_tag:
+        body_tag = soup.new_tag("body")
+        html_tag.append(body_tag)
+
+    if has_css:
+        index_css_file = [
+            f for f in ans.files if os.path.splitext(f.filename)[1] == ".css"
+        ]
+        assert len(index_css_file) == 1
+        index_css = index_css_file[0]
+        style_tag = soup.new_tag("style")
+        style_tag.string = index_css.content
+        head_tag.append(style_tag)
+
+    if has_js:
+        index_js_file = [
+            f for f in ans.files if os.path.splitext(f.filename)[1] == ".js"
+        ]
+        assert len(index_js_file) == 1
+        index_js = index_js_file[0]
+        script_tag = soup.new_tag("script")
+        script_tag.string = index_js.content
+        body_tag.append(script_tag)
+
+    # Keep only the HTML file, removing JS and CSS files
+    new_files = [
+        f for f in ans.files if os.path.splitext(f.filename)[1] not in [".js", ".css"]
+    ]
+    # Update the content of the HTML file
+    for file in new_files:
+        if file.filename == "index.html":
+            file.content = str(soup)
+
+    return CodeAnswer(
+        files=new_files,
+        installation_commands=ans.installation_commands,
+        additional_notes=ans.additional_notes,
+    )
+
+
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
 async def build_prompt_responses_pair(
@@ -720,6 +791,34 @@ async def build_prompt_responses_pair(
             model, result = await generate_answer(
                 client, model, question, language, topic=topic
             )
+
+            # TODO remove after testing ensure single index.html file just for now
+            ans_with_index_html = build_single_index_html(result)
+            html_file = next(
+                (
+                    file
+                    for file in ans_with_index_html.files
+                    if file.filename == "index.html"
+                ),
+                None,
+            )
+            if html_file:
+                pass
+            else:
+                raise ValueError("No index.html file found in the answer")
+
+            iteration_state, message_history = await code_feedback_loop(
+                code=html_file.content
+            )
+            logger.trace(f"message history: {message_history}")
+
+            # final html file
+            final_html = iteration_state.latest_code
+            # replace whole CodeAnswer with a single final_html file
+            for file in result.files:
+                if file.filename == "index.html":
+                    file.content = final_html
+
         elif language == Language.PYTHON:
             model, result = await generate_answer_with_feedback(
                 client, model, question, language

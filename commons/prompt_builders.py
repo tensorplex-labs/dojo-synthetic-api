@@ -29,12 +29,12 @@ def build_code_answer_prompt(
         CODE_ANS_PROMPT = f"""
         <user>
         Generate me a game using HTML, JS, and CSS according to these instructions: \n {question}
-        
+
         Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
 
         Here is an example for your reference:
         {games_examples_section}
-        
+
         Answer according to the JSON_SCHEMA:
         </user>
         """
