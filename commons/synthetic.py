@@ -22,8 +22,6 @@ from tenacity import (
 
 from commons.code_executor.simple_cot import code_feedback_loop
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
-from commons.executor.python_executor import PythonExecutor
-from commons.executor.utils import ExecutionError
 from commons.llm.llm_api import (
     Provider,
     get_llm_api_client,
@@ -111,13 +109,6 @@ class ResponseStrategy(Enum):
     NO_AUGMENTATION = 1
 
 
-async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
-    """Ensure that necessary files appended for python and javascript"""
-    result_object = await append_codesandbox_files(result_object)
-    # result_object = escape_double_quotes_in_files(result_object)
-    return result_object
-
-
 def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     package_json_content = json.dumps(
         {
@@ -145,45 +136,6 @@ def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
     )
     codeanswer_object.files.append(package_json_file)
     return codeanswer_object
-
-
-async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    print("in python")
-    main_file: FileObject | None = None
-    for file in codeanswer_object.files:
-        if file.language.lower() == "python" and file.filename == "main.py":
-            main_file = file
-            break
-
-    if not main_file:
-        logger.info("No main.py file found in code answer of Python code")
-        logger.info(codeanswer_object)
-        raise Exception("No main.py file found in code answer of Python code")
-
-    executor = PythonExecutor(code=main_file.content)
-    try:
-        loop = asyncio.get_event_loop()
-        html = await loop.run_in_executor(None, executor.main)
-    except ExecutionError as e:
-        logger.error(f"Error occurred while executing Python code: {e}")
-        raise e
-
-    codeanswer_object.files = [
-        FileObject(filename="index.html", content=html, language="html")
-    ]
-
-    return codeanswer_object
-
-
-async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    python_file_detected = any(
-        file.language.lower() == "python" for file in codeanswer_object.files
-    )
-    if python_file_detected:
-        codeanswer_object = await handle_python_files(codeanswer_object)
-
-    # changed to always run this since handle_python_files returns html which needs the parcel stuff
-    return handle_javascript_files(codeanswer_object)
 
 
 @observe(as_type="generation", capture_input=False, capture_output=False)
@@ -560,40 +512,6 @@ async def generate_python_fix_prompt(
     return build_python_fix_prompt(code=code, err=err)
 
 
-async def generate_answer_with_feedback(
-    client: LlmClient,
-    model: str,
-    question: str,
-    language: Language,
-    max_attempts: int = 3,
-) -> Tuple[str, CodeAnswer | None]:
-    previous_code = None
-    err = None
-    attempt_count = 0
-    previous_err = None
-
-    while attempt_count < max_attempts:
-        model, result = await generate_answer(
-            client, model, question, language, previous_code, err
-        )
-        if result is None:
-            return model, None
-
-        try:
-            return model, await parse_code_response(result)
-        except ExecutionError as e:
-            err = e.err
-            previous_code = e.code
-
-            if err == previous_err:
-                attempt_count += 1
-            else:
-                attempt_count = 0
-                previous_err = err
-
-    return model, None
-
-
 def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]:
     # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
     # randomly sampled from pool of models
@@ -767,7 +685,7 @@ def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
 
 
 # use trace to avoid double dipping cost logging on nested observations
-@observe(as_type="trace")
+@observe(as_type="trace")  # type: ignore
 async def build_prompt_responses_pair(
     language: Language, response_strategy: ResponseStrategy
 ):
@@ -818,11 +736,6 @@ async def build_prompt_responses_pair(
             for file in result.files:
                 if file.filename == "index.html":
                     file.content = final_html
-
-        elif language == Language.PYTHON:
-            model, result = await generate_answer_with_feedback(
-                client, model, question, language
-            )
 
         return model, result, level
 
@@ -883,9 +796,6 @@ async def build_prompt_responses_pair(
         if not result:
             logger.info(f"@@@@ offending result: {result}, aug_level: {level}")
             raise RuntimeError("Error generating prompt-response pair")
-
-        if language == Language.JAVASCRIPT:
-            result = await parse_code_response(result)
 
         formatted_files = [
             {

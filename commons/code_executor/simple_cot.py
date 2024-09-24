@@ -7,9 +7,10 @@ from pydantic import BaseModel, Field
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt
 
 from commons.code_executor.feedback import get_feedback
-from commons.llm.openai_proxy import Provider, get_openai_kwargs
+from commons.llm.llm_api import Provider, get_llm_api_kwargs
 
-kwargs = get_openai_kwargs(Provider.OPENROUTER)
+kwargs = get_llm_api_kwargs(Provider.OPENROUTER)
+
 
 client = instructor.from_openai(
     AsyncOpenAI(api_key=kwargs["api_key"], base_url=kwargs["base_url"]),
