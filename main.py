@@ -5,9 +5,12 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from rich.traceback import install
 
 from commons.routes.health import health_router
 from commons.routes.synthetic_gen import cache, generator, synthetic_gen_router
+
+install(show_locals=True)
 
 MAX_CONTENT_LENGTH = 1 * 1024 * 1024
 

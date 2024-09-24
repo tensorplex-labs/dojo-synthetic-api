@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import random
 import traceback
@@ -20,12 +19,9 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.code_iterator.iterator import debug_initial_code
+from commons.code_iterator import debug_initial_code
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
-from commons.llm.llm_api import (
-    Provider,
-    get_llm_api_client,
-)
+from commons.llm import get_llm_api_client
 from commons.prompt_builders import (
     Language,
     Topics,
@@ -107,35 +103,6 @@ class AugmentationLevel(Enum):
 class ResponseStrategy(Enum):
     AUGMENTATION_DETERIORIATE = 0
     NO_AUGMENTATION = 1
-
-
-def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    package_json_content = json.dumps(
-        {
-            "name": "javascript",
-            "version": "1.0.0",
-            "description": "The JavaScript template",
-            "scripts": {
-                "start": "parcel ./index.html",
-                "build": "parcel build ./index.html",
-            },
-            "devDependencies": {
-                "parcel": "^2.0.0",
-                "babel-eslint": "^10.1.0",
-                "eslint": "^7.2.0",
-            },
-            "keywords": ["css", "javascript"],
-        },
-        indent=4,
-    )
-
-    package_json_file = FileObject(
-        filename="package.json",
-        content=package_json_content,
-        language="json",
-    )
-    codeanswer_object.files.append(package_json_file)
-    return codeanswer_object
 
 
 @observe(as_type="generation", capture_input=False, capture_output=False)
@@ -692,7 +659,7 @@ async def build_prompt_responses_pair(
     global used_models
     global last_topic
 
-    client = get_llm_api_client(Provider.OPENROUTER)
+    client = get_llm_api_client()
     question_model = random.choice(GENERATOR_MODELS)
     used_models = set()
 
@@ -725,13 +692,13 @@ async def build_prompt_responses_pair(
             else:
                 raise ValueError("No index.html file found in the answer")
 
-            iteration_state, message_history = await debug_initial_code(
-                initial_html_code=html_file.content
+            iteration_state = await debug_initial_code(
+                initial_html_code=html_file.content,
+                model=model,
             )
-            logger.trace(f"message history: {message_history}")
 
             # final html file
-            final_html = iteration_state.latest_code
+            final_html = iteration_state.latest_iteration.code
             # replace whole CodeAnswer with a single final_html file
             for file in result.files:
                 if file.filename == "index.html":
@@ -829,39 +796,3 @@ async def build_prompt_responses_pair(
         "augmented_prompts": augmented_prompts,
         "topic": selected_topic[0].name,
     }
-
-
-async def test_generate_questions(language: Language):
-    log_data = []
-    client = get_llm_api_client(provider=Provider.OPENROUTER)
-    selected_topic = random.choices(population=list(Topics), k=1)
-    for model in GENERATOR_MODELS:
-        result = await generate_question(client, model, language, selected_topic[0])
-        if result is None:
-            continue
-        # unstructure tuple
-        question, kwargs = result
-        log_data.append({"model": model, "question": question, "kwargs": kwargs})
-
-    print(f"{log_data}")
-    # Convert the list of dictionaries to a JSON string
-    for data in log_data:
-        data["kwargs"].pop("response_model")
-    json_data = json.dumps(log_data, indent=4)
-
-    # Write the JSON string to a file
-    with open("output.json", "w") as file:
-        file.write(json_data)
-
-
-async def main():
-    language = Language("Python")
-    responses = await build_prompt_responses_pair(
-        language=language, response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
-    )
-    with open("output.json", "w") as f:
-        json.dump(responses, f, indent=4)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

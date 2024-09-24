@@ -46,7 +46,8 @@ dependencies = [
   "e2b-code-interpreter==0.0.9",
   "langfuse==2.48.0",
   "litellm[proxy]==1.44.28",
-  "pydantic-settings==2.5.2"
+  "pydantic-settings==2.5.2",
+  "rich==13.8.0"
 ]
 
 [project.optional-dependencies]

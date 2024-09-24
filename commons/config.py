@@ -1,5 +1,4 @@
 import os
-from functools import lru_cache
 
 from dotenv import find_dotenv, load_dotenv
 from pydantic import Field, SecretStr
@@ -34,10 +33,6 @@ class LlmApiSettings(BaseSettings):
     openrouter_api_base_url: str = Field(default="https://openrouter.ai/api/v1")
 
 
-class SubnetSettings(BaseSettings):
-    validator_min_stake: int = Field(default=20_000)
-
-
 class Settings(BaseSettings):
     langfuse: LangfuseSettings = LangfuseSettings()
     redis: RedisSettings = RedisSettings()
@@ -48,12 +43,9 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
 
-
-VALIDATOR_MIN_STAKE = 20_000
 
 GENERATOR_MODELS = [
     # COMMENTED OUT THESE MODELS BECAUSE NOT WORKING / NOT STABLE

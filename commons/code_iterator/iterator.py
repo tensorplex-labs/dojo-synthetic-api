@@ -3,16 +3,13 @@ from pydantic import BaseModel, Field
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt
 
 from commons.code_executor import get_feedback
-from commons.llm.llm_api import Provider, get_llm_api_client
-
-from .prompts import ITERATOR_PROMPT
+from commons.code_iterator.prompts import ITERATOR_PROMPT
+from commons.llm import get_llm_api_client
 
 
 class CodeIteration(BaseModel):
-    code: str = Field(description="Code for current iteration.")
-    error: str | None = Field(
-        description="Error feedback for code at current iteration."
-    )
+    code: str
+    error: str
     actions: str = Field(
         default="",
         description="The actions required to be taken to fix any errors in code.",
@@ -36,7 +33,7 @@ class CodeIterationStates(BaseModel):
         return self.iterations[-1] if self.iterations else None
 
 
-def build_messages_single_turn(iteration: CodeIteration):
+def _build_messages_single_turn(iteration: CodeIteration):
     return [
         {
             "role": "system",
@@ -102,7 +99,7 @@ async def debug_initial_code(
     if not states.latest_iteration:
         raise ValueError("No initial iteration found")
 
-    client = get_llm_api_client(Provider.OPENROUTER)
+    client = get_llm_api_client()
     while states.current_iteration_num < max_iterations and feedback:
         try:
             async for attempt in AsyncRetrying(
@@ -110,7 +107,7 @@ async def debug_initial_code(
             ):
                 with attempt:
                     latest_iteration = states.latest_iteration
-                    messages = build_messages_single_turn(latest_iteration)
+                    messages = _build_messages_single_turn(latest_iteration)
 
                     kwargs["messages"] = messages
                     completion: CodeIteration = await client.chat.completions.create(

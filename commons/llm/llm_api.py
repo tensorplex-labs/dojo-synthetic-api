@@ -1,5 +1,3 @@
-import os
-
 import instructor
 from dotenv import load_dotenv
 from instructor import Mode
@@ -7,14 +5,9 @@ from loguru import logger
 from openai import AsyncOpenAI
 from strenum import StrEnum
 
-load_dotenv()
+from commons.config import get_settings
 
-TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
-TOGETHER_API_BASE_URL = "https://api.together.xyz/v1"
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_API_BASE_URL = "https://api.openai.com/v1"
-OPENROUTER_API_BASE_URL = "https://openrouter.ai/api/v1"
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+load_dotenv()
 
 
 class Provider(StrEnum):
@@ -23,7 +16,7 @@ class Provider(StrEnum):
     OPENROUTER = "openrouter"
 
 
-def get_llm_api_kwargs(provider: Provider) -> dict[str, str]:
+def _get_llm_api_kwargs(provider: Provider) -> dict[str, str]:
     """build kwargs for different llm api providers, due to being able to use
     AsyncOpenAI as the default client
 
@@ -37,13 +30,24 @@ def get_llm_api_kwargs(provider: Provider) -> dict[str, str]:
     Returns:
         dict[str, str]: the kwargs for the llm api provider
     """
+
+    llm_api_settings = get_settings().llm_api
     kwargs = {}
     if provider == Provider.TOGETHER_AI:
-        kwargs = {"api_key": TOGETHER_API_KEY, "base_url": TOGETHER_API_BASE_URL}
+        kwargs = {
+            "api_key": llm_api_settings.together_api_key.get_secret_value(),
+            "base_url": llm_api_settings.together_api_base_url,
+        }
     elif provider == Provider.OPENAI:
-        kwargs = {"api_key": OPENAI_API_KEY, "base_url": OPENAI_API_BASE_URL}
+        kwargs = {
+            "api_key": llm_api_settings.openai_api_key.get_secret_value(),
+            "base_url": llm_api_settings.openai_api_base_url,
+        }
     elif provider == Provider.OPENROUTER:
-        kwargs = {"api_key": OPENROUTER_API_KEY, "base_url": OPENROUTER_API_BASE_URL}
+        kwargs = {
+            "api_key": llm_api_settings.openrouter_api_key.get_secret_value(),
+            "base_url": llm_api_settings.openrouter_api_base_url,
+        }
 
     if not kwargs:
         raise ValueError(f"Unknown provider specified , provider: {provider}")
@@ -56,7 +60,9 @@ def get_llm_api_kwargs(provider: Provider) -> dict[str, str]:
     return kwargs
 
 
-def get_llm_api_client(provider: Provider) -> instructor.AsyncInstructor:
+def get_llm_api_client(
+    provider: Provider = Provider.OPENROUTER,
+) -> instructor.AsyncInstructor:
     """instantiate the llm api client, where the instructor client wraps the
     openai client so that we can easily work with pydantic models without having
     to manually parse the json
@@ -67,7 +73,7 @@ def get_llm_api_client(provider: Provider) -> instructor.AsyncInstructor:
     Returns:
         instructor.AsyncInstructor: the llm api client
     """
-    kwargs = get_llm_api_kwargs(provider)
+    kwargs = _get_llm_api_kwargs(provider)
     return instructor.from_openai(
         AsyncOpenAI(api_key=kwargs["api_key"], base_url=kwargs["base_url"]),
         mode=Mode.MD_JSON,

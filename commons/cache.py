@@ -8,9 +8,9 @@ from commons.config import get_settings
 def build_redis_url() -> str:
     redis = get_settings().redis
     if redis.username and redis.password:
-        return f"redis://{redis.username}:{redis.password}@{redis.host}:{redis.port}"
+        return f"redis://{redis.username}:{redis.password.get_secret_value()}@{redis.host}:{redis.port}"
     elif redis.password:
-        return f"redis://:{redis.password}@{redis.host}:{redis.port}"
+        return f"redis://:{redis.password.get_secret_value()}@{redis.host}:{redis.port}"
     else:
         return f"redis://{redis.host}:{redis.port}"
 
