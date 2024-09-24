@@ -152,7 +152,9 @@ def _find_free_port():
     raise OSError("No free ports available in the range 3000-3999")
 
 
-async def run_sandbox(work_dir: str, run_uuid: str, port_number: int) -> Process | None:
+async def _run_sandbox(
+    work_dir: str, run_uuid: str, port_number: int
+) -> Process | None:
     assert os.path.exists(work_dir), f"Work dir {work_dir} does not exist"
     assert os.path.exists(
         os.path.join(work_dir, "index.html")
@@ -222,7 +224,7 @@ async def get_feedback(html_code: str, preserve_files: bool = False) -> str:
     port_number = _find_free_port()
 
     # run the sandbox
-    sandbox_process = await run_sandbox(run_dir, run_uuid, port_number)
+    sandbox_process = await _run_sandbox(run_dir, run_uuid, port_number)
 
     # visit the webpage
     page_url = f"http://localhost:{port_number}"
