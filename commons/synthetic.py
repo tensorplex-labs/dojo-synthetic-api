@@ -20,7 +20,7 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.code_executor.simple_cot import code_feedback_loop
+from commons.code_iterator.simple_cot import debug_initial_code
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.llm.llm_api import (
     Provider,
@@ -725,8 +725,8 @@ async def build_prompt_responses_pair(
             else:
                 raise ValueError("No index.html file found in the answer")
 
-            iteration_state, message_history = await code_feedback_loop(
-                code=html_file.content
+            iteration_state, message_history = await debug_initial_code(
+                initial_code=html_file.content
             )
             logger.trace(f"message history: {message_history}")
 

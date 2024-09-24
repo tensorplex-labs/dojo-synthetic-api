@@ -1,21 +1,18 @@
 import json
-import os
 
 from redis import asyncio as aioredis
 
+from commons.config import get_settings
+
 
 def build_redis_url() -> str:
-    host = os.getenv("REDIS_HOST", "localhost")
-    port = int(os.getenv("REDIS_PORT", 6379))
-    username = os.getenv("REDIS_USERNAME")
-    password = os.getenv("REDIS_PASSWORD")
-
-    if username and password:
-        return f"redis://{username}:{password}@{host}:{port}"
-    elif password:
-        return f"redis://:{password}@{host}:{port}"
+    redis = get_settings().redis
+    if redis.username and redis.password:
+        return f"redis://{redis.username}:{redis.password}@{redis.host}:{redis.port}"
+    elif redis.password:
+        return f"redis://:{redis.password}@{redis.host}:{redis.port}"
     else:
-        return f"redis://{host}:{port}"
+        return f"redis://{redis.host}:{redis.port}"
 
 
 class RedisCache:
@@ -25,8 +22,6 @@ class RedisCache:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.redis = None
-            # loop = asyncio.get_running_loop()
-            # loop.run_until_complete(cls._instance.connect())
         return cls._instance
 
     async def connect(self):

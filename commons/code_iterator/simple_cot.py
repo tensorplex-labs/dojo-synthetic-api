@@ -1,5 +1,3 @@
-import asyncio
-
 import instructor
 from loguru import logger
 from openai import AsyncOpenAI
@@ -250,100 +248,13 @@ Let's take a deep breath and think step by step.
 """
 
 
-ORBIT_CONTROLS_HTML = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Solar System Visualization</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overflow: hidden;
-        }
-        #solar-system {
-            width: 100vw;
-            height: 100vh;
-        }
-    </style>
-</head>
-<body>
-    <canvas id="solar-system"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
-    <script>
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solar-system') });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
-        // Add OrbitControls
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-
-        const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-        scene.add(sun);
-
-        const planets = [
-            { name: 'Mercury', radius: 0.5, distance: 10, color: 0x8a8a8a },
-            { name: 'Venus', radius: 0.8, distance: 15, color: 0xe39e1c },
-            { name: 'Earth', radius: 1, distance: 20, color: 0x6b93d6 },
-            { name: 'Mars', radius: 0.7, distance: 25, color: 0xc1440e },
-            { name: 'Jupiter', radius: 2, distance: 35, color: 0xd8ca9d },
-            { name: 'Saturn', radius: 1.8, distance: 45, color: 0xead6b8 },
-            { name: 'Uranus', radius: 1.3, distance: 55, color: 0xd1e7e7 },
-            { name: 'Neptune', radius: 1.2, distance: 65, color: 0x5b5ddf }
-        ];
-
-        planets.forEach(planet => {
-            const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-            const material = new THREE.MeshBasicMaterial({ color: planet.color });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.x = planet.distance;
-            scene.add(mesh);
-        });
-
-        camera.position.z = 100;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            planets.forEach((planet, index) => {
-                const mesh = scene.children[index + 1];
-                mesh.position.x = Math.cos(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-                mesh.position.z = Math.sin(Date.now() * 0.001 * (1 / planet.distance)) * planet.distance;
-            });
-            controls.update(); // Update OrbitControls
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-</html>
-"""
-
-
 class CodeIteration(BaseModel):
     code: str
     error: str | None
     iteration: int
-    # currently unused!!!
     actions: str = Field(
         description="The actions taken at this iteration to solve the problem."
     )
-    # currently unused!!!
     thoughts: str = Field(
         description="The thought process on whether the actions taken solved the problem or not."
     )
@@ -379,12 +290,6 @@ def build_messages_single_turn(code, error):
         {
             "role": "system",
             "content": CLAUDE_3_5_PROMPT,
-            # "content": PROMPT.format(
-            #     bad_example=THREE_JS_BADEXAMPLE.replace("{", "{{").replace("}", "}}"),
-            #     fixed_example=THREE_JS_FIXED_IMPORTS_EXAMPLE.replace("{", "{{").replace(
-            #         "}", "}}"
-            #     ),
-            # ),
         },
         {
             "role": "user",
@@ -401,16 +306,17 @@ Fixed Code:
     ]
 
 
-async def code_feedback_loop(
-    code: str,
+# based on an initial piece of code, perform CoT loop to fix any errors with the code
+async def debug_initial_code(
+    initial_code: str,
     model: str = "anthropic/claude-3.5-sonnet",
     max_iterations: int = 3,
     max_retries_per_iter: int = 3,
-) -> tuple[CodeIterationState, list[dict[str, str]]]:
-    feedback = await get_feedback(code)
+):
+    feedback = await get_feedback(initial_code)
     logger.info(f"Initial feedback: {feedback}")
     state = CodeIterationState()
-    state.add_iteration(code=code, error=feedback)
+    state.add_iteration(code=initial_code, error=feedback)
 
     from commons.synthetic import FileObject, log_retry_info
 
@@ -421,13 +327,7 @@ async def code_feedback_loop(
         "max_tokens": 16384,
     }
 
-    # form initial messages array
-    message_history = build_messages_single_turn(
-        code=state.latest_code, error=state.latest_error
-    )
-    logger.debug(f"Chat history: {message_history}")
-
-    while state.current_iteration < max_iterations:
+    while state.current_iteration < max_iterations and feedback:
         try:
             async for attempt in AsyncRetrying(
                 stop=stop_after_attempt(max_retries_per_iter),
@@ -448,10 +348,6 @@ async def code_feedback_loop(
 
                     if not feedback:
                         break
-
-                    # Update messages for the next iteration
-                    message_history.extend(messages)
-
         except RetryError as e:
             logger.error(
                 f"Failed to generate answer after {max_retries_per_iter} attempts."
@@ -461,12 +357,4 @@ async def code_feedback_loop(
             logger.error(f"Error occurred while generating code answer: {e}")
             raise e
 
-    return state, message_history
-
-
-async def main():
-    _ = await code_feedback_loop(code=ORBIT_CONTROLS_HTML)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    return state
