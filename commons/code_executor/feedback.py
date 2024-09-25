@@ -3,7 +3,6 @@ import os
 import shutil
 import socket
 import subprocess
-import sys
 import uuid
 from asyncio.subprocess import Process
 from typing import Literal
@@ -15,9 +14,6 @@ from loguru import logger
 from pyppeteer import launch
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
-
-logger.remove()
-logger.add(sys.stdout, level="DEBUG")
 
 IMAGE_NAME = "web-sandbox"
 IMAGE_TAG = "latest"

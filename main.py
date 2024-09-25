@@ -12,8 +12,6 @@ from commons.routes.synthetic_gen import cache, generator, synthetic_gen_router
 
 install(show_locals=True)
 
-MAX_CONTENT_LENGTH = 1 * 1024 * 1024
-
 logger.remove()
 logger.add(sys.stderr, level="DEBUG", backtrace=True, diagnose=True)
 
