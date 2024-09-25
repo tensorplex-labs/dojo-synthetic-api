@@ -26,9 +26,9 @@ class SyntheticGenResponse(BaseModel):
 
 
 @synthetic_gen_router.get("/synthetic-gen")
-async def execute_python_code(background_tasks: BackgroundTasks):
+async def generate_synthetic_data(background_tasks: BackgroundTasks):
     try:
-        num_elems = await cache.redis.llen(QUEUE_KEY)
+        num_elems = await cache.get_queue_length()
         if num_elems:
             result = await generator.get_one()
             try:
@@ -52,7 +52,6 @@ class SyntheticGenerator:
     _instance = None
     _num_workers = 10
     # point it to the shared cache between the generator and the router
-    done = cache
     todo = asyncio.Queue()
     semaphore = asyncio.Semaphore(TARGET_SIZE)
 
@@ -83,7 +82,7 @@ class SyntheticGenerator:
     async def calc_work_todo(self):
         # num_keys = await cache.check_num_keys(REDIS_PREFIX)
         await cache.connect()
-        num_keys = await cache.redis.llen(QUEUE_KEY)
+        num_keys = await cache.get_queue_length()
         num_data = max(TARGET_SIZE - num_keys, 0)
         return num_data
 
@@ -91,7 +90,7 @@ class SyntheticGenerator:
         await self.todo.get()
         try:
             async with self.semaphore:
-                num_keys = await cache.redis.llen(QUEUE_KEY)
+                num_keys = await cache.get_queue_length()
                 if num_keys < TARGET_SIZE:
                     language = Language.JAVASCRIPT
                     responses = await build_prompt_responses_pair(
@@ -99,7 +98,9 @@ class SyntheticGenerator:
                         response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE,
                     )
                     # responses = await build_2_prompt_responses_pairs()
-                    await cache.redis.rpush(QUEUE_KEY, json.dumps(responses))
+                    # TODO test if implentation works
+                    await cache.enqueue(responses)
+
         except Exception as exc:
             logger.opt(exception=True).error(f"ERROR: {exc}")
         finally:
@@ -115,9 +116,9 @@ class SyntheticGenerator:
         await self.todo.put(todo_data)
 
     async def get_one(self):
-        """Tries to get one item from the done queue.
+        """Tries to get one item from the queue.
         Otherwise waits on any of the workers to finish."""
-        return await self.done.redis.lpop(QUEUE_KEY)
+        return await cache.dequeue()
 
 
 generator = SyntheticGenerator()
