@@ -1,7 +1,6 @@
 import asyncio
 import os
 import random
-import traceback
 import uuid
 from enum import Enum
 from typing import Dict, List, Tuple, cast
@@ -32,6 +31,7 @@ from commons.prompt_builders import (
     build_python_fix_prompt,
     build_python_review_prompt,
 )
+from commons.utils.logging import log_retry_info
 
 load_dotenv()
 
@@ -46,14 +46,6 @@ def log_llm_usage(completion):
         "output": completion.usage.completion_tokens,
         "unit": "TOKENS",
     }
-
-
-def log_retry_info(retry_state):
-    """Meant to be used with tenacity's before_sleep callback"""
-    logger.warning(
-        f"Retry attempt {retry_state.attempt_number} failed with exception: {retry_state.outcome.exception()}",
-    )
-    logger.warning(f"Traceback: {traceback.format_exc()}")
 
 
 class CodingQuestion(BaseModel):
@@ -584,7 +576,7 @@ last_topic = []  # global var used to track last used topic.
 
 def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
     file_extensions = set(os.path.splitext(file.filename)[1] for file in ans.files)
-    logger.debug(f"file extensions: {file_extensions}")
+    logger.debug(f"found file extensions from CodeAnswer: {file_extensions}")
     has_js = ".js" in file_extensions
     has_css = ".css" in file_extensions
     has_html = ".html" in file_extensions
