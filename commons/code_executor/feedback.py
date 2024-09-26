@@ -99,10 +99,12 @@ async def _check_docker_image_exists(image_name: str = IMAGE_NAME) -> tuple[bool
         raise
 
 
-with open(FILE_DIR + "/errorLogging.js") as f:
-    error_logging_js = f.read()
-
-logger.debug(f"Error logging js:\n{error_logging_js}")
+error_logging_js: str = ""
+try:
+    with open(FILE_DIR + "/errorLogging.js") as f:
+        error_logging_js = f.read()
+except Exception as e:
+    logger.error(f"Error reading errorLogging.js: {e}")
 
 
 def _inject_error_logging_js(html_code: str) -> str:
