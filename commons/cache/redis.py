@@ -1,9 +1,11 @@
 import json
-from typing import Any, List
+from collections.abc import Awaitable
+from typing import Any, cast
 
 import uuid_utils
 from fastapi.encoders import jsonable_encoder
 from loguru import logger
+from redis import asyncio as aioredis
 from redis.asyncio.client import Redis
 
 from commons.config import RedisSettings, get_settings
@@ -26,12 +28,13 @@ class RedisCache:
     # historical data
     _hist_key: str = "history"
     _encoding: str = "utf-8"
-    redis: Redis | None = None
+    redis: Redis  # pyright: ignore[reportMissingTypeArgument]
 
     def __new__(cls) -> "RedisCache":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.redis = None
+            redis_url = build_redis_url()
+            cls._instance.redis = aioredis.from_url(url=redis_url)
         return cls._instance
 
     def _build_key(self, *parts: str) -> str:
@@ -39,19 +42,15 @@ class RedisCache:
             raise ValueError("Must specify at least one redis key")
         return f"{self._key_prefix}:{':'.join(parts)}"
 
-    async def connect(self) -> None:
-        if self.redis is None:
-            redis_url = build_redis_url()
-            self.redis = await Redis.from_url(redis_url)  # type: ignore
-
     async def close(self) -> None:
-        if self.redis:
-            await self.redis.aclose()
+        if self.redis:  # pyright: ignore[reportUnknownMemberType]
+            await self.redis.close()  # pyright: ignore[reportUnknownMemberType]
 
     async def get_queue_length(self) -> int:
-        await self.connect()
         key = self._build_key(self._queue_key)
-        num_items: int = await self.redis.llen(key)  # type: ignore
+        if not self.redis:  # pyright: ignore[reportUnknownMemberType]
+            raise ValueError("Redis connection not established")
+        num_items: int = await cast(Awaitable[int], self.redis.llen(key))  # pyright: ignore[reportUnknownMemberType]
         logger.debug(f"Queue length: {num_items}")
         return num_items
 
@@ -78,11 +77,10 @@ class RedisCache:
         # use uuid7 so keys in redis are sorted by time
         hist_key = self._build_key(self._hist_key, uuid_utils.uuid7().__str__())
         try:
-            await self.connect()
             logger.debug(f"Writing persistent data into {hist_key}")
             # place into persistent key
             str_data = json.dumps(jsonable_encoder(data)).encode(self._encoding)
-            await self.redis.set(hist_key, str_data)
+            await self.redis.set(hist_key, str_data)  # pyright: ignore[reportUnknownMemberType]
 
             queue_key = self._build_key(self._queue_key)
             logger.debug(f"Writing queue data into {queue_key}")
@@ -100,13 +98,15 @@ class RedisCache:
         """Dequeue an item from the specified queue key, assumes it is a queue and
         returns the value as as a string
         """
-        current_key = self._build_key(self._queue_key)
+        current_key: str = self._build_key(self._queue_key)
         try:
-            await self.connect()
-            value_raw = await self.redis.lpop(current_key)
+            value_raw = await cast(
+                Awaitable[str | bytes | list[Any] | None],
+                self.redis.lpop(current_key),  # pyright: ignore[reportUnknownMemberType]
+            )
 
             value: str | None = None
-            if isinstance(value_raw, List) or isinstance(value_raw, list):
+            if isinstance(value_raw, list):
                 raise NotImplementedError("not implemented")
             elif isinstance(value_raw, bytes):
                 value = value_raw.decode(self._encoding)

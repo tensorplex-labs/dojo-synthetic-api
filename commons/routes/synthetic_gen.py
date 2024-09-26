@@ -81,7 +81,6 @@ class SyntheticGenerator:
 
     async def calc_work_todo(self):
         # num_keys = await cache.check_num_keys(REDIS_PREFIX)
-        await cache.connect()
         num_keys = await cache.get_queue_length()
         num_data = max(TARGET_SIZE - num_keys, 0)
         return num_data

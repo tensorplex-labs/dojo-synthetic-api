@@ -19,7 +19,6 @@ logger.add(sys.stderr, level="DEBUG", backtrace=True, diagnose=True)
 @asynccontextmanager
 async def startup_lifespan(app: FastAPI):  # noqa: ARG001
     await generator.arun()
-    await cache.connect()
     yield
     await cache.close()
 
