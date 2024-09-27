@@ -17,7 +17,6 @@ Currently, synthetic-api only generates code output as Javascript. We are in the
 Before running the synthetic-api, you will need the following keys:
 
 - Openrouter (from https://openrouter.ai/)
-- E2B (from https://e2b.dev/)
 
 Copy the .env.example file to a .env file and fill in the blanks, here we will use Openrouter as our LLM API provider.
 
@@ -30,7 +29,6 @@ cp .env.example .env
 REDIS_USERNAME=
 REDIS_PASSWORD=
 OPENROUTER_API_KEY=
-E2B_API_KEY=
 ```
 
 ## Run with docker-compose
