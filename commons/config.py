@@ -33,10 +33,23 @@ class LlmApiSettings(BaseSettings):
     openrouter_api_base_url: str = Field(default="https://openrouter.ai/api/v1")
 
 
+class UvicornSettings(BaseSettings):
+    num_workers: int = Field(default=2)
+    port: int = Field(default=5003)
+    host: str = Field(default="0.0.0.0")
+    log_level: str = Field(default="debug")
+
+
+class GenerationSettings(BaseSettings):
+    buffer_size: int = Field(default=4)
+
+
 class Settings(BaseSettings):
     langfuse: LangfuseSettings = LangfuseSettings()
     redis: RedisSettings = RedisSettings()
     llm_api: LlmApiSettings = LlmApiSettings()
+    uvicorn: UvicornSettings = UvicornSettings()
+    generation: GenerationSettings = GenerationSettings()
 
     class Config:
         extra = "forbid"

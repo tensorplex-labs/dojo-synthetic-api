@@ -25,8 +25,10 @@ class RedisCache:
     _instance: "RedisCache | None" = None
     _key_prefix: str = "synthetic"
     _queue_key: str = "queue"
-    # historical data
-    _hist_key: str = "history"
+    # key prefix to historical data
+    _hist_key_prefix: str = "history"
+    # key to figure out how many workers are working
+    _num_workers_active_key: str = "num_workers_active"
     _encoding: str = "utf-8"
     redis: Redis  # pyright: ignore[reportMissingTypeArgument]
 
@@ -43,16 +45,56 @@ class RedisCache:
         return f"{self._key_prefix}:{':'.join(parts)}"
 
     async def close(self) -> None:
-        if self.redis:  # pyright: ignore[reportUnknownMemberType]
-            await self.redis.close()  # pyright: ignore[reportUnknownMemberType]
+        try:
+            # clear all active workers
+            delta = -1 * await self.get_num_workers_active()
+            await self.update_num_workers_active(delta)
+
+            if self.redis:
+                await self.redis.close()
+        except Exception as exc:
+            logger.opt(exception=True).error(f"Error closing Redis connection: {exc}")
 
     async def get_queue_length(self) -> int:
         key = self._build_key(self._queue_key)
-        if not self.redis:  # pyright: ignore[reportUnknownMemberType]
-            raise ValueError("Redis connection not established")
-        num_items: int = await cast(Awaitable[int], self.redis.llen(key))  # pyright: ignore[reportUnknownMemberType]
+        num_items: int = await cast(Awaitable[int], self.redis.llen(key))
         logger.debug(f"Queue length: {num_items}")
         return num_items
+
+    async def get_num_workers_active(self) -> int:
+        key = self._build_key(self._num_workers_active_key)
+        value = await self.redis.get(key)
+        num_active = 0 if value is None else int(value)
+        logger.debug(f"Number of active workers: {num_active}")
+        return num_active
+
+    async def update_num_workers_active(self, delta: int) -> int:
+        """Update the number of workers active by delta.
+
+        Args:
+            delta (int): Amount to increment/decrement the count by. To decrement use a negative number.
+
+        Returns:
+            int: The new number of workers active.
+        """
+        key = self._build_key(self._num_workers_active_key)
+
+        from pottery import Redlock
+
+        num_workers_active_lock = Redlock(
+            key=key,
+            masters={self.redis},  # pyright: ignore[reportArgumentType]
+            auto_release_time=1.0,  # after X seconds, auto release
+        )
+        num_workers_active_lock.acquire()
+
+        num_active: int = await self.get_num_workers_active() + delta
+        # ensure it doesn't go below 0
+        num_active = max(num_active, 0)
+        await self.redis.set(key, num_active)
+
+        num_workers_active_lock.release()
+        return num_active
 
     async def enqueue(self, data: Any) -> int:
         """Uses Redis list to enqueue data, in order to maintain a buffer of QA
@@ -75,7 +117,7 @@ class RedisCache:
 
         # keep the historical data as is
         # use uuid7 so keys in redis are sorted by time
-        hist_key = self._build_key(self._hist_key, uuid_utils.uuid7().__str__())
+        hist_key = self._build_key(self._hist_key_prefix, uuid_utils.uuid7().__str__())
         try:
             logger.debug(f"Writing persistent data into {hist_key}")
             # place into persistent key
