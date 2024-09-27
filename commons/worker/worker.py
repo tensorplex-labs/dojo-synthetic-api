@@ -41,72 +41,75 @@ class Worker:
         self._do_work = do_work
 
     async def run(self):
-        try:
-            workers: list[asyncio.Task[None]] = [
-                asyncio.create_task(self.worker()) for _ in range(self._num_workers)
-            ]
-            self._running_workers = workers
-            await asyncio.gather(*workers)
-            from commons.cache import RedisCache
+        # ensure to reset number of workers active to 0 upon startup
+        cache = RedisCache()
+        await cache.update_num_workers_active(-self._num_workers)
 
-            cache = RedisCache()
-            await cache.update_num_workers_active(-self._num_workers)
-        except KeyboardInterrupt:
-            logger.info("Worker interrupted by CTRL-C")
-        finally:
-            logger.info("Worker is shutting down")
+        workers: list[asyncio.Task[None]] = [
+            asyncio.create_task(self.worker()) for _ in range(self._num_workers)
+        ]
+        self._running_workers = workers
+        await asyncio.gather(*workers)
 
     async def worker(self):
+        """Continuously check for work to do, and do it.
+        Allows for worker to be cancelled using asyncio.Task.cancel()
+        """
         try:
             while True:
                 try:
                     work_todo = await self.calc_work_todo()
                     if work_todo > 0:
-                        await self.process_one()
+                        await self.advertise_and_do_work()
                     else:
                         await asyncio.sleep(3)
                 except asyncio.CancelledError:
-                    logger.opt(exception=True).info("Running worker was cancelled")
+                    logger.opt().info("Running worker was cancelled")
                     break
                 except Exception as exc:
                     logger.opt(exception=True).error(f"ERROR: {exc}")
-        except KeyboardInterrupt:
-            logger.info("Worker interrupted by CTRL-C")
         finally:
             logger.info("Worker is shutting down")
-        # while True:
-        #     await asyncio.sleep(3)
-        #     if await self.calc_work_todo() == 0:
-        #         continue
-
-        #     try:
-        #         await self.process_one()
-        #     except asyncio.CancelledError:
-        #         logger.opt(exception=True).info("Running worker was cancelled")
-        #         break
-        #     except Exception as exc:
-        #         logger.opt(exception=True).error(f"ERROR: {exc}")
-        #         pass
 
     async def stop(self):
         for worker in self._running_workers:
             worker.cancel()
 
-    async def calc_work_todo(self):
+    async def calc_work_todo(self) -> int:
+        """Calculate number of units of work needed to be done, based on
+        the desired buffer size, current buffer size, and number of active
+        workers.
+        """
         cache = RedisCache()
         current_buffer_size = await cache.get_queue_length()
         num_active_workers = await cache.get_num_workers_active()
-        logger.debug(f"Buffer size: {self._buffer_size}")
-        logger.debug(f"Current buffer size: {current_buffer_size}")
-        logger.debug(f"Number of active workers: {num_active_workers}")
         num_work_todo = max(
             self._buffer_size - current_buffer_size - num_active_workers, 0
         )
         return num_work_todo
 
-    async def process_one(self):
+    async def advertise_and_do_work(self):
+        """Tell other workers that I (current worker) am picking up some work"""
         cache = RedisCache()
         await cache.update_num_workers_active(1)
-        value = await self._do_work()
-        await cache.enqueue(value)
-        await cache.update_num_workers_active(-1)
+
+        # Find the parent task in self._running_workers
+        worker_id = next(
+            (
+                i
+                for i, task in enumerate(self._running_workers)
+                if task == asyncio.current_task()
+            ),
+            None,
+        )
+
+        try:
+            logger.debug(f"Worker-{worker_id} doing work")
+            value = await self._do_work()
+            await cache.enqueue(value)
+        except Exception as exc:
+            logger.opt(exception=True).error(
+                f"Error processing one unit of work: {exc}"
+            )
+        finally:
+            await cache.update_num_workers_active(-1)

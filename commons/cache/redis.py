@@ -79,21 +79,23 @@ class RedisCache:
         """
         key = self._build_key(self._num_workers_active_key)
 
-        from pottery import Redlock
-
-        num_workers_active_lock = Redlock(
-            key=key,
-            masters={self.redis},  # pyright: ignore[reportArgumentType]
-            auto_release_time=1.0,  # after X seconds, auto release
+        lock_key = self._build_key(key, "lock")
+        num_workers_active_lock = self.redis.lock(
+            name=lock_key,
+            timeout=60,
+            blocking=True,
         )
-        num_workers_active_lock.acquire()
+        num_active: int = 0
+        try:
+            if await num_workers_active_lock.acquire():
+                num_active = await self.get_num_workers_active() + delta
+                # ensure it doesn't go below 0
+                num_active = max(num_active, 0)
+                await self.redis.set(key, num_active)
+        finally:
+            # ensure we always release the lock
+            await num_workers_active_lock.release()
 
-        num_active: int = await self.get_num_workers_active() + delta
-        # ensure it doesn't go below 0
-        num_active = max(num_active, 0)
-        await self.redis.set(key, num_active)
-
-        num_workers_active_lock.release()
         return num_active
 
     async def enqueue(self, data: Any) -> int:

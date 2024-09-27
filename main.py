@@ -1,15 +1,20 @@
+import asyncio
 import sys
 from contextlib import asynccontextmanager
+from typing import Any
 
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from rich.traceback import install
 
+from commons.config import get_settings
 from commons.routes.health import health_router
-from commons.routes.synthetic_gen import cache, generator, synthetic_gen_router
+from commons.routes.synthetic_gen import cache, synthetic_gen_router, worker
 
+load_dotenv()
 install(show_locals=True)
 
 logger.remove()
@@ -17,13 +22,18 @@ logger.add(sys.stderr, level="DEBUG", backtrace=True, diagnose=True)
 
 
 @asynccontextmanager
-async def startup_lifespan(app: FastAPI):  # noqa: ARG001
-    await generator.arun()
+async def _lifespan_context(app: FastAPI):  # noqa: ARG001 #pyright: ignore[reportUnusedParameter]
+    logger.info("Performed startup tasks")
+    # wrap worker.run in a task so it can be cancelled
+    asyncio.create_task(worker.run())
     yield
+    await worker.stop()
     await cache.close()
+    logger.info("Performed shutdown tasks")
 
 
-app = FastAPI(lifespan=startup_lifespan)
+app = FastAPI(lifespan=_lifespan_context)
+app.router.lifespan_context = _lifespan_context
 
 
 # Add CORS middleware to allow cross-origin requests
@@ -39,5 +49,36 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(synthetic_gen_router)
 
+
+async def main():
+    uvicorn_config = get_settings().uvicorn
+    config = uvicorn.Config(
+        app=app,
+        host=uvicorn_config.host,
+        port=uvicorn_config.port,
+        workers=uvicorn_config.num_workers,
+        log_level=uvicorn_config.log_level,
+        reload=False,
+    )
+    logger.info(f"Using uvicorn config: {config}")
+    server = uvicorn.Server(config)
+    # create any background tasks here
+    running_tasks: list[asyncio.Task[Any]] = []
+
+    await server.serve()
+
+    for task in running_tasks:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            logger.info(f"Cancelled task {task.get_name()}")
+        except Exception as e:
+            logger.error(f"Task {task.get_name()} raised an exception: {e}")
+            pass
+
+    logger.info("Exiting main function.")
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    asyncio.run(main())
