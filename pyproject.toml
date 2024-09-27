@@ -42,13 +42,14 @@ dependencies = [
   "types-redis==4.6.0.20240903",
   "instructor==1.4.1",
   "anthropic==0.25.7",
-  "pandas==2.2.2",
-  "e2b==0.17.1",
-  "e2b-code-interpreter==0.0.9",
   "langfuse==2.48.0",
   "litellm[proxy]==1.44.28",
   "pydantic-settings==2.5.2",
-  "rich==13.8.0"
+  "rich==13.8.0",
+  "uuid-utils==0.9.0",
+  "beautifulsoup4==4.12.3",
+  "aiofiles==24.1.0",
+  "pyppeteer==2.0.0"
 ]
 
 [project.optional-dependencies]
