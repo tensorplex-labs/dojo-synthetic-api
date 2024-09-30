@@ -441,9 +441,9 @@ def _get_animation_answer_examples() -> str:
 def _get_science_answer_examples() -> str:
     return """
     <example_input_1>
-        Create an interactive visualization of a Newton's cradle, a classic physics demonstration that illustrates conservation of momentum and energy. The visualization should depict a set of suspended metal balls that can swing and collide, demonstrating the transfer of energy through the system.
+        Create an interactive simulation of a Newton's cradle, a classic physics demonstration that illustrates conservation of momentum and energy. The simulation should depict a set of suspended metal balls that can swing and collide, demonstrating the transfer of energy through the system.
 
-        The scene should display a horizontal support from which five metal balls are suspended by strings. The balls should be arranged in a row, just touching each other when at rest. The visualization should allow users to interact with the Newton's cradle and observe its behavior.
+        The scene should display a horizontal support from which five metal balls are suspended by strings. The balls should be arranged in a row, just touching each other when at rest. The simulation should allow users to interact with the Newton's cradle and observe its behavior.
 
         Features:
         • Implement the physics simulation for the Newton's cradle, including the swinging motion of the balls and the elastic collisions between them.
