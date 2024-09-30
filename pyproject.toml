@@ -45,7 +45,7 @@ dependencies = [
   "langfuse==2.48.0",
   "litellm[proxy]==1.44.28",
   "lfs",
-  "datasets"
+  "datasets",
   "pydantic-settings==2.5.2",
   "rich==13.8.0",
   "uuid-utils==0.9.0",
