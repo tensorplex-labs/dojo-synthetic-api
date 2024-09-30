@@ -1,13 +1,12 @@
 import asyncio
-import json
 import os
 import random
-import traceback
 import uuid
 from enum import Enum
 from typing import Dict, List, Tuple, cast
 
 import instructor
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
@@ -19,20 +18,17 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.dataset import ANSWER_MODELS, GENERATOR_MODELS
+from commons.code_iterator import debug_initial_code
+from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.dataset.personas import get_random_persona
-from commons.executor.python_executor import PythonExecutor
-from commons.executor.utils import ExecutionError
-from commons.llm.openai_proxy import (
-    Provider,
-    get_instructor_client,
-)
+from commons.llm import get_llm_api_client
 from commons.prompt_builders import (
     additional_notes_for_question_prompt,
     build_code_answer_prompt,
     build_code_generation_question_prompt,
 )
 from commons.types import Topics
+from commons.utils.logging import log_retry_info
 
 load_dotenv()
 
@@ -47,14 +43,6 @@ def log_llm_usage(completion):
         "output": completion.usage.completion_tokens,
         "unit": "TOKENS",
     }
-
-
-def log_retry_info(retry_state):
-    """Meant to be used with tenacity's before_sleep callback"""
-    logger.warning(
-        f"Retry attempt {retry_state.attempt_number} failed with exception: {retry_state.outcome.exception()}",
-    )
-    logger.warning(f"Traceback: {traceback.format_exc()}")
 
 
 class CodingQuestion(BaseModel):
@@ -104,81 +92,6 @@ class AugmentationLevel(Enum):
 class ResponseStrategy(Enum):
     AUGMENTATION_DETERIORIATE = 0
     NO_AUGMENTATION = 1
-
-
-async def parse_code_response(result_object: CodeAnswer) -> CodeAnswer:
-    """Ensure that necessary files appended for python and javascript"""
-    result_object = await append_codesandbox_files(result_object)
-    # result_object = escape_double_quotes_in_files(result_object)
-    return result_object
-
-
-def handle_javascript_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    package_json_content = json.dumps(
-        {
-            "name": "javascript",
-            "version": "1.0.0",
-            "description": "The JavaScript template",
-            "scripts": {
-                "start": "parcel ./index.html",
-                "build": "parcel build ./index.html",
-            },
-            "devDependencies": {
-                "parcel": "^2.0.0",
-                "babel-eslint": "^10.1.0",
-                "eslint": "^7.2.0",
-            },
-            "keywords": ["css", "javascript"],
-        },
-        indent=4,
-    )
-
-    package_json_file = FileObject(
-        filename="package.json",
-        content=package_json_content,
-        language="json",
-    )
-    codeanswer_object.files.append(package_json_file)
-    return codeanswer_object
-
-
-async def handle_python_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    print("in python")
-    main_file: FileObject | None = None
-    for file in codeanswer_object.files:
-        if file.language.lower() == "python" and file.filename == "main.py":
-            main_file = file
-            break
-
-    if not main_file:
-        logger.info("No main.py file found in code answer of Python code")
-        logger.info(codeanswer_object)
-        raise Exception("No main.py file found in code answer of Python code")
-
-    executor = PythonExecutor(code=main_file.content)
-    try:
-        loop = asyncio.get_event_loop()
-        html = await loop.run_in_executor(None, executor.main)
-    except ExecutionError as e:
-        logger.error(f"Error occurred while executing Python code: {e}")
-        raise e
-
-    codeanswer_object.files = [
-        FileObject(filename="index.html", content=html, language="html")
-    ]
-
-    return codeanswer_object
-
-
-async def append_codesandbox_files(codeanswer_object: CodeAnswer) -> CodeAnswer:
-    python_file_detected = any(
-        file.language.lower() == "python" for file in codeanswer_object.files
-    )
-    if python_file_detected:
-        codeanswer_object = await handle_python_files(codeanswer_object)
-
-    # changed to always run this since handle_python_files returns html which needs the parcel stuff
-    return handle_javascript_files(codeanswer_object)
 
 
 @observe(as_type="generation", capture_input=False, capture_output=False)
@@ -426,6 +339,7 @@ async def generate_answer(
     code: str | None = None,
 ) -> Tuple[str, CodeAnswer | None]:
     """Generates a coding question answer for a given coding question."""
+    import commons.config as config
 
     print(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
@@ -496,15 +410,14 @@ async def generate_answer(
         logger.error(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
         )
-        # temp disble retrying for debugging.
-        # used_models.add(model)
-        # remaining_models = [m for m in ANSWER_MODELS if m not in used_models]
-        # # return if no models remaining
-        # if not remaining_models:
-        #     logger.error("No answer models left to try.")
-        #     return model, None
-        # new_model = random.choice(remaining_models)
-        # return await generate_answer(client, new_model, question, topic=topic)
+        used_models.add(model)
+        remaining_models = [m for m in config.ANSWER_MODELS if m not in used_models]
+        # return if no models remaining
+        if not remaining_models:
+            logger.error("No answer models left to try.")
+            return model, None
+        new_model = random.choice(remaining_models)
+        return await generate_answer(client, new_model, question, topic=topic)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
 
@@ -614,13 +527,82 @@ async def augment_question(
 last_topic = []  # global var used to track last used topic.
 
 
+def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
+    file_extensions = set(os.path.splitext(file.filename)[1] for file in ans.files)
+    logger.debug(f"found file extensions from CodeAnswer: {file_extensions}")
+    has_js = ".js" in file_extensions
+    has_css = ".css" in file_extensions
+    has_html = ".html" in file_extensions
+
+    if not has_html:
+        raise ValueError("No HTML file found in the CodeAnswer")
+
+    index_html_file = [
+        f for f in ans.files if os.path.splitext(f.filename)[1] == ".html"
+    ]
+    assert len(index_html_file) == 1
+    index_html = index_html_file[0]
+    soup = BeautifulSoup(index_html.content, "html.parser")
+
+    # Ensure we have html and head tags
+    html_tag = soup.find("html")
+    if not html_tag:
+        html_tag = soup.new_tag("html")
+        soup.append(html_tag)
+
+    head_tag = soup.find("head")
+    if not head_tag:
+        head_tag = soup.new_tag("head")
+        html_tag.insert(0, head_tag)
+
+    body_tag = soup.find("body")
+    if not body_tag:
+        body_tag = soup.new_tag("body")
+        html_tag.append(body_tag)
+
+    if has_css:
+        index_css_file = [
+            f for f in ans.files if os.path.splitext(f.filename)[1] == ".css"
+        ]
+        assert len(index_css_file) == 1
+        index_css = index_css_file[0]
+        style_tag = soup.new_tag("style")
+        style_tag.string = index_css.content
+        head_tag.append(style_tag)
+
+    if has_js:
+        index_js_file = [
+            f for f in ans.files if os.path.splitext(f.filename)[1] == ".js"
+        ]
+        assert len(index_js_file) == 1
+        index_js = index_js_file[0]
+        script_tag = soup.new_tag("script")
+        script_tag.string = index_js.content
+        body_tag.append(script_tag)
+
+    # Keep only the HTML file, removing JS and CSS files
+    new_files = [
+        f for f in ans.files if os.path.splitext(f.filename)[1] not in [".js", ".css"]
+    ]
+    # Update the content of the HTML file
+    for file in new_files:
+        if file.filename == "index.html":
+            file.content = str(soup)
+
+    return CodeAnswer(
+        files=new_files,
+        installation_commands=ans.installation_commands,
+        additional_notes=ans.additional_notes,
+    )
+
+
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
 async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     global used_models
     global last_topic
 
-    client = get_instructor_client(Provider.OPENROUTER)
+    client = get_llm_api_client()
     question_model = random.choice(GENERATOR_MODELS)
     used_models = set()
 
@@ -634,6 +616,33 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         level: AugmentationLevel | None = None,
     ):
         model, result = await generate_answer(client, model, question, topic=topic)
+
+        # TODO remove after testing ensure single index.html file just for now
+        ans_with_index_html = build_single_index_html(result)
+        html_file = next(
+            (
+                file
+                for file in ans_with_index_html.files
+                if file.filename == "index.html"
+            ),
+            None,
+        )
+        if html_file:
+            pass
+        else:
+            raise ValueError("No index.html file found in the answer")
+
+        iteration_state = await debug_initial_code(
+            initial_html_code=html_file.content,
+            model=model,
+        )
+
+        # final html file
+        final_html = iteration_state.latest_iteration.code
+        # replace whole CodeAnswer with a single final_html file
+        for file in result.files:
+            if file.filename == "index.html":
+                file.content = final_html
 
         return model, result, level
 
@@ -699,8 +708,6 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         if not result:
             raise RuntimeError("Error generating prompt-response pair")
 
-        result = await parse_code_response(result)
-
         formatted_files = [
             {
                 "filename": file.filename,
@@ -734,39 +741,3 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         "topic": selected_topic[0].name,
         "persona": persona,
     }
-
-
-# async def test_generate_questions(language: Language):
-#     log_data = []
-#     client = get_instructor_client(provider=Provider.OPENROUTER)
-#     selected_topic = random.choices(population=list(Topics), k=1)
-#     for model in GENERATOR_MODELS:
-#         result = await generate_question(client, model, language, selected_topic[0])
-#         if result is None:
-#             continue
-#         # unstructure tuple
-#         question, kwargs = result
-#         log_data.append({"model": model, "question": question, "kwargs": kwargs})
-
-#     print(f"{log_data}")
-#     # Convert the list of dictionaries to a JSON string
-#     for data in log_data:
-#         data["kwargs"].pop("response_model")
-#     json_data = json.dumps(log_data, indent=4)
-
-#     # Write the JSON string to a file
-#     with open("output.json", "w") as file:
-#         file.write(json_data)
-
-
-async def main():
-    # language = Language("Python")
-    responses = await build_prompt_responses_pair(
-        response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
-    )
-    with open("output.json", "w") as f:
-        json.dump(responses, f, indent=4)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

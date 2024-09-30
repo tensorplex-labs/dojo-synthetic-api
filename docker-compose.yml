@@ -41,7 +41,6 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_USER=${REDIS_USERNAME}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - E2B_API_KEY=${E2B_API_KEY}
     networks:
       - dojo-synthetic-api-network
     depends_on:
