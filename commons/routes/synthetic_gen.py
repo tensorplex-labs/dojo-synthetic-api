@@ -6,7 +6,8 @@ from loguru import logger
 from pydantic import BaseModel
 
 from commons.cache import RedisCache
-from commons.prompt_builders import Language
+
+# from commons.prompt_builders import Language
 from commons.synthetic import (
     ResponseStrategy,
     build_prompt_responses_pair,
@@ -15,7 +16,7 @@ from commons.synthetic import (
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
 
-TARGET_SIZE = 3
+TARGET_SIZE = 1
 QUEUE_KEY = "synthetic:queue"
 
 
@@ -36,9 +37,9 @@ async def execute_python_code(background_tasks: BackgroundTasks):
             except json.JSONDecodeError:
                 result = {}
         else:
-            language = Language.JAVASCRIPT
+            # language = Language.JAVASCRIPT
             result = await build_prompt_responses_pair(
-                language, response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
+                response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
             )
 
         background_tasks.add_task(generator.arun)
@@ -93,9 +94,8 @@ class SyntheticGenerator:
             async with self.semaphore:
                 num_keys = await cache.redis.llen(QUEUE_KEY)
                 if num_keys < TARGET_SIZE:
-                    language = Language.JAVASCRIPT
+                    # language = Language.JAVASCRIPT
                     responses = await build_prompt_responses_pair(
-                        language,
                         response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE,
                     )
                     # responses = await build_2_prompt_responses_pairs()

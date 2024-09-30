@@ -28,15 +28,11 @@ from commons.llm.openai_proxy import (
     get_instructor_client,
 )
 from commons.prompt_builders import (
-    Language,
-    Topics,
     additional_notes_for_question_prompt,
     build_code_answer_prompt,
     build_code_generation_question_prompt,
-    build_game_meta_prompt,
-    build_python_fix_prompt,
-    build_python_review_prompt,
 )
+from commons.types import Topics
 
 load_dotenv()
 
@@ -214,16 +210,16 @@ async def _generate_objects_to_visualize(
 
         Output the list as a valid JSON
         """
-    elif topic == Topics.LANDSCAPES:
-        prompt = f"""
-        Give me a list of 30 recognizable natural phenomena that can be easily and simply visualized in 3D with a basic web app that uses only javascript, HTML and CSS.
+    # elif topic == Topics.LANDSCAPES:
+    #     prompt = f"""
+    #     Give me a list of 30 recognizable natural phenomena that can be easily and simply visualized in 3D with a basic web app that uses only javascript, HTML and CSS.
 
-        An LLM such as yourself will later have to generate the code for this program. So please ensure that the subject can feasibly be implemented by an LLM.
+    #     An LLM such as yourself will later have to generate the code for this program. So please ensure that the subject can feasibly be implemented by an LLM.
 
-        Do not include the following {', '.join(prev_used_objects+blacklist)}.
+    #     Do not include the following {', '.join(prev_used_objects+blacklist)}.
 
-        Output the list as a valid JSON
-    """
+    #     Output the list as a valid JSON
+    # """
     elif topic == Topics.SCIENCE:
         prompt = f"""
         Give me a list of 30 science experiments that can be demonstrated with a web app that uses only javascript, HTML and CSS.
@@ -297,7 +293,10 @@ used_models = set()
 
 @observe(as_type="generation", capture_input=False, capture_output=False)
 async def generate_question(
-    client: instructor.AsyncInstructor, model: str, language: Language, _topic: Topics
+    client: instructor.AsyncInstructor,
+    model: str,
+    _topic: Topics,
+    persona: str,
 ) -> tuple[str | None, Dict | None]:
     logger.info(f"Generating question with model: {model}")
 
@@ -312,9 +311,9 @@ async def generate_question(
             stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
         ):
             with attempt:
-                print(
-                    f"Objects to be excluded in instruction generation: {used_objects}"
-                )
+                # print(
+                #     f"Objects to be excluded in instruction generation: {used_objects}"
+                # )
                 print(
                     f"Few shot instruction included in instruction generation: {previous_coding_question}"
                 )
@@ -322,18 +321,17 @@ async def generate_question(
                 # selected_topic = random.choices(population=list(Topics), k=1)
                 # attempt to get random persona
 
-                if language == Language.JAVASCRIPT:
-                    persona = get_random_persona()
-                    logger.info(f"@@@@@ persona: {persona}")
-                    print("Generating objects to visualize")
-                    possible_objects = await _generate_objects_to_visualize(
-                        client, model, used_objects, _topic
-                    )
-                    sampled_objects = random.sample(
-                        possible_objects, random.randint(3, 5)
-                    )
-                    # logger.info(f"@@@ sampled objs: \n {sampled_objects} \n")
-                    used_objects = sampled_objects
+                # if language == Language.JAVASCRIPT:
+                # print("Generating objects to visualize")
+                # possible_objects = await _generate_objects_to_visualize(
+                #     client, model, used_objects, _topic
+                # )
+                # sampled_objects = random.sample(
+                #     possible_objects, random.randint(3, 5)
+                # )
+                # # logger.info(f"@@@ sampled objs: \n {sampled_objects} \n")
+                # used_objects = sampled_objects
+                used_objects = None
 
                 kwargs = {
                     "response_model": CodingQuestion,
@@ -343,9 +341,6 @@ async def generate_question(
                             "role": "system",
                             "content": build_code_generation_question_prompt(
                                 random.choices([3, 4], weights=[0.5, 0.5])[0],
-                                used_objects,
-                                previous_coding_question,
-                                language,
                                 topic=_topic,
                                 persona=persona,
                             ),
@@ -358,32 +353,30 @@ async def generate_question(
                 }
 
                 # need to meta-prompt first to generate the 'question prompt`
-                if _topic == Topics.GAMES:
-                    kwargs = {
-                        "response_model": CodingQuestion,
-                        "model": model,
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": build_game_meta_prompt(),
-                            },
-                            {
-                                "role": "user",
-                                "content": f"Select one of the games from {used_objects} and generate a system prompt that can be used to create the selected game.",
-                            },
-                        ],
-                        "temperature": random.uniform(0.5, 0.75),
-                        "max_tokens": 8192,
-                        "top_p": random.uniform(0.9, 1.0),
-                        "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
-                    }
+                # if _topic == Topics.GAMES:
+                #     kwargs = {
+                #         "response_model": CodingQuestion,
+                #         "model": model,
+                #         "messages": [
+                #             {
+                #                 "role": "system",
+                #                 "content": build_game_meta_prompt(),
+                #             },
+                #             {
+                #                 "role": "user",
+                #                 "content": f"Select one of the games from {used_objects} and generate a system prompt that can be used to create the selected game.",
+                #             },
+                #         ],
+                #         "temperature": random.uniform(0.5, 0.75),
+                #         "max_tokens": 8192,
+                #         "top_p": random.uniform(0.9, 1.0),
+                #         "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
+                #     }
 
                 logger.info(kwargs["messages"][0])
                 response_model = await client.chat.completions.create(**kwargs)
                 coding_question = response_model.question
-                coding_question = additional_notes_for_question_prompt(
-                    coding_question, language
-                )
+                coding_question = additional_notes_for_question_prompt(coding_question)
 
                 kwargs_clone = kwargs.copy()
                 kwargs_clone["response_model"] = kwargs[
@@ -395,7 +388,6 @@ async def generate_question(
                     output=response_model.model_dump(),
                     # usage=log_llm_usage(response_model.usage),
                     metadata={
-                        "language": language,
                         "topic": _topic,
                         "used_objects": used_objects,
                         "used_models": used_models,
@@ -417,7 +409,7 @@ async def generate_question(
             logger.error("No generator models left to try.")
             return None, None
         new_model = random.choice(remaining_models)
-        return await generate_question(client, new_model, language, _topic)
+        return await generate_question(client, new_model, _topic, persona)
     except Exception as e:
         print(f"Error occurred while generating question: {e}")
 
@@ -429,37 +421,35 @@ async def generate_answer(
     client: LlmClient,
     model: str,
     question: str,
-    language: Language,
+    topic: Topics,
     err: str | None = None,
     code: str | None = None,
-    topic: Topics | None = None,
 ) -> Tuple[str, CodeAnswer | None]:
     """Generates a coding question answer for a given coding question."""
-    import commons.dataset as dataset
 
     print(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
         raise ValueError("Both error and code must be provided or neither")
 
+    # this is a hack because CodeAnswer.model_json_schema cannot be imported by prompt_builders without a ciruclar import error.add()
+    # need to move where these types are declared during refactor.
+    _answer_format = CodeAnswer.model_json_schema()
+    logger.warning(f"@@@ codeAnswer schema: {_answer_format}")
     messages = [
+        # {
+        #     "role": "system",
+        #     "content": f"You are an expert at outputting json. You always output valid json based on this schema: {}",
+        # },
         {
             "role": "system",
-            "content": f"You are an expert at outputting json. You always output valid json based on this schema: {CodeAnswer.model_json_schema()}",
-        },
-        {
-            "role": "user",
             "content": build_code_answer_prompt(
-                question, language.value == Language.JAVASCRIPT, topic=topic
+                question,
+                True,
+                topic=topic,
+                answer_format=_answer_format,
             ),
         },
     ]
-
-    if err and code:
-        err_prompt = await generate_python_fix_prompt(
-            client, model, code, err, question
-        )
-        messages.append({"role": "system", "content": err_prompt})
-        logger.info(err_prompt)
 
     kwargs = {
         "response_model": CodeAnswer,
@@ -473,7 +463,7 @@ async def generate_answer(
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
     MAX_RETRIES = 2
-    # logger.warning(f"@@@ ans gen {model} prompt: {kwargs['messages'][1]} \n")
+    logger.warning(f"@@@@ ans prompt : {kwargs['messages'][0]} \n")
 
     # try generating until max retries, then switch models
     try:
@@ -494,106 +484,29 @@ async def generate_answer(
                     # usage=log_llm_usage(response_model.usage),
                     metadata={
                         "question": question,
-                        "language": language,
                         "err": err,
                         "code": code,
                         "topic": topic,
                         **kwargs_clone,
                     },
                 )
-                # logger.warning(f"@@@ generate_answer(): {response_model} \n")
+                logger.warning(f"@@@@@ generate_answer(): {response_model} \n")
                 return model, response_model
     except RetryError:
         logger.error(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
         )
-        used_models.add(model)
-        remaining_models = [m for m in dataset.ANSWER_MODELS if m not in used_models]
-        # return if no models remaining
-        if not remaining_models:
-            logger.error("No answer models left to try.")
-            return model, None
-        new_model = random.choice(remaining_models)
-        return await generate_answer(client, new_model, question, language)
+        # temp disble retrying for debugging.
+        # used_models.add(model)
+        # remaining_models = [m for m in ANSWER_MODELS if m not in used_models]
+        # # return if no models remaining
+        # if not remaining_models:
+        #     logger.error("No answer models left to try.")
+        #     return model, None
+        # new_model = random.choice(remaining_models)
+        # return await generate_answer(client, new_model, question, topic=topic)
     except Exception as e:
         print(f"Error occurred while generating code answer: {e}")
-
-    return model, None
-
-
-async def generate_python_fix_prompt(
-    client: LlmClient,
-    model: str,
-    code: str,
-    err: str,
-    prompt: str,
-) -> str:
-    kwargs = {
-        "response_model": ErrorAnswer,
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": f"You are an expert at outputting json. You always output valid json based on this schema: {ErrorAnswer.model_json_schema()}",
-            },
-            {
-                "role": "user",
-                "content": build_python_review_prompt(prompt, code, err),
-            },
-        ],
-        "temperature": 0.0,
-        "max_tokens": 8192,
-        "top_p": random.uniform(0.9, 1.0),
-    }
-    if model.startswith("openai"):
-        kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
-    try:
-        completion = await client.chat.completions.create(**kwargs)
-        # print(f"Generated completion: {completion}")
-        logger.info(f"Generated error prompt: {completion}")
-        return build_python_fix_prompt(
-            code=code,
-            err=completion.error,
-            solution=completion.solution,
-            changes=completion.changes,
-        )
-    except Exception as e:
-        print(f"Error occurred while generating code answer: {e}")
-        pass
-
-    return build_python_fix_prompt(code=code, err=err)
-
-
-async def generate_answer_with_feedback(
-    client: LlmClient,
-    model: str,
-    question: str,
-    language: Language,
-    max_attempts: int = 3,
-) -> Tuple[str, CodeAnswer | None]:
-    previous_code = None
-    err = None
-    attempt_count = 0
-    previous_err = None
-
-    while attempt_count < max_attempts:
-        model, result = await generate_answer(
-            client, model, question, language, previous_code, err
-        )
-        if result is None:
-            return model, None
-
-        try:
-            return model, await parse_code_response(result)
-        except ExecutionError as e:
-            err = e.err
-            previous_code = e.code
-
-            if err == previous_err:
-                attempt_count += 1
-            else:
-                attempt_count = 0
-                previous_err = err
 
     return model, None
 
@@ -645,8 +558,8 @@ async def augment_question(
     elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
         if topic == Topics.SCIENCE:
             augmentation_prompt = f"Here is a generated coding question: {question}. \n Generate a new coding question similar to the original, but with a similar science experiment that is different from the original. "
-        elif topic == Topics.THREE_D:
-            augmentation_prompt = f"Here is a generated coding question: {question}. \n Generate a new coding question similar to the original, but with a 2D visualization instead of 3D. Adapt the requirements as necessary to suit your 2D constraints."
+        # elif topic == Topics.THREE_D:
+        #     augmentation_prompt = f"Here is a generated coding question: {question}. \n Generate a new coding question similar to the original, but with a 2D visualization instead of 3D. Adapt the requirements as necessary to suit your 2D constraints."
         else:
             augmentation_prompt = f"Here is a generated coding question: {question}. \n change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question."
     elif augmentation_level == AugmentationLevel.ORIGINAL:
@@ -703,9 +616,7 @@ last_topic = []  # global var used to track last used topic.
 
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
-async def build_prompt_responses_pair(
-    language: Language, response_strategy: ResponseStrategy
-):
+async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     global used_models
     global last_topic
 
@@ -719,17 +630,10 @@ async def build_prompt_responses_pair(
     async def _generate_response(
         model: str,
         question: str,
+        topic: Topics,
         level: AugmentationLevel | None = None,
-        topic: Topics | None = None,
     ):
-        if language == Language.JAVASCRIPT:
-            model, result = await generate_answer(
-                client, model, question, language, topic=topic
-            )
-        elif language == Language.PYTHON:
-            model, result = await generate_answer_with_feedback(
-                client, model, question, language
-            )
+        model, result = await generate_answer(client, model, question, topic=topic)
 
         return model, result, level
 
@@ -742,13 +646,17 @@ async def build_prompt_responses_pair(
     # selected_topic = random.choices(available_topics, k=1)
     # last_topic = selected_topic
 
+    # 1b. generate persona
+    persona = get_random_persona()
+    # logger.info(f"@@@@@ persona: {persona}")
+
     # change weights accordingly to choose what topic of Tasks to generate.
     # in prod, we should use the above commented out topic selection instead.
-    selected_topic = random.choices(list(Topics), weights=[1, 0, 0, 0, 0], k=1)
+    selected_topic = random.choices(list(Topics), weights=[0, 1, 0], k=1)
 
     # 2. generate a question using the topic
     question_prompt, _ = await generate_question(
-        client, question_model, language, selected_topic[0]
+        client, question_model, selected_topic[0], persona
     )
 
     assert type(question_prompt) is str
@@ -774,7 +682,10 @@ async def build_prompt_responses_pair(
             # 4. generate answers as code
             tasks.append(
                 _generate_response(
-                    answer_models, augmented_question, level, selected_topic[0]
+                    answer_models,
+                    augmented_question,
+                    topic=selected_topic[0],
+                    level=level,
                 )
             )
 
@@ -788,8 +699,7 @@ async def build_prompt_responses_pair(
         if not result:
             raise RuntimeError("Error generating prompt-response pair")
 
-        if language == Language.JAVASCRIPT:
-            result = await parse_code_response(result)
+        result = await parse_code_response(result)
 
         formatted_files = [
             {
@@ -822,36 +732,37 @@ async def build_prompt_responses_pair(
         "ground_truth": synthetic_ground_truth,
         "augmented_prompts": augmented_prompts,
         "topic": selected_topic[0].name,
+        "persona": persona,
     }
 
 
-async def test_generate_questions(language: Language):
-    log_data = []
-    client = get_instructor_client(provider=Provider.OPENROUTER)
-    selected_topic = random.choices(population=list(Topics), k=1)
-    for model in GENERATOR_MODELS:
-        result = await generate_question(client, model, language, selected_topic[0])
-        if result is None:
-            continue
-        # unstructure tuple
-        question, kwargs = result
-        log_data.append({"model": model, "question": question, "kwargs": kwargs})
+# async def test_generate_questions(language: Language):
+#     log_data = []
+#     client = get_instructor_client(provider=Provider.OPENROUTER)
+#     selected_topic = random.choices(population=list(Topics), k=1)
+#     for model in GENERATOR_MODELS:
+#         result = await generate_question(client, model, language, selected_topic[0])
+#         if result is None:
+#             continue
+#         # unstructure tuple
+#         question, kwargs = result
+#         log_data.append({"model": model, "question": question, "kwargs": kwargs})
 
-    print(f"{log_data}")
-    # Convert the list of dictionaries to a JSON string
-    for data in log_data:
-        data["kwargs"].pop("response_model")
-    json_data = json.dumps(log_data, indent=4)
+#     print(f"{log_data}")
+#     # Convert the list of dictionaries to a JSON string
+#     for data in log_data:
+#         data["kwargs"].pop("response_model")
+#     json_data = json.dumps(log_data, indent=4)
 
-    # Write the JSON string to a file
-    with open("output.json", "w") as file:
-        file.write(json_data)
+#     # Write the JSON string to a file
+#     with open("output.json", "w") as file:
+#         file.write(json_data)
 
 
 async def main():
-    language = Language("Python")
+    # language = Language("Python")
     responses = await build_prompt_responses_pair(
-        language=language, response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
+        response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE
     )
     with open("output.json", "w") as f:
         json.dump(responses, f, indent=4)
