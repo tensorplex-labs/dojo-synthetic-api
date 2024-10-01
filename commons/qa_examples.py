@@ -221,7 +221,7 @@ def _get_game_answer_examples() -> str:
     """
 
 
-def get_game_question_examples() -> str:
+def _get_game_question_examples() -> str:
     return """
         <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 3 user actions for the following persona: A police officer who is constantly trying to catch the pickpocket artist in the act.
@@ -274,7 +274,7 @@ def get_game_question_examples() -> str:
 
 def get_persona_question_examples(topic: Topics) -> str:
     if topic == Topics.GAMES:
-        return get_game_question_examples()
+        return _get_game_question_examples()
     if topic == Topics.SCIENCE:
         return """
     <example_input_1>
@@ -474,4 +474,46 @@ def _get_science_answer_examples() -> str:
             "additional_notes": "null"
         }        
     </example_output_1>
+    </example_input_2>
+        Create an interactive golf ball trajectory simulator that models the physics of a golf ball's flight, incorporating factors like wind speed and direction.
+
+        Features:
+        - A 2D side-view golf course display with a tee area, fairway, and green
+        - A movable golfer figure at the tee
+        - A golf ball that follows a realistic trajectory when hit
+        - Wind direction indicator (e.g., a flag or arrow)
+        - Wind speed display
+        - Distance markers along the fairway
+        - A trajectory path line that shows the ball's flight
+        - A landing spot indicator
+        - A scoreboard displaying current shot distance and best distance
+
+        User Actions:
+        1. Adjust Shot Power: Allow the user to set the initial velocity of the golf ball by clicking and dragging a power meter or using a slider. The power should be visually represented, perhaps by the backswing of the golfer figure.
+
+        2. Set Shot Angle: Enable the user to change the launch angle of the shot by clicking and dragging the golfer figure or using arrow keys. The angle should be displayed numerically and visually represented by the golfer's stance.
+
+        3. Control Wind Conditions: Implement a way for users to adjust wind speed and direction, such as with sliders or by clicking and dragging a wind indicator. The wind flag or arrow should update in real-time to reflect these changes.
+
+        When the user has set their desired parameters, they should be able to initiate the shot with a 'Swing' button. The ball should then follow a realistic trajectory based on the input parameters and wind conditions, with the path visually traced on the screen. After the ball lands, update the scoreboard with the shot distance and best distance if applicable.
+    </example_input_2>
+    <example_output_2>
+                 {
+        "files": [
+            {
+                "filename": "index.js",
+                "content": "const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),powerSlider=document.getElementById('powerSlider'),angleSlider=document.getElementById('angleSlider'),windSpeedSlider=document.getElementById('windSpeedSlider'),windDirectionSlider=document.getElementById('windDirectionSlider'),swingButton=document.getElementById('swingButton'),currentDistanceSpan=document.getElementById('currentDistance'),bestDistanceSpan=document.getElementById('bestDistance');canvas.width=window.innerWidth;canvas.height=window.innerHeight;let bestDistance=0,ballInFlight=!1,ballPosition={x:50,y:canvas.height-50},ballVelocity={x:0,y:0},time=0;function drawCourse(){ctx.fillStyle='#87CEEB',ctx.fillRect(0,0,canvas.width,canvas.height),ctx.fillStyle='#228B22',ctx.fillRect(0,canvas.height-40,canvas.width,40),ctx.fillStyle='#8B4513',ctx.fillRect(40,canvas.height-45,20,5),ctx.fillStyle='white',ctx.font='12px Arial';for(let i=100;i<=500;i+=100){let x=1.5*i;ctx.fillText(`${i}m`,x,canvas.height-45),ctx.fillRect(x,canvas.height-40,2,10)}}function drawGolfer(){ctx.fillStyle='black',ctx.beginPath(),ctx.arc(50,canvas.height-60,10,0,2*Math.PI),ctx.fill();let angle=angleSlider.value*Math.PI/180;ctx.beginPath(),ctx.moveTo(50,canvas.height-60),ctx.lineTo(50+30*Math.cos(angle),canvas.height-60-30*Math.sin(angle)),ctx.stroke()}function drawBall(){ctx.fillStyle='white',ctx.beginPath(),ctx.arc(ballPosition.x,ballPosition.y,5,0,2*Math.PI),ctx.fill()}function drawWindIndicator(){let windSpeed=windSpeedSlider.value,windDirection=windDirectionSlider.value*Math.PI/180;ctx.save(),ctx.translate(canvas.width-50,50),ctx.rotate(windDirection),ctx.fillStyle='rgba(255, 255, 255, 0.7)',ctx.fillRect(-40,-20,80,40),ctx.fillStyle='black',ctx.beginPath(),ctx.moveTo(0,-15),ctx.lineTo(2*windSpeed,0),ctx.lineTo(0,15),ctx.fill(),ctx.fillStyle='black',ctx.font='12px Arial',ctx.fillText(`${windSpeed} m/s`,-30,30),ctx.restore()}function updateBallPosition(){if(!ballInFlight)return;let g=9.81,dt=.1,windSpeed=windSpeedSlider.value,windDirection=windDirectionSlider.value*Math.PI/180,windForce={x:windSpeed*Math.cos(windDirection),y:windSpeed*Math.sin(windDirection)};if(ballVelocity.x+=windForce.x*dt,ballVelocity.y+=(windForce.y-g)*dt,ballPosition.x+=ballVelocity.x*dt,ballPosition.y-=ballVelocity.y*dt,ballPosition.y>=canvas.height-40){ballInFlight=!1;let distance=Math.round(ballPosition.x/1.5);currentDistanceSpan.textContent=distance,distance>bestDistance&&(bestDistance=distance,bestDistanceSpan.textContent=bestDistance)}time+=dt}function drawTrajectory(){ballInFlight&&(ctx.strokeStyle='rgba(255, 0, 0, 0.5)',ctx.beginPath(),ctx.moveTo(50,canvas.height-50),ctx.lineTo(ballPosition.x,ballPosition.y),ctx.stroke())}function swing(){let power=powerSlider.value/2,angle=angleSlider.value*Math.PI/180;ballPosition={x:50,y:canvas.height-50},ballVelocity={x:power*Math.cos(angle),y:power*Math.sin(angle)},time=0,ballInFlight=!0}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height),drawCourse(),drawWindIndicator(),drawGolfer(),updateBallPosition(),drawTrajectory(),drawBall(),requestAnimationFrame(animate)}swingButton.addEventListener('click',swing),animate(),window.addEventListener('resize',()=>{canvas.width=window.innerWidth,canvas.height=window.innerHeight})",
+                "language": "javascript"
+            },
+            {
+                "filename": "index.html",
+                "content": "<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'unsafe-inline'; img-src data: blob: https://threejsfundamentals.org; connect-src 'none'; form-action 'none'; base-uri 'none';"><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>Golf Ball Trajectory Simulator</title><style>body { } #content-wrapper { } ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: hsla(60, 17%, 0%, 0); } ::-webkit-scrollbar-thumb { background: hsla(175, 100%, 36%, 0.387); border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: hsl(175, 100%, 36%); } body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; } #canvas { display: block; } #controls { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 5px; } #controls input { width: 100px; } #swingButton { margin-top: 10px; } #scoreboard { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 5px; }</style></head><body><canvas id="canvas"></canvas><div id="controls"><label>Power: <input id="powerSlider" max="100" min="0" type="range" value="50"/></label><br/><label>Angle: <input id="angleSlider" max="90" min="0" type="range" value="45"/></label><br/><label>Wind Speed: <input id="windSpeedSlider" max="20" min="0" type="range" value="0"/></label><br/><label>Wind Direction: <input id="windDirectionSlider" max="360" min="0" type="range" value="0"/></label><br/><button id="swingButton">Swing!</button></div><div id="scoreboard"><p>Current Distance: <span id="currentDistance">0</span> m</p><p>Best Distance: <span id="bestDistance">0</span> m</p></div><script src="index.js"></script></body></html>",
+                "language": "html"
+            }
+            ],
+            "installation_commands": "null",
+            "additional_notes": "null"
+        }        
+    </example_output_2>
+    
     """
