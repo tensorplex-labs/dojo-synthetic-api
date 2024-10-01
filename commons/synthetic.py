@@ -253,7 +253,7 @@ async def generate_question(
                         {
                             "role": "system",
                             "content": build_code_generation_question_prompt(
-                                random.choices([3, 4], weights=[0.5, 0.5])[0],
+                                random.choices([2, 3], weights=[0.5, 0.5])[0],
                                 topic=_topic,
                                 persona=persona,
                             ),
