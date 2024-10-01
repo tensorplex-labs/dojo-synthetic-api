@@ -639,10 +639,15 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         # final html file
         final_html = iteration_state.latest_iteration.code
+
         # replace whole CodeAnswer with a single final_html file
-        for file in result.files:
-            if file.filename == "index.html":
-                file.content = final_html
+        result.files = [file for file in result.files if file.filename == "index.html"]
+
+        # replace old html with updated html with inlined JS and CSS.
+        if result.files:
+            result.files[0].content = final_html
+        else:
+            raise ValueError("No index.html file found in the result")
 
         return model, result, level
 
