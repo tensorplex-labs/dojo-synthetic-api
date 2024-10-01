@@ -27,7 +27,9 @@ lock = asyncio.Lock()
 async def _visit_page(url: str) -> None:
     """
     Visits the given URL using pyppeteer to trigger rendering of the webpage and
-    subsequently loggin
+    subsequently log the status based on specific events and conditions.
+
+    Optional list of functions to call where the outputs need to be "True" to be considered passing
 
     Args:
         url (str): The URL to be visited.
@@ -35,15 +37,26 @@ async def _visit_page(url: str) -> None:
     Raises:
         Exception: If there's an error visiting the page.
     """
+    browser: Browser | None = None
     try:
-        browser: Browser = await launch(headless=True)
+        browser = await launch(headless=True)
         page: Page = await browser.newPage()
         logger.debug(f"Attempting to visit page {url}")
+
+        # Listen for the 'DOMContentLoaded' event
+        page.on("domcontentloaded", lambda: logger.info("DOMContentLoaded event fired"))
+
+        # Listen for the 'load' event
+        page.on("load", lambda: logger.info("Load event fired"))
+
+        # Navigate to the URL and wait for the 'networkidle0' event
         await page.goto(url, {"waitUntil": "networkidle0"})
+
     except Exception as e:
         logger.error(f"Error visiting the page: {e}")
     finally:
-        await browser.close()
+        if browser:
+            await browser.close()
 
 
 async def _build_docker_image() -> tuple[Literal[True], int]:
