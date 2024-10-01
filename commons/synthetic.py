@@ -348,7 +348,7 @@ async def generate_answer(
     # this is a hack because CodeAnswer.model_json_schema cannot be imported by prompt_builders without a ciruclar import error.add()
     # need to move where these types are declared during refactor.
     _answer_format = CodeAnswer.model_json_schema()
-    logger.warning(f"@@@ codeAnswer schema: {_answer_format}")
+    # logger.warning(f"@@@ codeAnswer schema: {_answer_format}")
     messages = [
         # {
         #     "role": "system",
@@ -377,7 +377,7 @@ async def generate_answer(
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
     MAX_RETRIES = 2
-    logger.warning(f"@@@@ ans prompt : {kwargs['messages'][0]} \n")
+    # logger.warning(f"@@@@ ans prompt : {kwargs['messages'][0]} \n")
 
     # try generating until max retries, then switch models
     try:
@@ -404,7 +404,7 @@ async def generate_answer(
                         **kwargs_clone,
                     },
                 )
-                logger.warning(f"@@@@@ generate_answer(): {response_model} \n")
+                # logger.warning(f"@@@@@ generate_answer(): {response_model} \n")
                 return model, response_model
     except RetryError:
         logger.error(
@@ -666,7 +666,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
     # change weights accordingly to choose what topic of Tasks to generate.
     # in prod, we should use the above commented out topic selection instead.
-    selected_topic = random.choices(list(Topics), weights=[0, 1, 0], k=1)
+    selected_topic = random.choices(list(Topics), weights=[0, 0, 1], k=1)
 
     # 2. generate a question using the topic
     question_prompt, _ = await generate_question(
