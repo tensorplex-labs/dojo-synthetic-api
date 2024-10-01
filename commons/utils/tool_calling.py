@@ -1,25 +1,47 @@
 import inspect
 import json
-from typing import Annotated, Callable, get_args, get_origin
+from typing import Annotated, Callable, Union, get_args, get_origin
 
+from loguru import logger
 from pydantic import BaseModel, Field, create_model
 
 
 def get_function_signature(func: Callable) -> str:
-    """Get only the required parameters in function signature, and the return type"""
+    """
+    Returns a string representation of the function signature.
+    """
+    logger.info(f"Getting function signature for {func}")
     signature = inspect.signature(func)
-    required_params = [
-        param
-        for param in signature.parameters.values()
-        if param.default == inspect.Parameter.empty
-    ]
-    param_str = ", ".join(str(param) for param in required_params)
-    return_str = (
-        f" -> {signature.return_annotation.__name__}"
-        if signature.return_annotation != inspect.Signature.empty
-        else ""
-    )
-    return f"({param_str}){return_str}"
+    params = []
+    for name, param in signature.parameters.items():
+        param_type = param.annotation
+        if param_type is inspect.Parameter.empty:
+            param_type_str = "Any"
+        else:
+            param_type_str = _get_type_name(param_type)
+        params.append(f"{name}: {param_type_str}")
+
+    return_annotation = signature.return_annotation
+    if return_annotation is inspect.Signature.empty:
+        return_annotation_str = "Any"
+    else:
+        return_annotation_str = _get_type_name(return_annotation)
+
+    return f"({', '.join(params)}) -> {return_annotation_str}"
+
+
+def _get_type_name(tp):
+    """
+    Returns the name of the type, handling Union and other special cases.
+    """
+    origin = get_origin(tp)
+    if origin is None:
+        return getattr(tp, "__name__", str(tp))
+    elif origin is Union:
+        args = get_args(tp)
+        return f"Union[{', '.join(_get_type_name(arg) for arg in args)}]"
+    else:
+        return str(tp)
 
 
 def func_to_pydantic_model(func: Callable) -> BaseModel:
@@ -48,8 +70,6 @@ def func_to_pydantic_model(func: Callable) -> BaseModel:
         model_props.append(
             (param_name, param_type, Field(default=default, description=description))
         )
-
-    from loguru import logger
 
     logger.debug(f"Inferred properties from function: {model_props}")
     dynamic_model = create_model(  # type: ignore
