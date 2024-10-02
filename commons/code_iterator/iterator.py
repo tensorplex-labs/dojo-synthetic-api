@@ -82,7 +82,7 @@ async def debug_initial_code(
     Returns:
         CodeIterationStates: States of all code iterations.
     """
-    feedback = await get_feedback(initial_html_code)
+    feedback, _ = await get_feedback(initial_html_code)
     logger.info(f"Initial feedback: {feedback}")
     states = CodeIterationStates()
     states.add_iteration(
@@ -114,7 +114,7 @@ async def debug_initial_code(
                         **kwargs
                     )
                     logger.info(f"Completion: {completion}")
-                    feedback = await get_feedback(completion.code)
+                    feedback, _ = await get_feedback(completion.code)
                     states.add_iteration(iteration=completion)
 
                     if not feedback:
