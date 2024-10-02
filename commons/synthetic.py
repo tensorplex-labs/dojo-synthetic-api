@@ -529,7 +529,7 @@ last_topic = []  # global var used to track last used topic.
 
 def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
     file_extensions = set(os.path.splitext(file.filename)[1] for file in ans.files)
-    logger.debug(f"found file extensions from CodeAnswer: {file_extensions}")
+    logger.trace(f"found file extensions from CodeAnswer: {file_extensions}")
     has_js = ".js" in file_extensions
     has_css = ".css" in file_extensions
     has_html = ".html" in file_extensions
@@ -634,6 +634,21 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         iteration_state = await debug_initial_code(
             initial_html_code=html_file.content,
+        )
+        # print some stats to figure out are we doing shit or nah
+
+        num_errors_total = sum(
+            1 if iteration.error else 0 for iteration in iteration_state.iterations
+        )
+        is_final_iter_fixed = (
+            True
+            if iteration_state.latest_iteration
+            and not iteration_state.latest_iteration.error
+            else False
+        )
+
+        logger.info(
+            f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
         )
 
         # final html file

@@ -64,7 +64,7 @@ async def main():
         log_level=uvicorn_config.log_level,
         reload=False,
     )
-    logger.info(f"Using uvicorn config: {config}")
+    logger.info(f"Using uvicorn config: {config.__dict__}")
     server = uvicorn.Server(config)
     # create any background tasks here
     running_tasks: list[asyncio.Task[Any]] = []

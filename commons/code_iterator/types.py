@@ -124,6 +124,9 @@ class CodeIterationStates(BaseModel):
         self.iterations.append(iteration)
         self.current_iteration_num += 1
 
+    def set_initial_state(self, iteration: CodeIteration):
+        self.iterations.append(iteration)
+
     @property
     def latest_iteration(self) -> CodeIteration | None:
         return self.iterations[-1] if self.iterations else None

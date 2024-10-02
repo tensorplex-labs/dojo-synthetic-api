@@ -2,8 +2,17 @@ from loguru import logger
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt
 
 from commons.code_executor import get_feedback
+from commons.code_executor.feedback import _remove_error_logging_js
 from commons.code_iterator.rewoo import plan_and_solve
 from commons.code_iterator.types import CodeIteration, CodeIterationStates
+
+
+def parse_code_iteration_state(states: CodeIterationStates) -> CodeIterationStates:
+    for state in states.iterations:
+        if not state.error or state.error == "":
+            state.code = _remove_error_logging_js(state.code)
+            logger.trace("Removed error logging js from code ...")
+    return states
 
 
 async def debug_initial_code(
@@ -27,12 +36,14 @@ async def debug_initial_code(
     Returns:
         CodeIterationStates: States of all code iterations.
     """
-    feedback, _ = await get_feedback(initial_html_code)
-    logger.info(f"Initial feedback: {feedback}")
+    feedback, code_with_loggingjs = await get_feedback(initial_html_code)
     states = CodeIterationStates()
-    states.add_iteration(
-        iteration=CodeIteration(code=initial_html_code, error=feedback)
+    states.set_initial_state(
+        iteration=CodeIteration(code=code_with_loggingjs, error=feedback)
     )
+    if not feedback:
+        logger.info("⏩ No intitial code executor feedback, skipping feedback loop")
+        return parse_code_iteration_state(states)
 
     if not states.latest_iteration:
         raise ValueError("No initial iteration found")
@@ -45,9 +56,11 @@ async def debug_initial_code(
                 with attempt:
                     latest_iteration = states.latest_iteration
                     solution = await plan_and_solve(latest_iteration.code)
-                    feedback, _ = await get_feedback(solution)
+                    feedback, code_with_loggingjs = await get_feedback(solution)
                     states.add_iteration(
-                        iteration=CodeIteration(code=solution, error=feedback)
+                        iteration=CodeIteration(
+                            code=code_with_loggingjs, error=feedback
+                        )
                     )
 
                     if not feedback:
@@ -64,4 +77,4 @@ async def debug_initial_code(
             logger.error(f"Error occurred while generating code answer: {e}")
             raise e
 
-    return states
+    return parse_code_iteration_state(states)

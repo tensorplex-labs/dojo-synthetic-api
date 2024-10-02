@@ -1,4 +1,5 @@
 import inspect
+import json
 from typing import Annotated, Callable, Union, get_args, get_origin
 
 from loguru import logger
@@ -81,3 +82,41 @@ def func_to_pydantic_model(func: Callable) -> BaseModel:
         },
     )
     return dynamic_model
+
+
+def func_to_schema(func: Callable):
+    """Given a function, return a JSON schema to prepare for tool calling"""
+    signature = inspect.signature(func)
+
+    schema = {"type": "object", "properties": {}, "required": []}
+
+    for param_name, param in signature.parameters.items():
+        param_type = (
+            param.annotation
+            if param.annotation != inspect.Parameter.empty
+            else type(param.default)
+        )
+
+        if param_type is str:
+            schema["properties"][param_name] = {"type": "string"}
+        elif param_type is int:
+            schema["properties"][param_name] = {"type": "integer"}
+        elif param_type is float:
+            schema["properties"][param_name] = {"type": "number"}
+        elif param_type is bool:
+            schema["properties"][param_name] = {"type": "boolean"}
+        elif param_type is list:
+            schema["properties"][param_name] = {"type": "array"}
+        elif param_type is dict:
+            schema["properties"][param_name] = {"type": "object"}
+        else:
+            schema["properties"][param_name] = {"type": "any"}
+
+        # Add default value if present
+        if param.default != inspect.Parameter.empty:
+            schema["properties"][param_name]["default"] = param.default
+
+        if param.default == inspect.Parameter.empty:
+            schema["required"].append(param_name)
+
+    return json.dumps(schema, indent=2)

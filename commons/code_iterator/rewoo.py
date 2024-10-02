@@ -276,7 +276,7 @@ async def _execute_step_naive(step: Step, rewoo_state: ReWOOState):
 
 async def _execute_step_with_deps(step: Step, rewoo_state: ReWOOState):
     if step.inputs is None or len(step.inputs) == 0:
-        logger.info(f"Executing step {step.step_id} with no inputs, {step=}")
+        logger.info(f"Executing step {step.step_id} with no inputs, title:{step.title}")
         try:
             await _execute_step_naive(step, rewoo_state)
         except NotImplementedError as exc:
@@ -284,7 +284,9 @@ async def _execute_step_with_deps(step: Step, rewoo_state: ReWOOState):
 
         return
 
-    logger.info(f"Executing step step_id:{step.step_id} with inputs, {step=}")
+    logger.info(
+        f"Executing step step_id:{step.step_id} with inputs, title:{step.title}"
+    )
 
     # figure out dependencies have already been resolved
     start_time = datetime.datetime.now(datetime.timezone.utc)
@@ -299,10 +301,12 @@ async def _execute_step_with_deps(step: Step, rewoo_state: ReWOOState):
             if not rewoo_state.results.get(input.refers_to)
         ]
         if len(unresolved_deps) == 0:
-            logger.info(f"All dependencies have been resolved, executing step, {step=}")
+            logger.info(
+                f"All dependencies have been resolved, executing step, title:{step.title}"
+            )
             break
         logger.info(
-            f"Step {step=} is waiting for unresolved dependencies to be resolved: {unresolved_deps}"
+            f"Step id:{step.step_id} title:{step.title} is waiting for unresolved dependencies to be resolved: {unresolved_deps}"
         )
         await asyncio.sleep(3)
 
