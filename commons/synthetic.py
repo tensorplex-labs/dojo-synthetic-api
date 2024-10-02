@@ -632,9 +632,9 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         else:
             raise ValueError("No index.html file found in the answer")
 
-            iteration_state = await debug_initial_code(
-                initial_html_code=html_file.content,
-            )
+        iteration_state = await debug_initial_code(
+            initial_html_code=html_file.content,
+        )
 
         # final html file
         final_html = iteration_state.latest_iteration.code

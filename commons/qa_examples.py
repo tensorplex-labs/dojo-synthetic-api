@@ -182,8 +182,8 @@ def _get_game_answer_examples() -> str:
     # return ""
     return """
         <example_input_1>
-            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene. 
-            
+            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
+
             Features
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
@@ -192,10 +192,10 @@ def _get_game_answer_examples() -> str:
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-        
+
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
-            
+
             Note:
             - Your output should be implemented in JavaScript with HTML and CSS.
             - Ensure that the output has both index.js and index.html files
@@ -226,11 +226,11 @@ def _get_game_question_examples() -> str:
         <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 3 user actions for the following persona: A police officer who is constantly trying to catch the pickpocket artist in the act.
         </example_input_1>
-    
-    
+
+
         <example_output_1>
-            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene. 
-            
+            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
+
             Features
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
@@ -239,35 +239,35 @@ def _get_game_question_examples() -> str:
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-        
+
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
         </example_output_1>
-        
+
         <example_input_2>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 3 user actions for the following persona: a longtime hip-hop enthusiast who used to attend live shows all the time.
         </example_input_2>
-        
+
         <example_output_2>
             Implement a fun, streamlined web game called 'Rhythm Master' that challenges players to match beats and create their own hip-hop tracks.
-            
+
             Features:
             •  Create a game board as 4x4 grid of colorful buttons. The game board should resemble a DJ's mixing panel.
             •  Use neon colors (e.g., hot pink, electric blue, lime green, and bright orange) for the buttons.
-            •  Display a score counter at the top of the screen 
+            •  Display a score counter at the top of the screen
             •  Show a 'Play' button to start the game and a 'Reset' button to restart
             •  Implement a timer that counts down from 60 seconds. When the timer ends, display a "Game Over" screen displaying the final score.
             •  Generate a random sequence of button highlights for the player to follow.
-            •  The game should increase in difficulty as the player's score increases by speeding up the sequence and adding more buttons to remember. 
+            •  The game should increase in difficulty as the player's score increases by speeding up the sequence and adding more buttons to remember.
             •  Provide audio feedback for correct and incorrect button presses using synthesized drum and bass sounds.
             •  Animate button presses with a 'glow' effect, this effect should be distinct and easy for the player to identify.
             •  Add visual effects like confetti when the player successfully completes a sequence
-            
+
             User Actions:
-            1. Click the 'Play' button to start the game and begin the countdown timer 
+            1. Click the 'Play' button to start the game and begin the countdown timer
             2. Click on the colorful buttons in the correct sequence to match the generated pattern
-            3. Press the 'R' key to stop the current game and reset the score to zero 
-            
+            3. Press the 'R' key to stop the current game and reset the score to zero
+
         </example_output_2>
     """
 
@@ -280,7 +280,7 @@ def get_persona_question_examples(topic: Topics) -> str:
     <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a science simulation with persona inspired visuals and content, with 3 requirements for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
     </example_input_1>
-    
+
     <example_output_1>
         Create an interactive simulation of the Monty Hall problem to challenge skeptical users and demonstrate probability concepts.
 
@@ -298,7 +298,7 @@ def get_persona_question_examples(topic: Topics) -> str:
 
         3. Include a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.
 
-    </example_output_1> 
+    </example_output_1>
     """
     if topic == Topics.ANIMATION:
         # put this into a  function
@@ -306,7 +306,7 @@ def get_persona_question_examples(topic: Topics) -> str:
         <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 3 requirements for the following persona: "A high school music teacher who passionately believes in making music resources more accessible to society".
         </example_input_1>
-        
+
         <example_output_1>
             "Create an interactive piano visualization using HTML, CSS, and JavaScript. The piano should have 88 keys (52 white keys and 36 black keys). Implement the following user interactions:
 
@@ -401,8 +401,8 @@ def get_persona_question_examples(topic: Topics) -> str:
 def _get_animation_answer_examples() -> str:
     return """
     <example_input_1>
-        Create an interactive visualization of a vaccine molecular structure. 
-        
+        Create an interactive visualization of a vaccine molecular structure.
+
         Features:
         • Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
         • Each atom should be represented by a sphere, with connecting lines between atoms.
@@ -411,11 +411,11 @@ def _get_animation_answer_examples() -> str:
         • Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
         • Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
         • Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
-        
+
         User actions:
         1. Hover over an atom to view more information about the atom.
         2. Adjust the slider to control the rotation speed of the molecule animation.
-        3. Click and drag the molecule to rotate it manually. 
+        3. Click and drag the molecule to rotate it manually.
     </example_input_1>
     <example_output_1>
         {
@@ -472,7 +472,7 @@ def _get_science_answer_examples() -> str:
             ],
             "installation_commands": "null",
             "additional_notes": "null"
-        }        
+        }
     </example_output_1>
     </example_input_2>
         Create an interactive golf ball trajectory simulator that models the physics of a golf ball's flight, incorporating factors like wind speed and direction.
@@ -513,7 +513,7 @@ def _get_science_answer_examples() -> str:
             ],
             "installation_commands": "null",
             "additional_notes": "null"
-        }        
+        }
     </example_output_2>
-    
+
     """
