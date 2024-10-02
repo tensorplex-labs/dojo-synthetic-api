@@ -3,7 +3,7 @@ import datetime
 import re
 import textwrap
 import traceback
-from typing import Callable, Iterable, List
+from typing import Any, Callable, Iterable, List
 
 import instructor
 from dotenv import load_dotenv
@@ -13,6 +13,7 @@ from openai.types.chat import ChatCompletion
 from pydantic import BaseModel, Field
 
 from commons.code_executor import get_feedback
+from commons.code_iterator.tools import web_search
 from commons.config import get_settings
 from commons.llm import Provider, _get_llm_api_kwargs, get_llm_api_client
 from commons.utils import func_to_pydantic_model, get_function_signature
@@ -20,19 +21,66 @@ from commons.utils import func_to_pydantic_model, get_function_signature
 load_dotenv()
 
 _lock = asyncio.Lock()
+solve_prompt = """Solve the following task or problem. To solve the problem, we have made step-by-step Plan and \
+retrieved corresponding Evidence to each Plan. Use them with caution since long evidence might \
+contain irrelevant information.
+
+Plan:
+{plan}
+
+
+Execution Results:
+{execution_results}
+
+Now solve the question or task according to provided Evidence above. Respond with the answer directly with no extra words.
+
+Task: {task}
+Response:
+"""
+
 plan_prompt = """For the following task, make plans that can solve the problem step by step. For each plan, indicate \
 which external tool together with tool input to retrieve evidence. You can store the evidence into a \
 variable #E that can be called by later tools. (Plan, #E1, Plan, #E2, Plan, ...) \
 You must ensure reusability by defining similar input variables used across different evidence retrieval steps into a variable #I that can be called by later tools. (Plan, #E1[#I1] Plan, #E2[#I1,#I2], Plan, ...)
 
+<available_tools>
 Tools can be one of the following:
-(1) GetCodeFeedback[input]: Use a live execution environment to get runtime error feedback on the code.
-(2) Google[input]: Worker that searches results from Google. Useful when you need to find short
-and succinct answers about a specific topic. The input should be a search query.
-(3) LLM[input]: A pretrained LLM like yourself. Useful when you need to act with general
-world knowledge and common sense. Prioritize it when you are confident in solving the problem
-yourself. Input can be any instruction.
+You are an advanced AI assistant designed to solve coding problems efficiently. You have access to the following tools:
 
+1. ExecuteCode[input]:
+- Executes code in a live environment, providing real-time error feedback, runtime behavior, and output.
+- Essential for verifying code correctness, debugging, and ensuring solutions are free of runtime errors.
+- Use this tool frequently, especially when:
+ a) Validating your initial solution or any significant code changes
+ b) Encountering errors or unexpected behavior
+ c) Before considering any code solution complete
+
+2. SearchWeb[input]:
+- Searches the web for up-to-date information, similar to using Google.
+- Use for finding specific facts, documentation, or examples related to coding problems.
+- Helpful when you need to quickly find information about particular coding concepts, libraries, or best practices.
+
+3. UseLLM[input]:
+- Accesses your general knowledge and reasoning capabilities as a pre-trained language model.
+- Use for high-level problem-solving, algorithm design, brainstorming ideas, or clarifying concepts.
+- Rely on this when you're confident in generating solutions based on your existing knowledge.
+
+</available_tools>
+
+
+<tool_usage_guidelines>
+Guidelines for solving coding problems:
+1. Always start by using ExecuteCode to validate your initial solution.
+2. Use ExecuteCode after each significant code modification or when you encounter errors.
+3. Utilize SearchWeb to find relevant documentation or examples if unsure about syntax or best practices.
+4. Employ UseLLM for overall problem-solving strategy and explaining your approach.
+5. Before finalizing any solution, verify its correctness with ExecuteCode.
+
+Remember: Frequent use of ExecuteCode is crucial for ensuring accurate and working solutions. Prioritize it over other tools when dealing with code implementation and debugging. These tools are designed to complement your capabilities and enhance problem-solving efficiency. Select the appropriate tool based on the problem context.
+
+</tool_usage_guidelines>
+
+<example_plan_1>
 For example,
 Task: Thomas, Toby, and Rebecca worked a total of 157 hours in one week. Thomas worked x
 hours. Toby worked 10 hours less than twice what Thomas worked, and Rebecca worked 8 hours
@@ -50,6 +98,7 @@ Plan: Find out the number of hours Thomas worked.
 
 Plan: Calculate the number of hours Rebecca worked.
 #E3 = Calculator[(2 * #E2 − 10) − 8]
+</example_plan_1>
 
 Begin!
 Describe your plans with rich details. Each Plan must be followed by only one #E, where one #E may use one or more #I.
@@ -63,24 +112,25 @@ def get_buggy_code():
 """
 
 
+# TODO change this to a parameter
 buggy_code = get_buggy_code()
 
 
 class Tool(BaseModel):
     """
-    Represents a tool used in a plan step.
+    Represents a tool used in a step.
     """
 
     name: str = Field(
         ...,
-        description="The name of the tool used in the step, e.g. Google, LLM, GetCodeFeedback",
+        description="The name of the tool used in the step, e.g. Google, LLM, ExecuteCode",
     )
     purpose: str = Field(..., description="Purpose of the tool call")
 
 
 class Execution(BaseModel):
     """
-    Represents an execution output from a plan step.
+    Represents an execution output from a step.
     """
 
     identifier: str = Field(
@@ -94,7 +144,7 @@ class Execution(BaseModel):
 
 class InputReference(BaseModel):
     """
-    Represents an input reference for a plan step.
+    Represents an input reference for a step.
     """
 
     identifier: str = Field(
@@ -120,7 +170,6 @@ class Step(BaseModel):
     tool: Tool = Field(..., description="The tool used in this step.")
     # can consider these dependencies
     inputs: List[InputReference] | None = Field(
-        # None, description="A list of input references this step depends on."
         None,
         description="A list of input references from previous steps that this step depends on.",
     )
@@ -141,10 +190,12 @@ class ReWooStrat(BaseModel):
     task: str
     plan: Plan
     # store the `output` identifiers here, for easy lookups
-    results: dict
+    results: dict[str, Any]
 
 
-task = f"let #I0 be the following html: {buggy_code}, \nidentify any existing or potential errors or bugs in the code, fix them and return the fully working code"
+# define the initial input state here
+initial_state_key = "#E0"
+task = f"let {initial_state_key} be the following html: {buggy_code}, \nidentify any existing or potential errors or bugs in the code, fix them and return the fully working code"
 
 
 async def generate_plan() -> Plan | None:
@@ -153,7 +204,7 @@ async def generate_plan() -> Plan | None:
         messages = [{"role": "user", "content": plan_prompt.format(task=task)}]
         completion: Plan = await client.chat.completions.create(
             messages=messages,  # type: ignore
-            model="openai/gpt-4-turbo",
+            model=get_settings().rewoo.planner,
             stream=False,
             response_model=Plan,
         )
@@ -173,20 +224,13 @@ async def call_llm(input: str) -> str | None:
         )
         completion = await client.chat.completions.create(
             messages=[{"role": "user", "content": input}],
-            model="openai/gpt-4-turbo",
+            model=get_settings().rewoo.tool.use_llm,
         )
 
         return completion.choices[0].message.content
     except Exception as exc:
         logger.error(f"Error while calling tool: LLM, error:{exc}")
         return None
-
-
-async def google_search(input: str):
-    logger.warning("Google search not implemented yet lol")
-    logger.warning(f"Google search input: {input}")
-    await asyncio.sleep(7 / 3 - 4 / 3 - 1)
-    return ""
 
 
 def resolve_state_key(value: str, rewoo_strat: ReWooStrat):
@@ -216,18 +260,29 @@ def resolve_state_key(value: str, rewoo_strat: ReWooStrat):
     return value
 
 
+async def google_search(search_string: str, num_top_results: int = 3):
+    results = await web_search(search_string, num_top_results)
+    results_str = "\n".join(
+        [
+            f"Title: {result.title}\nURL: {result.url}\nSnippet: {result.snippet}"
+            for result in results
+        ]
+    )
+    return results_str
+
+
 def map_tool_to_function(tool: Tool):
-    if tool.name == "Google":
-        return google_search
-    elif tool.name == "LLM":
+    if tool.name == "SearchWeb":
+        return web_search
+    elif tool.name == "UseLLM":
         return call_llm
-    elif tool.name == "GetCodeFeedback":
+    elif tool.name == "ExecuteCode":
         return get_feedback
     else:
         raise NotImplementedError(f"Tool {tool.name} not implemented")
 
 
-async def build_function_call(func: Callable, step: Step, rewoo_strat: ReWooStrat):
+async def build_func_call(func: Callable, step: Step, rewoo_strat: ReWooStrat):
     logger.info(f"Building tool call for step {step.step_id}")
 
     state_prompt = ""
@@ -265,7 +320,7 @@ async def build_function_call(func: Callable, step: Step, rewoo_strat: ReWooStra
 
     exec_args = await tool_client.chat.completions.create(
         messages=[{"role": "user", "content": tool_prompt}],
-        model="openai/gpt-4-turbo",
+        model=get_settings().rewoo.func_call_builder,
         response_model=Iterable[response_model],
         max_tokens=8192,
     )
@@ -280,49 +335,50 @@ async def build_function_call(func: Callable, step: Step, rewoo_strat: ReWooStra
     return collected_args[0]
 
 
+async def _execute_step_naive(step: Step, rewoo_strat: ReWooStrat):
+    # resolve inputs
+    func = map_tool_to_function(step.tool)
+    func_signature = get_function_signature(func)
+    logger.info(f"Executing step {step.step_id} with {func_signature}")
+    # based on the following step in the plan, determine the input
+
+    exec_kwargs = await build_func_call(func, step, rewoo_strat)
+
+    # resolve kwargs by looking in state, this is because we're having some trouble with LLM truncating the long HTML output
+    for key, value in exec_kwargs.items():
+        try:
+            exec_kwargs[key] = resolve_state_key(value, rewoo_strat)
+        except ValueError:
+            logger.error(f"No state key found for value: {value[:40]}")
+            pass
+        except AssertionError:
+            logger.error("Tried to resolve state key for unexpected value")
+            pass
+
+    logger.debug(f"Resolved kwargs: {exec_kwargs}")
+
+    result = await func(**exec_kwargs)
+    logger.debug(f"Got result: {result} from tool exec")
+
+    # parse output to string
+    exec_output = ""
+    if isinstance(result, ChatCompletion):
+        exec_output = result.choices[0].message.content
+    else:
+        exec_output = str(result)
+
+    assert step.output is not None
+
+    # update our state
+    state_key = step.output.identifier
+    if state_key not in rewoo_strat.results:
+        rewoo_strat.results[state_key] = exec_output
+    else:
+        logger.warning(f"State key {state_key} already exists, skipping")
+    return
+
+
 async def execute_step(step: Step, rewoo_strat: ReWooStrat):
-    async def _execute_step_naive(step: Step, rewoo_strat: ReWooStrat):
-        # resolve inputs
-        func = map_tool_to_function(step.tool)
-        func_signature = get_function_signature(func)
-        logger.info(f"Executing step {step.step_id} with {func_signature}")
-        # based on the following step in the plan, determine the input
-
-        exec_kwargs = await build_function_call(func, step, rewoo_strat)
-
-        # resolve kwargs by looking in state, this is because we're having some trouble with LLM truncating the long HTML output
-        for key, value in exec_kwargs.items():
-            try:
-                exec_kwargs[key] = resolve_state_key(value, rewoo_strat)
-            except ValueError:
-                logger.error("No state keys present")
-                pass
-            except AssertionError:
-                logger.error("Tried to resolve state key for unexpected value")
-                pass
-
-        logger.debug(f"Resolved kwargs: {exec_kwargs}")
-
-        result = await func(**exec_kwargs)
-        logger.debug(f"Got result: {result} from tool exec")
-
-        # parse output to string
-        exec_output = ""
-        if isinstance(result, ChatCompletion):
-            exec_output = result.choices[0].message.content
-        else:
-            exec_output = str(result)
-
-        assert step.output is not None
-
-        # update our state
-        state_key = step.output.identifier
-        if state_key not in rewoo_strat.results:
-            rewoo_strat.results[state_key] = exec_output
-        else:
-            logger.warning(f"State key {state_key} already exists, skipping")
-        return
-
     if step.inputs is None or len(step.inputs) == 0:
         logger.info(f"Executing step {step.step_id} with no inputs")
         try:
@@ -342,73 +398,32 @@ async def execute_step(step: Step, rewoo_strat: ReWooStrat):
 
     # figure out dependencies have already been resolved
     start_time = datetime.datetime.now(datetime.timezone.utc)
-    # TODO define this constant somewhere else
-    max_wait_time = 60
     while datetime.datetime.now(
         datetime.timezone.utc
-    ) - start_time < datetime.timedelta(seconds=max_wait_time):
+    ) - start_time < datetime.timedelta(
+        seconds=get_settings().rewoo.max_dep_resolve_sec
+    ):
         unresolved_deps = [
             input.refers_to
             for input in step.inputs
             if not rewoo_strat.results.get(input.refers_to)
         ]
         if len(unresolved_deps) == 0:
-            logger.info("All dependencies have been resolved, executing step")
+            logger.info(
+                f"All dependencies have been resolved, executing step, step_id:{step.step_id}"
+            )
             break
         logger.info(
             f"Waiting for unresolved dependencies to be resolved: {unresolved_deps}"
         )
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
 
     try:
         await _execute_step_naive(step, rewoo_strat)
     except Exception as exc:
         logger.error(f"Error executing step: {exc}")
-        pass
 
-    pass
-
-
-async def main():
-    plan = await generate_plan()
-    if plan is None:
-        raise ValueError("Plan is None")
-
-    # initial results
-    results = {"#I0": buggy_code}
-    rewoo_strat = ReWooStrat(task=task, plan=plan, results=results)
-
-    sorted_steps = sorted(plan.steps, key=lambda s: s.step_id)
-    # TODO supposed to be in parallel
-    for step in sorted_steps:
-        await execute_step(step, rewoo_strat)
-
-    solution = await solve(rewoo_strat)
-
-    pass
-
-
-# ## Solver
-#
-# The solver receives the full plan and generates the final response based on the responses of the tool calls from the worker.
-
-solve_prompt = """Solve the following task or problem. To solve the problem, we have made step-by-step Plan and \
-retrieved corresponding Evidence to each Plan. Use them with caution since long evidence might \
-contain irrelevant information.
-
-Plan:
-{plan}
-
-
-Execution Results:
-{execution_results}
-
-Now solve the question or task according to provided Evidence above. Respond with the answer
-directly with no extra words.
-
-Task: {task}
-Response:
-"""
+    return
 
 
 def _build_step_prompt(step: Step) -> str:
@@ -452,7 +467,7 @@ async def solve(rewoo_strat: ReWooStrat) -> str:
 
     completion: HtmlCode = await client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="openai/gpt-4-turbo",
+        model=get_settings().rewoo.solver,
         response_model=HtmlCode,
     )
 
@@ -460,5 +475,31 @@ async def solve(rewoo_strat: ReWooStrat) -> str:
     return completion.html_code
 
 
+async def main():
+    plan = await generate_plan()
+    if plan is None:
+        raise ValueError("Plan is None")
+
+    # initial results
+    results = {initial_state_key: buggy_code}
+    rewoo_strat = ReWooStrat(task=task, plan=plan, results=results)
+
+    sorted_steps = sorted(plan.steps, key=lambda s: s.step_id)
+    # TODO supposed to be in parallel
+    for step in sorted_steps:
+        await execute_step(step, rewoo_strat)
+
+    solution = await solve(rewoo_strat)
+    logger.info(f"Solution: {solution}")
+
+    pass
+
+
 if __name__ == "__main__":
+    # TODO try implementing backtracking to be able to catch the
+    # case in https://claude.ai/chat/81c96cd9-5de0-46e6-baee-e0ad93935e05
+    # where model fucked up the code, but backtracking seemed to solve it
+    # TODO try to catch the case where the code doesn't throw errors but there's
+    # no output being rendered properly
+
     asyncio.run(main())

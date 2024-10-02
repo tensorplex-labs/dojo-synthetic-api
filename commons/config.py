@@ -6,8 +6,6 @@ from pydantic_settings import BaseSettings
 
 load_dotenv(find_dotenv(".env"))
 
-# TODO continue adding all differrent configs here
-
 
 # we use this instead of the Field(..., env=...) due to some errors in resolving
 # the env variables from pydantic, also due to some pyright parsing issues
@@ -44,12 +42,32 @@ class GenerationSettings(BaseSettings):
     buffer_size: int = Field(default=4)
 
 
+class RewooModelConfig(BaseSettings):
+    # used to generate the plan
+    planner: str = Field(default="openai/gpt-4-turbo")
+    # used to determine if given the plan, task, and evidence, the solution fulfils the task
+    solver: str = Field(default="anthropic/claude-3.5-sonnet")
+    # we MUST use gpt-4-turbo, only this is supported for parallel tool calls, used to generate the tool call params
+    func_call_builder: str = Field(default="openai/gpt-4-turbo")
+    assert func_call_builder == "openai/gpt-4-turbo"
+
+    # used as a maximum time that a step has to wait for dependencies to resolve
+    max_dep_resolve_sec: int = Field(default=60)
+
+    class ToolCallModelConfig(BaseSettings):
+        # let an LLM call another LLM
+        use_llm: str = Field(default="openai/gpt-4-turbo")
+
+    tool: ToolCallModelConfig = ToolCallModelConfig()
+
+
 class Settings(BaseSettings):
     langfuse: LangfuseSettings = LangfuseSettings()
     redis: RedisSettings = RedisSettings()
     llm_api: LlmApiSettings = LlmApiSettings()
     uvicorn: UvicornSettings = UvicornSettings()
     generation: GenerationSettings = GenerationSettings()
+    rewoo: RewooModelConfig = RewooModelConfig()
 
     class Config:
         extra = "forbid"
