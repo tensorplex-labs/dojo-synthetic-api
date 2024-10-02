@@ -11,6 +11,7 @@ from loguru import logger
 from rich.traceback import install
 
 from commons.config import get_settings
+from commons.dataset.personas import load_persona_dataset
 from commons.routes.health import health_router
 from commons.routes.synthetic_gen import cache, synthetic_gen_router, worker
 
@@ -23,6 +24,9 @@ logger.add(sys.stderr, level="DEBUG", backtrace=True, diagnose=True)
 
 @asynccontextmanager
 async def _lifespan_context(app: FastAPI):  # noqa: ARG001 #pyright: ignore[reportUnusedParameter]
+    # Load persona dataset
+    # persona_dataset = load_persona_dataset()
+    app.state.persona_dataset = load_persona_dataset()
     logger.info("Performed startup tasks")
     # wrap worker.run in a task so it can be cancelled
     asyncio.create_task(worker.run())
