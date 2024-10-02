@@ -2,25 +2,25 @@ import asyncio
 import datetime
 import re
 import textwrap
-import traceback
-from typing import Any, Callable, Iterable, List
+from typing import Callable, Iterable
 
 import instructor
 from dotenv import load_dotenv
 from loguru import logger
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
-from pydantic import BaseModel, Field
 
-from commons.code_executor import get_feedback
-from commons.code_iterator.tools import web_search
+from commons.code_iterator.tools import call_llm, fix_code, web_search_and_format
+from commons.code_iterator.types import HtmlCode, Plan, RewooStrategy, Step, Tool
 from commons.config import get_settings
 from commons.llm import Provider, _get_llm_api_kwargs, get_llm_api_client
 from commons.utils import func_to_pydantic_model, get_function_signature
 
 load_dotenv()
 
-_lock = asyncio.Lock()
+# define the initial input state here
+initial_state_key = "#E0"
+lock = asyncio.Lock()
 solve_prompt = """Solve the following task or problem. To solve the problem, we have made step-by-step Plan and \
 retrieved corresponding Evidence to each Plan. Use them with caution since long evidence might \
 contain irrelevant information.
@@ -106,135 +106,32 @@ Describe your plans with rich details. Each Plan must be followed by only one #E
 Task: {task}"""
 
 
-def get_buggy_code():
-    return """
-<!DOCTYPE html>\n\n<html lang="en">\n<head>\n<meta charset="utf-8"/>\n<meta content="width=device-width, initial-scale=1.0" name="viewport"/>\n<title>Interactive Solar System</title>\n<style>\n        body {\n            margin: 0;\n            overflow: hidden;\n            background-color: #000;\n        }\n        canvas {\n            display: block;\n        }\n        #speedSlider {\n            position: absolute;\n            bottom: 20px;\n            left: 20px;\n            width: 200px;\n        }\n        #instructions {\n            position: absolute;\n            top: 20px;\n            left: 20px;\n            color: white;\n            font-family: Arial, sans-serif;\n            font-size: 14px;\n        }\n    </style>\n</head>\n<body>\n<canvas id="solarSystem"></canvas>\n<input id="speedSlider" max="2" min="0.1" step="0.1" type="range" value="1"/>\n<div id="instructions">Click on a planet to zoom in. Use the slider to adjust speed.</div>\n<script src="index.js"></script>\n<script>const canvas = document.getElementById(\'solarSystem\');\nconst ctx = canvas.getContext(\'2d\');\nconst speedSlider = document.getElementById(\'speedSlider\');\n\ncanvas.width = window.innerWidth;\ncanvas.height = window.innerHeight;\n\nconst centerX = canvas.width / 2;\nconst centerY = canvas.height / 2;\n\nconst sun = {\n    x: centerX,\n    y: centerY,\n    radius: 50,\n    color: \'#FFD700\'\n};\n\nconst planets = [\n    { name: \'Mercury\', color: \'#8B8989\', radius: 10, orbitRadius: 100, angle: 0, speed: 0.02, terrainColor: \'#A9A9A9\' },\n    { name: \'Venus\', color: \'#E6E6FA\', radius: 15, orbitRadius: 150, angle: 0, speed: 0.015, terrainColor: \'#DDA0DD\' },\n    { name: \'Earth\', color: \'#4169E1\', radius: 18, orbitRadius: 200, angle: 0, speed: 0.01, terrainColor: \'#228B22\' },\n    { name: \'Mars\', color: \'#B22222\', radius: 14, orbitRadius: 250, angle: 0, speed: 0.008, terrainColor: \'#8B4513\' }\n];\n\nconst stars = [];\nfor (let i = 0; i < 1000; i++) {\n    stars.push({\n        x: Math.random() * canvas.width,\n        y: Math.random() * canvas.height,\n        radius: Math.random() * 1.5\n    });\n}\n\nlet zoomedPlanet = null;\nlet zoomLevel = 1;\n\nfunction drawStar(star) {\n    ctx.beginPath();\n    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);\n    ctx.fillStyle = \'white\';\n    ctx.fill();\n}\n\nfunction drawSun() {\n    ctx.beginPath();\n    ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);\n    ctx.fillStyle = sun.color;\n    ctx.fill();\n}\n\nfunction drawPlanet(planet) {\n    const x = sun.x + Math.cos(planet.angle) * planet.orbitRadius;\n    const y = sun.y + Math.sin(planet.angle) * planet.orbitRadius;\n\n    ctx.beginPath();\n    ctx.arc(x, y, planet.radius, 0, Math.PI * 2);\n\n    const gradient = ctx.createRadialGradient(x, y, 0, x, y, planet.radius);\n    gradient.addColorStop(0, planet.color);\n    gradient.addColorStop(1, shadeColor(planet.color, -30));\n\n    ctx.fillStyle = gradient;\n    ctx.fill();\n\n    // Day/night cycle\n    ctx.beginPath();\n    ctx.arc(x, y, planet.radius, -Math.PI / 2, Math.PI / 2);\n    ctx.fillStyle = \'rgba(0, 0, 0, 0.5)\';\n    ctx.fill();\n}\n\nfunction drawOrbit(planet) {\n    ctx.beginPath();\n    ctx.ellipse(sun.x, sun.y, planet.orbitRadius, planet.orbitRadius * 0.99, 0, 0, Math.PI * 2);\n    ctx.strokeStyle = \'rgba(255, 255, 255, 0.2)\';\n    ctx.stroke();\n}\n\nfunction drawZoomedPlanet(planet) {\n    ctx.save();\n    ctx.translate(canvas.width / 2, canvas.height / 2);\n    ctx.scale(zoomLevel, zoomLevel);\n    ctx.translate(-canvas.width / 2, -canvas.height / 2);\n\n    const terrainGradient = ctx.createRadialGradient(\n        canvas.width / 2, canvas.height / 2, 0,\n        canvas.width / 2, canvas.height / 2, canvas.width / 4\n    );\n    terrainGradient.addColorStop(0, planet.terrainColor);\n    terrainGradient.addColorStop(1, shadeColor(planet.terrainColor, -30));\n\n    ctx.fillStyle = terrainGradient;\n    ctx.fillRect(0, 0, canvas.width, canvas.height);\n\n    // Add some terrain features\n    for (let i = 0; i < 50; i++) {\n        const x = Math.random() * canvas.width;\n        const y = Math.random() * canvas.height;\n        const radius = Math.random() * 20 + 5;\n\n        ctx.beginPath();\n        ctx.arc(x, y, radius, 0, Math.PI * 2);\n        ctx.fillStyle = shadeColor(planet.terrainColor, Math.random() * 40 - 20);\n        ctx.fill();\n    }\n\n    ctx.restore();\n}\n\nfunction shadeColor(color, percent) {\n    const num = parseInt(color.slice(1), 16);\n    const amt = Math.round(2.55 * percent);\n    const R = (num >> 16) + amt;\n    const G = (num >> 8 & 0x00FF) + amt;\n    const B = (num & 0x0000FF) + amt;\n    return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;\n}\n\nfunction animate() {\n    ctx.clearRect(0, 0, canvas.width, canvas.height);\n\n    stars.forEach(drawStar);\n\n    if (zoomedPlanet) {\n        drawZoomedPlanet(zoomedPlanet);\n    } else {\n        drawSun();\n        planets.forEach(drawOrbit);\n        planets.forEach(drawPlanet);\n    }\n\n    const speed = parseFloat(speedSlider.value);\n    planets.forEach(planet => {\n        planet.angle += planet.speed * speed;\n    });\n\n    if (zoomedPlanet && zoomLevel < 10) {\n        zoomLevel += 0.1;\n    } else if (!zoomedPlanet && zoomLevel > 1) {\n        zoomLevel -= 0.1;\n    }\n\n    requestAnimationFrame(animate);\n}\n\ncanvas.addEventListener(\'click\', (event) => {\n    if (zoomedPlanet) {\n        zoomedPlanet = null;\n    } else {\n        const rect = canvas.getBoundingClientRect();\n        const x = event.clientX - rect.left;\n        const y = event.clientY - rect.top;\n\n        planets.forEach(planet => {\n            const planetX = sun.x + Math.cos(planet.angle) * planet.orbitRadius;\n            const planetY = sun.y + Math.sin(planet.angle) * planet.orbitRadius;\n            const distance = Math.sqrt((x - planetX) ** 2 + (y - planetY) ** 2);\n\n            if (distance <= planet.radius) {\n                zoomedPlanet = planet;\n            }\n        });\n    }\n});\n\nanimate();</script></body>\n</html>
-"""
+# ---------------------------------------------------------------------------- #
+#                           PROMPT BUILDER FUNCTIONS                           #
+# ---------------------------------------------------------------------------- #
 
 
-# TODO change this to a parameter
-buggy_code = get_buggy_code()
+def _build_task_prompt(html_code: str) -> str:
+    task = f"let {initial_state_key} be the following html: {html_code}, \nidentify any existing or potential errors or bugs in the code, fix them and return the fully working code"
+    return textwrap.dedent(task)
 
 
-class Tool(BaseModel):
+def _build_step_prompt(step: Step) -> str:
+    inputs = step.inputs or []
+    tool_inputs_str = ", ".join([_input.refers_to for _input in inputs])
+    output_str = step.output.identifier if step.output else ""
+    step_str = f"""
+Step {step.step_id}:
+Title: {step.title}
+Purpose: {step.purpose}
+Tool: {step.tool.name}[{tool_inputs_str}]
+Outputs: {output_str}\n
     """
-    Represents a tool used in a step.
-    """
-
-    name: str = Field(
-        ...,
-        description="The name of the tool used in the step, e.g. Google, LLM, ExecuteCode",
-    )
-    purpose: str = Field(..., description="Purpose of the tool call")
+    return textwrap.dedent(step_str)
 
 
-class Execution(BaseModel):
-    """
-    Represents an execution output from a step.
-    """
-
-    identifier: str = Field(
-        ...,
-        description="A unique identifier for the execution output (e.g., '#E1').",
-    )
-    description: str = Field(
-        ..., description="Detailed explanation of the execution output."
-    )
-
-
-class InputReference(BaseModel):
-    """
-    Represents an input reference for a step.
-    """
-
-    identifier: str = Field(
-        ..., description="A unique identifier for the input reference (e.g., '#I1')."
-    )
-    refers_to: str = Field(
-        ...,
-        description="The identifier of the execution output that this input references (e.g., '#E1').",
-    )
-    description: str = Field(
-        ..., description="Detailed explanation of the input reference."
-    )
-
-
-class Step(BaseModel):
-    """
-    Represents a single step in the plan.
-    """
-
-    step_id: int = Field(..., description="The unique idenfier of the step.")
-    title: str = Field(..., description="The title of the step.")
-    purpose: str = Field(..., description="The purpose of the step.")
-    tool: Tool = Field(..., description="The tool used in this step.")
-    # can consider these dependencies
-    inputs: List[InputReference] | None = Field(
-        None,
-        description="A list of input references from previous steps that this step depends on.",
-    )
-    output: Execution | None = Field(
-        None, description="The execution output produced by this step."
-    )
-
-
-class Plan(BaseModel):
-    """
-    Represents the entire plan consisting of multiple steps.
-    """
-
-    steps: List[Step] = Field(..., description="A list of all steps in the plan.")
-
-
-class ReWooStrat(BaseModel):
-    task: str
-    plan: Plan
-    # store the `output` identifiers here, for easy lookups
-    results: dict[str, Any]
-
-
-# define the initial input state here
-initial_state_key = "#E0"
-task = f"let {initial_state_key} be the following html: {buggy_code}, \nidentify any existing or potential errors or bugs in the code, fix them and return the fully working code"
-
-
-async def generate_plan() -> Plan | None:
-    try:
-        client = get_llm_api_client()
-        messages = [{"role": "user", "content": plan_prompt.format(task=task)}]
-        completion: Plan = await client.chat.completions.create(
-            messages=messages,  # type: ignore
-            model=get_settings().rewoo.planner,
-            stream=False,
-            response_model=Plan,
-        )
-
-        logger.debug(f"Generated plan... {completion=}")
-        return completion
-    except Exception as exc:
-        logger.error(f"Error generating plan: {exc}")
-
-
-async def call_llm(input: str) -> str | None:
-    try:
-        settings = get_settings()
-        client = AsyncOpenAI(
-            api_key=settings.llm_api.openrouter_api_key.get_secret_value(),
-            base_url=settings.llm_api.openrouter_api_base_url,
-        )
-        completion = await client.chat.completions.create(
-            messages=[{"role": "user", "content": input}],
-            model=get_settings().rewoo.tool.use_llm,
-        )
-
-        return completion.choices[0].message.content
-    except Exception as exc:
-        logger.error(f"Error while calling tool: LLM, error:{exc}")
-        return None
-
-
-def resolve_state_key(value: str, rewoo_strat: ReWooStrat):
-    assert isinstance(rewoo_strat, ReWooStrat)
+def _resolve_state_key(value: str, rewoo_strat: RewooStrategy):
+    assert isinstance(rewoo_strat, RewooStrategy)
     assert isinstance(value, str)
 
     logger.debug(f"Resolving state key for {value=}")
@@ -246,7 +143,9 @@ def resolve_state_key(value: str, rewoo_strat: ReWooStrat):
 
     unknown_keys = set(matches) - set(rewoo_strat.results.keys())
     if len(unknown_keys) > 0:
-        logger.warning(f"State keys that don't exist ... {unknown_keys}")
+        logger.warning(
+            f"State keys that don't exist but were found in LLM's output: {unknown_keys}"
+        )
 
     for match in matches:
         if match not in rewoo_strat.results:
@@ -260,29 +159,18 @@ def resolve_state_key(value: str, rewoo_strat: ReWooStrat):
     return value
 
 
-async def google_search(search_string: str, num_top_results: int = 3):
-    results = await web_search(search_string, num_top_results)
-    results_str = "\n".join(
-        [
-            f"Title: {result.title}\nURL: {result.url}\nSnippet: {result.snippet}"
-            for result in results
-        ]
-    )
-    return results_str
-
-
-def map_tool_to_function(tool: Tool):
+def _map_tool_to_function(tool: Tool):
     if tool.name == "SearchWeb":
-        return web_search
+        return web_search_and_format
     elif tool.name == "UseLLM":
         return call_llm
     elif tool.name == "ExecuteCode":
-        return get_feedback
+        return fix_code
     else:
         raise NotImplementedError(f"Tool {tool.name} not implemented")
 
 
-async def build_func_call(func: Callable, step: Step, rewoo_strat: ReWooStrat):
+async def build_func_call(func: Callable, step: Step, rewoo_strat: RewooStrategy):
     logger.info(f"Building tool call for step {step.step_id}")
 
     state_prompt = ""
@@ -301,13 +189,12 @@ async def build_func_call(func: Callable, step: Step, rewoo_strat: ReWooStrat):
     Purpose: {step.purpose}
     """
 
-    # if no results yet, might be the first step
+    # if no results yet, it's probably the first step, provide additional context
     if len(rewoo_strat.results.items()) == 0:
         tool_prompt += f"""
         Context: {rewoo_strat.task}
         """
 
-    # parallel tool only for gpt-4-turbo tho
     tool_client = instructor.from_openai(  # type: ignore
         AsyncOpenAI(
             **_get_llm_api_kwargs(Provider.OPENROUTER),  # type: ignore
@@ -318,6 +205,7 @@ async def build_func_call(func: Callable, step: Step, rewoo_strat: ReWooStrat):
     response_model = func_to_pydantic_model(func)
     logger.debug(f"Inferred JSON schema: {response_model.model_json_schema()}")
 
+    # parallel tool only for gpt-4-turbo tho
     exec_args = await tool_client.chat.completions.create(
         messages=[{"role": "user", "content": tool_prompt}],
         model=get_settings().rewoo.func_call_builder,
@@ -335,24 +223,27 @@ async def build_func_call(func: Callable, step: Step, rewoo_strat: ReWooStrat):
     return collected_args[0]
 
 
-async def _execute_step_naive(step: Step, rewoo_strat: ReWooStrat):
+async def _execute_step_naive(step: Step, rewoo_strat: RewooStrategy):
+    """Execute a step without awareness of other dependencies"""
+
     # resolve inputs
-    func = map_tool_to_function(step.tool)
+    func = _map_tool_to_function(step.tool)
     func_signature = get_function_signature(func)
     logger.info(f"Executing step {step.step_id} with {func_signature}")
     # based on the following step in the plan, determine the input
-
     exec_kwargs = await build_func_call(func, step, rewoo_strat)
 
     # resolve kwargs by looking in state, this is because we're having some trouble with LLM truncating the long HTML output
     for key, value in exec_kwargs.items():
         try:
-            exec_kwargs[key] = resolve_state_key(value, rewoo_strat)
+            exec_kwargs[key] = _resolve_state_key(value, rewoo_strat)
         except ValueError:
-            logger.error(f"No state key found for value: {value[:40]}")
+            logger.error(f"No state key found for key: {key}, value: {value[:40]}...")
             pass
         except AssertionError:
-            logger.error("Tried to resolve state key for unexpected value")
+            logger.error(
+                f"Tried to resolve state key for unexpected value, key: {key} value: {value=}"
+            )
             pass
 
     logger.debug(f"Resolved kwargs: {exec_kwargs}")
@@ -378,23 +269,17 @@ async def _execute_step_naive(step: Step, rewoo_strat: ReWooStrat):
     return
 
 
-async def execute_step(step: Step, rewoo_strat: ReWooStrat):
+async def _execute_step_with_deps(step: Step, rewoo_strat: RewooStrategy):
     if step.inputs is None or len(step.inputs) == 0:
-        logger.info(f"Executing step {step.step_id} with no inputs")
+        logger.info(f"Executing step {step.step_id} with no inputs, {step=}")
         try:
             await _execute_step_naive(step, rewoo_strat)
-
-        except Exception as exc:
+        except NotImplementedError as exc:
             logger.error(f"Error mapping tool to function: {exc}")
-
-            traceback.print_exc()
-            pass
 
         return
 
-    logger.info(
-        f"Executing step step_id:{step.step_id}, name: {step.title} with inputs"
-    )
+    logger.info(f"Executing step step_id:{step.step_id} with inputs, {step=}")
 
     # figure out dependencies have already been resolved
     start_time = datetime.datetime.now(datetime.timezone.utc)
@@ -409,12 +294,10 @@ async def execute_step(step: Step, rewoo_strat: ReWooStrat):
             if not rewoo_strat.results.get(input.refers_to)
         ]
         if len(unresolved_deps) == 0:
-            logger.info(
-                f"All dependencies have been resolved, executing step, step_id:{step.step_id}"
-            )
+            logger.info(f"All dependencies have been resolved, executing step, {step=}")
             break
         logger.info(
-            f"Waiting for unresolved dependencies to be resolved: {unresolved_deps}"
+            f"Step {step=} is waiting for unresolved dependencies to be resolved: {unresolved_deps}"
         )
         await asyncio.sleep(3)
 
@@ -426,21 +309,33 @@ async def execute_step(step: Step, rewoo_strat: ReWooStrat):
     return
 
 
-def _build_step_prompt(step: Step) -> str:
-    inputs = step.inputs or []
-    tool_inputs_str = ", ".join([_input.refers_to for _input in inputs])
-    output_str = step.output.identifier if step.output else ""
-    step_str = f"""
-Step {step.step_id}:
-Title: {step.title}
-Purpose: {step.purpose}
-Tool: {step.tool.name}[{tool_inputs_str}]
-Outputs: {output_str}\n
-    """
-    return textwrap.dedent(step_str)
+async def _generate_plan(task: str) -> Plan | None:
+    """Generate plan before executing subsequent tools to solve the task"""
+    try:
+        client = get_llm_api_client()
+        messages = [
+            {
+                "role": "user",
+                "content": plan_prompt.format(task=task),
+            }
+        ]
+        completion: Plan = await client.chat.completions.create(
+            messages=messages,  # type: ignore
+            model=get_settings().rewoo.planner,
+            stream=False,
+            response_model=Plan,
+        )
+
+        logger.debug(f"Generated plan... {completion=}")
+        return completion
+
+    except Exception as exc:
+        logger.error(f"Error generating plan: {exc}")
+
+    return None
 
 
-async def solve(rewoo_strat: ReWooStrat) -> str:
+async def _solve(rewoo_strat: RewooStrategy) -> str:
     plan_str: str = ""
     results_str: str = ""
     for step in rewoo_strat.plan.steps:
@@ -454,16 +349,13 @@ async def solve(rewoo_strat: ReWooStrat) -> str:
     logger.debug("Attempting to solve with the following state:")
     logger.debug(f"Plan: {plan_str}")
     logger.debug(f"Results: {results_str}")
-    logger.debug(f"Task: {rewoo_strat.task}")
+    logger.debug(f"Task: {rewoo_strat.task[:40]}...{rewoo_strat.task[-40:]}")
 
     prompt = solve_prompt.format(
         plan=plan_str, execution_results=results_str, task=rewoo_strat.task
     )
 
     client = get_llm_api_client()
-
-    class HtmlCode(BaseModel):
-        html_code: str = Field(..., description="The HTML code solution")
 
     completion: HtmlCode = await client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
@@ -475,31 +367,23 @@ async def solve(rewoo_strat: ReWooStrat) -> str:
     return completion.html_code
 
 
-async def main():
-    plan = await generate_plan()
+async def plan_and_solve(html_code: str):
+    # TODO implement backtracking to be able to figure out when LLM's iteration actually makes code worse
+    task = _build_task_prompt(html_code)
+    plan = await _generate_plan(task)
     if plan is None:
         raise ValueError("Plan is None")
 
     # initial results
-    results = {initial_state_key: buggy_code}
-    rewoo_strat = ReWooStrat(task=task, plan=plan, results=results)
+    results = {initial_state_key: html_code}
+    rewoo_strat = RewooStrategy(task=task, plan=plan, results=results)
 
     sorted_steps = sorted(plan.steps, key=lambda s: s.step_id)
-    # TODO supposed to be in parallel
-    for step in sorted_steps:
-        await execute_step(step, rewoo_strat)
 
-    solution = await solve(rewoo_strat)
-    logger.info(f"Solution: {solution}")
+    # let tools execute in parallel
+    await asyncio.gather(
+        *[_execute_step_with_deps(step, rewoo_strat) for step in sorted_steps]
+    )
 
-    pass
-
-
-if __name__ == "__main__":
-    # TODO try implementing backtracking to be able to catch the
-    # case in https://claude.ai/chat/81c96cd9-5de0-46e6-baee-e0ad93935e05
-    # where model fucked up the code, but backtracking seemed to solve it
-    # TODO try to catch the case where the code doesn't throw errors but there's
-    # no output being rendered properly
-
-    asyncio.run(main())
+    solution = await _solve(rewoo_strat)
+    return solution

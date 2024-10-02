@@ -49,7 +49,6 @@ class RewooModelConfig(BaseSettings):
     solver: str = Field(default="anthropic/claude-3.5-sonnet")
     # we MUST use gpt-4-turbo, only this is supported for parallel tool calls, used to generate the tool call params
     func_call_builder: str = Field(default="openai/gpt-4-turbo")
-    assert func_call_builder == "openai/gpt-4-turbo"
 
     # used as a maximum time that a step has to wait for dependencies to resolve
     max_dep_resolve_sec: int = Field(default=60)
@@ -57,6 +56,8 @@ class RewooModelConfig(BaseSettings):
     class ToolCallModelConfig(BaseSettings):
         # let an LLM call another LLM
         use_llm: str = Field(default="openai/gpt-4-turbo")
+        # use this LLM when attempting to solve the code by feeding the execution feedback
+        fix_code: str = Field(default="anthropic/claude-3.5-sonnet")
 
     tool: ToolCallModelConfig = ToolCallModelConfig()
 
@@ -68,6 +69,8 @@ class Settings(BaseSettings):
     uvicorn: UvicornSettings = UvicornSettings()
     generation: GenerationSettings = GenerationSettings()
     rewoo: RewooModelConfig = RewooModelConfig()
+
+    assert rewoo.func_call_builder == "openai/gpt-4-turbo"
 
     class Config:
         extra = "forbid"
