@@ -686,7 +686,6 @@ async def build_prompt_responses_pair(
 
             iteration_state = await debug_initial_code(
                 initial_html_code=html_file.content,
-                model=model,
             )
 
             # final html file

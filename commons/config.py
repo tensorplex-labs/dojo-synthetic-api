@@ -42,7 +42,7 @@ class GenerationSettings(BaseSettings):
     buffer_size: int = Field(default=4)
 
 
-class RewooModelConfig(BaseSettings):
+class ReWOOModelConfig(BaseSettings):
     # used to generate the plan
     planner: str = Field(default="openai/gpt-4-turbo")
     # used to determine if given the plan, task, and evidence, the solution fulfils the task
@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     llm_api: LlmApiSettings = LlmApiSettings()
     uvicorn: UvicornSettings = UvicornSettings()
     generation: GenerationSettings = GenerationSettings()
-    rewoo: RewooModelConfig = RewooModelConfig()
+    rewoo: ReWOOModelConfig = ReWOOModelConfig()
 
     assert rewoo.func_call_builder == "openai/gpt-4-turbo"
 

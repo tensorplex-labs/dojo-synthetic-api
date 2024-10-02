@@ -1,3 +1,8 @@
+"""
+Implementation of plan & solve approach using ReWOO, instead of suffering from abstraction hell.
+This exists to decouple our implementation of the code iterator from the main function in `iterator.py
+"""
+
 import asyncio
 import datetime
 import re
@@ -11,7 +16,7 @@ from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
 from commons.code_iterator.tools import call_llm, fix_code, web_search_and_format
-from commons.code_iterator.types import HtmlCode, Plan, RewooStrategy, Step, Tool
+from commons.code_iterator.types import HtmlCode, Plan, ReWOOState, Step, Tool
 from commons.config import get_settings
 from commons.llm import Provider, _get_llm_api_kwargs, get_llm_api_client
 from commons.utils import func_to_pydantic_model, get_function_signature
@@ -130,8 +135,8 @@ Outputs: {output_str}\n
     return textwrap.dedent(step_str)
 
 
-def _resolve_state_key(value: str, rewoo_strat: RewooStrategy):
-    assert isinstance(rewoo_strat, RewooStrategy)
+def _resolve_state_key(value: str, rewoo_state: ReWOOState):
+    assert isinstance(rewoo_state, ReWOOState)
     assert isinstance(value, str)
 
     logger.debug(f"Resolving state key for {value=}")
@@ -141,17 +146,17 @@ def _resolve_state_key(value: str, rewoo_strat: RewooStrategy):
     if len(matches) == 0:
         raise ValueError("No state keys found in value")
 
-    unknown_keys = set(matches) - set(rewoo_strat.results.keys())
+    unknown_keys = set(matches) - set(rewoo_state.results.keys())
     if len(unknown_keys) > 0:
         logger.warning(
             f"State keys that don't exist but were found in LLM's output: {unknown_keys}"
         )
 
     for match in matches:
-        if match not in rewoo_strat.results:
+        if match not in rewoo_state.results:
             continue
         value = value.replace(
-            f"<state_key>{match}</state_key>", rewoo_strat.results[match]
+            f"<state_key>{match}</state_key>", rewoo_state.results[match]
         )
 
     logger.debug(f"Resolved state key for {value=}")
@@ -170,11 +175,11 @@ def _map_tool_to_function(tool: Tool):
         raise NotImplementedError(f"Tool {tool.name} not implemented")
 
 
-async def build_func_call(func: Callable, step: Step, rewoo_strat: RewooStrategy):
+async def build_func_call(func: Callable, step: Step, rewoo_state: ReWOOState):
     logger.info(f"Building tool call for step {step.step_id}")
 
     state_prompt = ""
-    for key, value in rewoo_strat.results.items():
+    for key, value in rewoo_state.results.items():
         state_prompt += f"<state_key>{key}</state_key>: {value}\n"
 
     tool_prompt = f"""
@@ -190,9 +195,9 @@ async def build_func_call(func: Callable, step: Step, rewoo_strat: RewooStrategy
     """
 
     # if no results yet, it's probably the first step, provide additional context
-    if len(rewoo_strat.results.items()) == 0:
+    if len(rewoo_state.results.items()) == 0:
         tool_prompt += f"""
-        Context: {rewoo_strat.task}
+        Context: {rewoo_state.task}
         """
 
     tool_client = instructor.from_openai(  # type: ignore
@@ -223,7 +228,7 @@ async def build_func_call(func: Callable, step: Step, rewoo_strat: RewooStrategy
     return collected_args[0]
 
 
-async def _execute_step_naive(step: Step, rewoo_strat: RewooStrategy):
+async def _execute_step_naive(step: Step, rewoo_state: ReWOOState):
     """Execute a step without awareness of other dependencies"""
 
     # resolve inputs
@@ -231,12 +236,12 @@ async def _execute_step_naive(step: Step, rewoo_strat: RewooStrategy):
     func_signature = get_function_signature(func)
     logger.info(f"Executing step {step.step_id} with {func_signature}")
     # based on the following step in the plan, determine the input
-    exec_kwargs = await build_func_call(func, step, rewoo_strat)
+    exec_kwargs = await build_func_call(func, step, rewoo_state)
 
     # resolve kwargs by looking in state, this is because we're having some trouble with LLM truncating the long HTML output
     for key, value in exec_kwargs.items():
         try:
-            exec_kwargs[key] = _resolve_state_key(value, rewoo_strat)
+            exec_kwargs[key] = _resolve_state_key(value, rewoo_state)
         except ValueError:
             logger.error(f"No state key found for key: {key}, value: {value[:40]}...")
             pass
@@ -262,18 +267,18 @@ async def _execute_step_naive(step: Step, rewoo_strat: RewooStrategy):
 
     # update our state
     state_key = step.output.identifier
-    if state_key not in rewoo_strat.results:
-        rewoo_strat.results[state_key] = exec_output
+    if state_key not in rewoo_state.results:
+        rewoo_state.results[state_key] = exec_output
     else:
         logger.warning(f"State key {state_key} already exists, skipping")
     return
 
 
-async def _execute_step_with_deps(step: Step, rewoo_strat: RewooStrategy):
+async def _execute_step_with_deps(step: Step, rewoo_state: ReWOOState):
     if step.inputs is None or len(step.inputs) == 0:
         logger.info(f"Executing step {step.step_id} with no inputs, {step=}")
         try:
-            await _execute_step_naive(step, rewoo_strat)
+            await _execute_step_naive(step, rewoo_state)
         except NotImplementedError as exc:
             logger.error(f"Error mapping tool to function: {exc}")
 
@@ -291,7 +296,7 @@ async def _execute_step_with_deps(step: Step, rewoo_strat: RewooStrategy):
         unresolved_deps = [
             input.refers_to
             for input in step.inputs
-            if not rewoo_strat.results.get(input.refers_to)
+            if not rewoo_state.results.get(input.refers_to)
         ]
         if len(unresolved_deps) == 0:
             logger.info(f"All dependencies have been resolved, executing step, {step=}")
@@ -302,7 +307,7 @@ async def _execute_step_with_deps(step: Step, rewoo_strat: RewooStrategy):
         await asyncio.sleep(3)
 
     try:
-        await _execute_step_naive(step, rewoo_strat)
+        await _execute_step_naive(step, rewoo_state)
     except Exception as exc:
         logger.error(f"Error executing step: {exc}")
 
@@ -335,24 +340,24 @@ async def _generate_plan(task: str) -> Plan | None:
     return None
 
 
-async def _solve(rewoo_strat: RewooStrategy) -> str:
+async def _solve(rewoo_state: ReWOOState) -> str:
     plan_str: str = ""
     results_str: str = ""
-    for step in rewoo_strat.plan.steps:
+    for step in rewoo_state.plan.steps:
         if step.inputs is None:
             continue
         plan_str += _build_step_prompt(step)
 
-    for k, v in rewoo_strat.results.items():
+    for k, v in rewoo_state.results.items():
         results_str += f"{k}: {v}\n"
 
     logger.debug("Attempting to solve with the following state:")
     logger.debug(f"Plan: {plan_str}")
     logger.debug(f"Results: {results_str}")
-    logger.debug(f"Task: {rewoo_strat.task[:40]}...{rewoo_strat.task[-40:]}")
+    logger.debug(f"Task: {rewoo_state.task[:40]}...{rewoo_state.task[-40:]}")
 
     prompt = solve_prompt.format(
-        plan=plan_str, execution_results=results_str, task=rewoo_strat.task
+        plan=plan_str, execution_results=results_str, task=rewoo_state.task
     )
 
     client = get_llm_api_client()
@@ -376,7 +381,7 @@ async def plan_and_solve(html_code: str):
 
     # initial results
     results = {initial_state_key: html_code}
-    rewoo_strat = RewooStrategy(task=task, plan=plan, results=results)
+    rewoo_strat = ReWOOState(task=task, plan=plan, results=results)
 
     sorted_steps = sorted(plan.steps, key=lambda s: s.step_id)
 
@@ -386,4 +391,5 @@ async def plan_and_solve(html_code: str):
     )
 
     solution = await _solve(rewoo_strat)
+    logger.info(f"Plan and Solve approach using ReWOO got solution:{solution=}")
     return solution

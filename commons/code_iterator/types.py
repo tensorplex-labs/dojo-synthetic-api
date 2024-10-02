@@ -83,7 +83,7 @@ class Plan(BaseModel):
     steps: List[Step] = Field(..., description="A list of all steps in the plan.")
 
 
-class RewooStrategy(BaseModel):
+class ReWOOState(BaseModel):
     task: str
     plan: Plan
     # store the `output` identifiers here, for easy lookups
@@ -109,3 +109,21 @@ class DuckduckgoSearchResult(BaseModel):
 
 class HtmlCode(BaseModel):
     html_code: str = Field(..., description="The HTML code solution")
+
+
+class CodeIteration(BaseModel):
+    code: str
+    error: str
+
+
+class CodeIterationStates(BaseModel):
+    iterations: list[CodeIteration] = []
+    current_iteration_num: int = 0
+
+    def add_iteration(self, iteration: CodeIteration):
+        self.iterations.append(iteration)
+        self.current_iteration_num += 1
+
+    @property
+    def latest_iteration(self) -> CodeIteration | None:
+        return self.iterations[-1] if self.iterations else None
