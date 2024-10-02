@@ -184,7 +184,12 @@ def _remove_error_logging_js(html_code: str) -> str:
     else:
         logger.warning("Error logging script not found in the HTML code!!!")
 
-    return str(soup)
+    html_code_stripped = str(soup)
+    assert (
+        html_code_stripped != ""
+    ), "Stripped HTML code is completely empty, something went wrong"
+
+    return html_code_stripped
 
 
 def _find_free_port():
