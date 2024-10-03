@@ -38,7 +38,14 @@ def log_retry_info(retry_state: RetryCallState):
 
 
 def get_kwargs_from_partial(p: functools.partial) -> dict:
-    """Infer the kwargs from a partial function so that we don't need to keep copying kwargs"""
+    """Infer the positional & keyword arguments from a partial function (i.e. "pre-filled" function) so that we don't need to keep copying kwargs dictionary for logging, etc.
+
+    Args:
+        p (functools.partial): A partial function
+
+    Returns:
+        dict: A dictionary of the positional and keyword arguments
+    """
 
     sig = inspect.signature(p.func)
 
