@@ -97,7 +97,10 @@ class RedisCache:
                 await self.redis.set(key, num_active)
         finally:
             # ensure we always release the lock
-            await num_workers_active_lock.release()
+            try:
+                await num_workers_active_lock.release()
+            except Exception:
+                pass
 
         return num_active
 
