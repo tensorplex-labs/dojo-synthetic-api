@@ -9,9 +9,8 @@ from commons.code_iterator.types import CodeIteration, CodeIterationStates
 
 def parse_code_iteration_state(states: CodeIterationStates) -> CodeIterationStates:
     for state in states.iterations:
-        if not state.error or state.error == "":
-            state.code = _remove_error_logging_js(state.code)
-            logger.trace("Removed error logging js from code ...")
+        state.code = _remove_error_logging_js(state.code)
+        logger.trace("Removed error logging js from code ...")
     return states
 
 
