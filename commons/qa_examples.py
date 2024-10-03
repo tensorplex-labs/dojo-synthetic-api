@@ -182,8 +182,8 @@ def _get_game_answer_examples() -> str:
     # return ""
     return """
         <example_input_1>
-            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene. 
-            
+            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
+
             Features
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
@@ -192,10 +192,10 @@ def _get_game_answer_examples() -> str:
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-        
+
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
-            
+
             Note:
             - Your output should be implemented in JavaScript with HTML and CSS.
             - Ensure that the output has both index.js and index.html files
@@ -235,7 +235,7 @@ def _get_game_answer_examples() -> str:
             User Actions:
             1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
             2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
-            
+
             Note:
             - Your output should be implemented in JavaScript with HTML and CSS.
             - Ensure that the output has both index.js and index.html files
@@ -290,10 +290,10 @@ def _get_game_question_examples() -> str:
         <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 3 user actions for the following persona: A police officer who is constantly trying to catch the pickpocket artist in the act.
         </example_input_1>
-    
+
         <example_output_1>
-            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene. 
-            
+            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
+
             Features
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
@@ -302,11 +302,11 @@ def _get_game_question_examples() -> str:
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-        
+
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
         </example_output_1>
-        
+
         <example_input_2>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 2 user actions for the following persona: A middle-aged son who is a flight attendant, bonded with air travel stories.
         </example_input_2>
@@ -339,7 +339,7 @@ def get_persona_question_examples(topic: Topics) -> str:
     <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a science simulation with persona inspired visuals and content, with 3 requirements for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
     </example_input_1>
-    
+
     <example_output_1>
         Create an interactive simulation of the Monty Hall problem to challenge skeptical users and demonstrate probability concepts.
 
@@ -357,7 +357,7 @@ def get_persona_question_examples(topic: Topics) -> str:
 
         3. Include a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.
 
-    </example_output_1> 
+    </example_output_1>
     """
     if topic == Topics.ANIMATION:
         # put this into a  function
@@ -365,7 +365,7 @@ def get_persona_question_examples(topic: Topics) -> str:
         <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 3 requirements for the following persona: "A high school music teacher who passionately believes in making music resources more accessible to society".
         </example_input_1>
-        
+
         <example_output_1>
             "Create an interactive piano visualization using HTML, CSS, and JavaScript. The piano should have 88 keys (52 white keys and 36 black keys). Implement the following user interactions:
 
@@ -460,8 +460,8 @@ def get_persona_question_examples(topic: Topics) -> str:
 def _get_animation_answer_examples() -> str:
     return """
     <example_input_1>
-        Create an interactive visualization of a vaccine molecular structure. 
-        
+        Create an interactive visualization of a vaccine molecular structure.
+
         Features:
         • Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
         • Each atom should be represented by a sphere, with connecting lines between atoms.
@@ -470,11 +470,11 @@ def _get_animation_answer_examples() -> str:
         • Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
         • Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
         • Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
-        
+
         User actions:
         1. Hover over an atom to view more information about the atom.
         2. Adjust the slider to control the rotation speed of the molecule animation.
-        3. Click and drag the molecule to rotate it manually. 
+        3. Click and drag the molecule to rotate it manually.
     </example_input_1>
     <example_output_1>
         {
@@ -531,7 +531,7 @@ def _get_science_answer_examples() -> str:
             ],
             "installation_commands": "null",
             "additional_notes": "null"
-        }        
+        }
     </example_output_1>
     </example_input_2>
         Create an interactive golf ball trajectory simulator that models the physics of a golf ball's flight, incorporating factors like wind speed and direction.
@@ -572,7 +572,7 @@ def _get_science_answer_examples() -> str:
             ],
             "installation_commands": "null",
             "additional_notes": "null"
-        }        
+        }
     </example_output_2>
-    
+
     """
