@@ -1,8 +1,10 @@
+import functools
 import urllib.parse
 from typing import Annotated, List
 
 import aiohttp
 from bs4 import BeautifulSoup, Tag
+from langfuse.decorators import langfuse_context, observe
 from loguru import logger
 from openai import AsyncOpenAI
 
@@ -10,6 +12,7 @@ from commons.code_executor import get_feedback
 from commons.code_iterator.types import DuckduckgoSearchResult, HtmlCode
 from commons.config import get_settings
 from commons.llm import get_llm_api_client
+from commons.utils.logging import get_kwargs_from_partial
 
 # blacklist domains that are not useful for code fixing
 blacklisted_domains = ["reddit.com", "quora.com", "youtube.com"]
@@ -112,6 +115,7 @@ async def web_search_and_format(
     return results_str
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def call_llm(input: str) -> str | None:
     """Simply use OpenAI as a proxy to call LLMs, no JSON parsing etc, just pure text"""
     try:
@@ -122,17 +126,32 @@ async def call_llm(input: str) -> str | None:
             base_url=settings.llm_api.openrouter_api_base_url,
         )
 
-        completion = await client.chat.completions.create(
+        partial_func = functools.partial(
+            client.chat.completions.create,
             messages=[{"role": "user", "content": input}],
             model=get_settings().rewoo.tool.use_llm,
         )
 
-        return completion.choices[0].message.content
+        kwargs = get_kwargs_from_partial(partial_func)
+        completion = await partial_func()
+
+        completion_text = completion.choices[0].message.content
+        langfuse_context.update_current_observation(
+            input=kwargs.pop("messages"),
+            model=kwargs.pop("model"),
+            output=completion_text,
+            metadata={
+                **kwargs,
+            },
+        )
+
+        return completion_text
     except Exception as exc:
         logger.error(f"Error while calling tool: LLM, error:{exc}")
         return None
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def fix_code(html_code: str) -> str:
     """Fix the code by rendering the HTML code inside the browser to get any runtime errors, then use another LLM call to fix the code.
 
@@ -151,7 +170,8 @@ async def fix_code(html_code: str) -> str:
     # so that diagnostics are consistent with the actual lineno/colno error is at
     fix_code_prompt = f"The following is the buggy code: {modified_code}\n\nThe following is the feedback from the execution: {feedback}\n\nYour task is to fix the code and provide the fully working code."
 
-    response: HtmlCode = await client.chat.completions.create(
+    partial_func = functools.partial(
+        client.chat.completions.create,
         messages=[
             {
                 "role": "user",
@@ -160,6 +180,17 @@ async def fix_code(html_code: str) -> str:
         ],
         model=get_settings().rewoo.tool.fix_code,
         response_model=HtmlCode,
+    )
+
+    kwargs = get_kwargs_from_partial(partial_func)
+    response: HtmlCode = await partial_func()
+    langfuse_context.update_current_observation(
+        input=kwargs.pop("messages"),
+        model=kwargs.pop("model"),
+        output=response.model_dump(),
+        metadata={
+            **kwargs,
+        },
     )
 
     return response.html_code
