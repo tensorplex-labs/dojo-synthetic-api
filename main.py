@@ -1,5 +1,4 @@
 import asyncio
-import sys
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -10,16 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from rich.traceback import install
 
-from commons.config import get_settings
+from commons.config import get_settings, parse_cli_args
 from commons.dataset.personas import load_persona_dataset
 from commons.routes.health import health_router
 from commons.routes.synthetic_gen import cache, synthetic_gen_router, worker
 
 load_dotenv()
 install(show_locals=True)
-
-logger.remove()
-logger.add(sys.stderr, level="DEBUG", backtrace=True, diagnose=True)
 
 
 @asynccontextmanager
@@ -55,6 +51,7 @@ app.include_router(synthetic_gen_router)
 
 
 async def main():
+    parse_cli_args()
     uvicorn_config = get_settings().uvicorn
     config = uvicorn.Config(
         app=app,

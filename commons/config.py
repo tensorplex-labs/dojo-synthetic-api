@@ -1,6 +1,9 @@
+import argparse
 import os
+import sys
 
 from dotenv import find_dotenv, load_dotenv
+from loguru import logger
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings
 
@@ -79,6 +82,32 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     return Settings()
+
+
+def parse_cli_args():
+    parser = argparse.ArgumentParser(description="CLI arguments for the application")
+    parser.add_argument(
+        "--debug", action="store_true", help="Enable DEBUG logging level"
+    )
+    parser.add_argument(
+        "--trace", action="store_true", help="Enable TRACE logging level"
+    )
+    args = parser.parse_args()
+
+    if args.trace:
+        logger.remove()
+        logger.add(sys.stderr, level="TRACE", backtrace=False, diagnose=False)
+        logger.trace("Enabled TRACE logging")
+    elif args.debug:
+        logger.remove()
+        logger.add(sys.stderr, level="DEBUG", backtrace=False, diagnose=False)
+        logger.debug("Enabled DEBUG logging")
+    else:
+        logger.remove()
+        logger.add(sys.stderr, level="INFO", backtrace=False, diagnose=False)
+        logger.add("Enabled INFO logging")
+
+    return args
 
 
 GENERATOR_MODELS = [
