@@ -61,7 +61,7 @@ async def _parse_duckduckgo_results(
                 try:
                     content = await _browse_result(url)
                 except Exception as e:
-                    print(f"Failed to browse {url}: {e}")
+                    logger.error(f"Failed to browse {url}: {e}")
                 results.append(
                     DuckduckgoSearchResult(
                         title=title, snippet=snippet, url=url, content=content

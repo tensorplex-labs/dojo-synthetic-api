@@ -227,7 +227,7 @@ async def generate_question(
                 # print(
                 #     f"Objects to be excluded in instruction generation: {used_objects}"
                 # )
-                print(
+                logger.info(
                     f"Few shot instruction included in instruction generation: {previous_coding_question}"
                 )
                 # # randomly select one topic to be used to generate objects + question
@@ -326,7 +326,7 @@ async def generate_question(
             client=client, model=new_model, _topic=_topic, persona=persona
         )
     except Exception as e:
-        print(f"Error occurred while generating question: {e}")
+        logger.error(f"Error occurred while generating question: {e}")
 
     return None, None
 
@@ -343,7 +343,7 @@ async def generate_answer(
     """Generates a coding question answer for a given coding question."""
     import commons.config as config
 
-    print(f"Generating code answer with model: {model}")
+    logger.info(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
         raise ValueError("Both error and code must be provided or neither")
 
@@ -421,7 +421,7 @@ async def generate_answer(
         new_model = random.choice(remaining_models)
         return await generate_answer(client, new_model, question, topic=topic)
     except Exception as e:
-        print(f"Error occurred while generating code answer: {e}")
+        logger.error(f"Error occurred while generating code answer: {e}")
 
     return model, None
 
