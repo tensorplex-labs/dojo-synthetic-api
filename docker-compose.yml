@@ -41,7 +41,6 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_USER=${REDIS_USERNAME}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - E2B_API_KEY=${E2B_API_KEY}
     networks:
       - dojo-synthetic-api-network
     depends_on:
@@ -52,3 +51,6 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+    # allow docker commands inside container
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

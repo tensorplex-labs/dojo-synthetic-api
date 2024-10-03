@@ -17,7 +17,6 @@ Currently, synthetic-api only generates code output as Javascript. We are in the
 Before running the synthetic-api, you will need the following keys:
 
 - Openrouter (from https://openrouter.ai/)
-- E2B (from https://e2b.dev/)
 
 Copy the .env.example file to a .env file and fill in the blanks, here we will use Openrouter as our LLM API provider.
 
@@ -30,7 +29,6 @@ cp .env.example .env
 REDIS_USERNAME=
 REDIS_PASSWORD=
 OPENROUTER_API_KEY=
-E2B_API_KEY=
 ```
 
 ## Run with docker-compose
@@ -58,3 +56,46 @@ Run docker to launch synthetic-api:
 # Run the service
 docker compose up -d
 ```
+
+# code executor
+
+## rationale
+
+this is meant to serve as a way for the LLM to get some sort of feedback to ensure our QA pair outputs are good enough when it reaches the end-user (i.e. miners/human labellers), and feeds the live runtime errors etc. to the LLM rather than just have the LLM "think" about it.
+
+## how it works
+
+the following is how `get_feedback` is supposed to work, which is the main function to call to get feedback on any piece of code.
+
+1. firstly ensures that a docker image that runs a nodejs server is built
+2. creates a temporary folder inside of `commons/code_executor/sandbox-workspace/`, called `run_<run_uuid>`
+3. injects error logging javascript code as inline javascript into a HTML file, and writes it into `index.html` to be served by the nodejs server
+4. searches for a free port <port_no> on the host machine in the range 3000-3999, as a port may be taken due to another asyncio coroutine running
+5. runs a docker container for the nodejs server with an error logging endpoint, and serves an `index.html` on the port <port_no>
+6. uses headless puppeteer to visit the page at `http://localhost:<port_no>` to trigger rendering of the page
+7. on errors like SyntaxError, TypeError, etc. these get written into the app.log when the client-side calls the error logging endpoint on the server-side
+8. reads the contents of `app.log` (in the same folder as index.html) and returns it to the caller
+
+## types of errors caught so far
+
+- Syntax Error
+- Type Error
+- Reference Error
+
+## todo
+
+- [ ] errors that occur during interaction of different components
+
+# code iterator
+
+Based on the ReWOO paper (https://arxiv.org/abs/2305.18323), we use this to be able to fix any buggy code that the LLM outputs.
+
+## how it works
+
+1. given a task (which in our case is always code generation), generate a plan containing different steps, tool calls, and inputs (dependent steps) & outputs of each step.
+2. asynchronously try to execute all steps, where the current step being executed will wait for a dependency to be resolved (with some timeout)
+3. for each step, execute tools (in `commons/code_iterator/tools.py`)
+   1. web search - using html version of duckduckgo as it's free
+   2. use llm - call another LLM based on a query
+   3. fix code - a single turn LLM call to ask an LLM to fix code, given the feedback from our code executor
+4. once all steps are resolved, ask a solver LLM if the task has been completed
