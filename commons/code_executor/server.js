@@ -9,9 +9,7 @@ const logger = winston.createLogger({
   level: "debug",
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => {
-      return `${timestamp} [${level.toUpperCase()}]: ${message}`;
-    })
+    winston.format.json() // Ensure logs are in JSON format
   ),
   transports: [
     new winston.transports.Console(),
@@ -111,7 +109,7 @@ app.get("/", (req, res) => {
 
 // Add new endpoint for client-side error logging
 app.post("/log-error", (req, res) => {
-  logger.error(`Client Error occurred: ${JSON.stringify(req.body, null, 2)}`);
+  logger.error(`${JSON.stringify(req.body, null, 2)}`);
   res.sendStatus(200);
 });
 

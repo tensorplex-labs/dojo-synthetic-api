@@ -227,7 +227,7 @@ async def generate_question(
                 # print(
                 #     f"Objects to be excluded in instruction generation: {used_objects}"
                 # )
-                print(
+                logger.info(
                     f"Few shot instruction included in instruction generation: {previous_coding_question}"
                 )
                 # # randomly select one topic to be used to generate objects + question
@@ -326,7 +326,7 @@ async def generate_question(
             client=client, model=new_model, _topic=_topic, persona=persona
         )
     except Exception as e:
-        print(f"Error occurred while generating question: {e}")
+        logger.error(f"Error occurred while generating question: {e}")
 
     return None, None
 
@@ -343,7 +343,7 @@ async def generate_answer(
     """Generates a coding question answer for a given coding question."""
     import commons.config as config
 
-    print(f"Generating code answer with model: {model}")
+    logger.info(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
         raise ValueError("Both error and code must be provided or neither")
 
@@ -421,7 +421,7 @@ async def generate_answer(
         new_model = random.choice(remaining_models)
         return await generate_answer(client, new_model, question, topic=topic)
     except Exception as e:
-        print(f"Error occurred while generating code answer: {e}")
+        logger.error(f"Error occurred while generating code answer: {e}")
 
     return model, None
 
@@ -531,7 +531,7 @@ last_topic = []  # global var used to track last used topic.
 
 def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
     file_extensions = set(os.path.splitext(file.filename)[1] for file in ans.files)
-    logger.debug(f"found file extensions from CodeAnswer: {file_extensions}")
+    logger.trace(f"found file extensions from CodeAnswer: {file_extensions}")
     has_js = ".js" in file_extensions
     has_css = ".css" in file_extensions
     has_html = ".html" in file_extensions
@@ -636,7 +636,21 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         iteration_state = await debug_initial_code(
             initial_html_code=html_file.content,
-            model=model,
+        )
+        # print some stats to figure out are we doing shit or nah
+
+        num_errors_total = sum(
+            1 if iteration.error else 0 for iteration in iteration_state.iterations
+        )
+        is_final_iter_fixed = (
+            True
+            if iteration_state.latest_iteration
+            and not iteration_state.latest_iteration.error
+            else False
+        )
+
+        logger.info(
+            f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
         )
 
         # final html file

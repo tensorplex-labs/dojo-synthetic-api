@@ -1,3 +1,4 @@
+import functools
 import inspect
 import os
 
@@ -34,3 +35,32 @@ def log_retry_info(retry_state: RetryCallState):
     logger.warning(
         f"Retry attempt {retry_state.attempt_number} failed in {caller_info} with exception: {exception_str}"
     )
+
+
+def get_kwargs_from_partial(p: functools.partial) -> dict:
+    """Infer the positional & keyword arguments from a partial function (i.e. "pre-filled" function) so that we don't need to keep copying kwargs dictionary for logging, etc.
+
+    Args:
+        p (functools.partial): A partial function
+
+    Returns:
+        dict: A dictionary of the positional and keyword arguments
+    """
+
+    sig = inspect.signature(p.func)
+
+    # map positional args to keyword args
+    positional_args_as_kwargs = {
+        param.name: arg
+        for param, arg in zip(sig.parameters.values(), p.args, strict=False)
+    }
+
+    # combine positional and keyword args
+    all_kwargs = {**positional_args_as_kwargs, **p.keywords}
+
+    # strip 'openai' from model name if present
+    if "model" in all_kwargs:
+        all_kwargs["model"] = all_kwargs["model"].replace("openai/", "")
+
+    logger.trace(f"Inferred kwargs from partial: {all_kwargs}")
+    return all_kwargs

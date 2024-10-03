@@ -1,68 +1,21 @@
 from loguru import logger
-from pydantic import BaseModel, Field
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt
 
 from commons.code_executor import get_feedback
-from commons.code_iterator.prompts import ITERATOR_PROMPT
-from commons.llm import get_llm_api_client
+from commons.code_executor.feedback import _remove_error_logging_js
+from commons.code_iterator.rewoo import plan_and_solve
+from commons.code_iterator.types import CodeIteration, CodeIterationStates
 
 
-class CodeIteration(BaseModel):
-    code: str
-    error: str
-    actions: str = Field(
-        default="",
-        description="The actions required to be taken to fix any errors in code.",
-    )
-    thoughts: str = Field(
-        default="",
-        description="Thoughts and reasoning for the actions taken and code written.",
-    )
-
-
-class CodeIterationStates(BaseModel):
-    iterations: list[CodeIteration] = []
-    current_iteration_num: int = 0
-
-    def add_iteration(self, iteration: CodeIteration):
-        self.iterations.append(iteration)
-        self.current_iteration_num += 1
-
-    @property
-    def latest_iteration(self) -> CodeIteration | None:
-        return self.iterations[-1] if self.iterations else None
-
-
-def _build_messages_single_turn(iteration: CodeIteration):
-    return [
-        {
-            "role": "system",
-            "content": ITERATOR_PROMPT,
-        },
-        {
-            "role": "user",
-            "content": f"""
-Given Code:
-{iteration.code}
-
-Execution Error:
-{iteration.error}
-
-Actions to take to fix the code:
-{iteration.actions}
-
-Thoughts and reasoning for the actions taken and code written:
-{iteration.thoughts}
-
-Fixed Code:
-            """,
-        },
-    ]
+def parse_code_iteration_state(states: CodeIterationStates) -> CodeIterationStates:
+    for state in states.iterations:
+        state.code = _remove_error_logging_js(state.code)
+        logger.trace("Removed error logging js from code ...")
+    return states
 
 
 async def debug_initial_code(
     initial_html_code: str,
-    model: str,
     max_iterations: int = 3,
     max_retries_per_iter: int = 3,
 ) -> CodeIterationStates:
@@ -82,42 +35,37 @@ async def debug_initial_code(
     Returns:
         CodeIterationStates: States of all code iterations.
     """
-    feedback = await get_feedback(initial_html_code)
-    logger.info(f"Initial feedback: {feedback}")
+    feedback, code_with_loggingjs = await get_feedback(initial_html_code)
     states = CodeIterationStates()
-    states.add_iteration(
-        iteration=CodeIteration(code=initial_html_code, error=feedback)
+    states.set_initial_state(
+        iteration=CodeIteration(code=code_with_loggingjs, error=feedback)
     )
-
-    kwargs = {
-        "response_model": CodeIteration,
-        "model": model,
-        "temperature": 0.0,
-        "max_tokens": 16384,
-    }
+    if not feedback:
+        logger.info("⏩ No intitial code executor feedback, skipping feedback loop")
+        return parse_code_iteration_state(states)
 
     if not states.latest_iteration:
         raise ValueError("No initial iteration found")
 
-    client = get_llm_api_client()
-    while states.current_iteration_num < max_iterations and feedback:
+    while states.current_iteration_num < max_iterations:
         try:
             async for attempt in AsyncRetrying(
                 stop=stop_after_attempt(max_retries_per_iter),
             ):
                 with attempt:
                     latest_iteration = states.latest_iteration
-                    messages = _build_messages_single_turn(latest_iteration)
-
-                    kwargs["messages"] = messages
-                    completion: CodeIteration = await client.chat.completions.create(
-                        **kwargs
+                    solution = await plan_and_solve(latest_iteration.code)
+                    feedback, code_with_loggingjs = await get_feedback(solution)
+                    states.add_iteration(
+                        iteration=CodeIteration(
+                            code=code_with_loggingjs, error=feedback
+                        )
                     )
-                    logger.info(f"Completion: {completion}")
-                    feedback = await get_feedback(completion.code)
-                    states.add_iteration(iteration=completion)
 
                     if not feedback:
+                        logger.success(
+                            f"🚀 No more error feedback found after {states.current_iteration_num}, exiting feedback loop 🙇"
+                        )
                         break
         except RetryError as e:
             logger.error(
@@ -128,4 +76,4 @@ async def debug_initial_code(
             logger.error(f"Error occurred while generating code answer: {e}")
             raise e
 
-    return states
+    return parse_code_iteration_state(states)

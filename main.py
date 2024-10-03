@@ -1,7 +1,5 @@
 import asyncio
-import sys
 from contextlib import asynccontextmanager
-from typing import Any
 
 import uvicorn
 from dotenv import load_dotenv
@@ -10,16 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from rich.traceback import install
 
-from commons.config import get_settings
+from commons.config import get_settings, parse_cli_args
 from commons.dataset.personas import load_persona_dataset
 from commons.routes.health import health_router
 from commons.routes.synthetic_gen import cache, synthetic_gen_router, worker
 
 load_dotenv()
 install(show_locals=True)
-
-logger.remove()
-logger.add(sys.stderr, level="DEBUG", backtrace=True, diagnose=True)
 
 
 @asynccontextmanager
@@ -55,6 +50,7 @@ app.include_router(synthetic_gen_router)
 
 
 async def main():
+    parse_cli_args()
     uvicorn_config = get_settings().uvicorn
     config = uvicorn.Config(
         app=app,
@@ -64,22 +60,22 @@ async def main():
         log_level=uvicorn_config.log_level,
         reload=False,
     )
-    logger.info(f"Using uvicorn config: {config}")
+    logger.info(f"Using uvicorn config: {config.__dict__}")
     server = uvicorn.Server(config)
-    # create any background tasks here
-    running_tasks: list[asyncio.Task[Any]] = []
 
-    await server.serve()
+    try:
+        # ctrl-c will already send keyboard interrupt to uvicorn/fastapi to handle
+        await server.serve()
+        logger.info("No longer serving FastAPI app...")
+    finally:
+        # Cancel all running tasks except the current one
+        tasks = [
+            task for task in asyncio.all_tasks() if task is not asyncio.current_task()
+        ]
 
-    for task in running_tasks:
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            logger.info(f"Cancelled task {task.get_name()}")
-        except Exception as e:
-            logger.error(f"Task {task.get_name()} raised an exception: {e}")
-            pass
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     logger.info("Exiting main function.")
 

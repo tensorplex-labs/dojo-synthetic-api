@@ -1,6 +1,8 @@
 import random
 import textwrap
 
+from loguru import logger
+
 from commons.qa_examples import get_answer_examples, get_persona_question_examples
 from commons.types import Topics
 
@@ -195,7 +197,7 @@ def build_code_generation_question_prompt(
     topic: Topics,
     persona: str | None,
 ) -> str:
-    print(f"Generating {topic} question with {num_requirements} requirements")
+    logger.info(f"Generating {topic} question with {num_requirements} requirements")
     # reduce num of user requirements for games.
     if topic == Topics.GAMES:
         num_requirements = random.choices([2, 3], weights=[0.7, 0.3])[0]

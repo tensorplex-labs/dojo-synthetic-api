@@ -1,12 +1,13 @@
+import argparse
 import os
+import sys
 
 from dotenv import find_dotenv, load_dotenv
+from loguru import logger
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings
 
 load_dotenv(find_dotenv(".env"))
-
-# TODO continue adding all differrent configs here
 
 
 # we use this instead of the Field(..., env=...) due to some errors in resolving
@@ -44,12 +45,35 @@ class GenerationSettings(BaseSettings):
     buffer_size: int = Field(default=4)
 
 
+class ReWOOModelConfig(BaseSettings):
+    # used to generate the plan
+    planner: str = Field(default="anthropic/claude-3.5-sonnet")
+    # used to determine if given the plan, task, and evidence, the solution fulfils the task
+    solver: str = Field(default="anthropic/claude-3.5-sonnet")
+    # we MUST use gpt-4-turbo, only this is supported for parallel tool calls, used to generate the tool call params
+    func_call_builder: str = Field(default="openai/gpt-4-turbo")
+
+    # used as a maximum time that a step has to wait for dependencies to resolve
+    max_dep_resolve_sec: int = Field(default=60)
+
+    class ToolCallModelConfig(BaseSettings):
+        # let an LLM call another LLM
+        use_llm: str = Field(default="anthropic/claude-3.5-sonnet")
+        # use this LLM when attempting to solve the code by feeding the execution feedback
+        fix_code: str = Field(default="anthropic/claude-3.5-sonnet")
+
+    tool: ToolCallModelConfig = ToolCallModelConfig()
+
+
 class Settings(BaseSettings):
     langfuse: LangfuseSettings = LangfuseSettings()
     redis: RedisSettings = RedisSettings()
     llm_api: LlmApiSettings = LlmApiSettings()
     uvicorn: UvicornSettings = UvicornSettings()
     generation: GenerationSettings = GenerationSettings()
+    rewoo: ReWOOModelConfig = ReWOOModelConfig()
+
+    assert rewoo.func_call_builder == "openai/gpt-4-turbo"
 
     class Config:
         extra = "forbid"
@@ -58,6 +82,32 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     return Settings()
+
+
+def parse_cli_args():
+    parser = argparse.ArgumentParser(description="CLI arguments for the application")
+    parser.add_argument(
+        "--debug", action="store_true", help="Enable DEBUG logging level"
+    )
+    parser.add_argument(
+        "--trace", action="store_true", help="Enable TRACE logging level"
+    )
+    args = parser.parse_args()
+
+    if args.trace:
+        logger.remove()
+        logger.add(sys.stderr, level="TRACE", backtrace=False, diagnose=False)
+        logger.trace("Enabled TRACE logging")
+    elif args.debug:
+        logger.remove()
+        logger.add(sys.stderr, level="DEBUG", backtrace=False, diagnose=False)
+        logger.debug("Enabled DEBUG logging")
+    else:
+        logger.remove()
+        logger.add(sys.stderr, level="INFO", backtrace=False, diagnose=False)
+        logger.add("Enabled INFO logging")
+
+    return args
 
 
 GENERATOR_MODELS = [
