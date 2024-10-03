@@ -188,7 +188,7 @@ def _get_game_answer_examples() -> str:
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
             • One pedestrian figure representing the pickpocket, visually distinct
-            • One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled. 
+            • One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled.
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
@@ -224,7 +224,7 @@ def _get_game_answer_examples() -> str:
             Features:
             • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
             • Display an airplane sprite that the player can move up and down.
-            • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled. 
+            • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
             • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement.
             • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
             • Add floating luggage items that appear randomly on the screen and move from right to left.
@@ -317,7 +317,7 @@ def _get_game_question_examples() -> str:
                 Features:
                 • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
                 • Display an airplane sprite that the player can move up and down.
-                • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled. 
+                • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
                 • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement.
                 • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
                 • Add floating luggage items that appear randomly on the screen and move from right to left.
