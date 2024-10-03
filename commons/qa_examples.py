@@ -342,17 +342,17 @@ def _get_science_question_examples() -> str:
 
         Features:
         • Create three closed doors displayed prominently on the screen.
-        • Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch. 
+        • Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch.
         • A scoreboard showing the number of wins and losses
         • A reset button to start a new game
         • Visual indicators for door selection and reveal (eg. a prize displayed behind the winning door, and a goat for the non-winning doors.)
         • A background of a corridor with relevant decorations.
-        • Create a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.at 
+        • Create a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.at
 
-        User Actions:        
-        1. Click on a door to reveal what is behind it, then decide wheter to switch or stay. 
-        
-        2. Click on the 'Run Simulation' button to simulate the game 1000 times. 
+        User Actions:
+        1. Click on a door to reveal what is behind it, then decide wheter to switch or stay.
+
+        2. Click on the 'Run Simulation' button to simulate the game 1000 times.
     </example_output_1>
     """
 
@@ -364,17 +364,17 @@ def _get_animation_question_examples() -> str:
         </example_input_1>
 
         <example_output_1>
-            "Create an interactive piano visualization using HTML, CSS, and JavaScript. 
-                
+            "Create an interactive piano visualization using HTML, CSS, and JavaScript.
+
                 Features:
                 • User playable piano that should have 88 keys (52 white keys and 36 black keys). The user can play the piano by clicking on the piano keys.
                 • When the user hovers over a key, it should visually highlight to indicate it can be played.
                 • Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
                 • Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
-                
+
                 User Actions:
                 1. Click on a piano key to play that note.
-                2. Adjust the volume slider to increase or decrease the loudness of the piano.  
+                2. Adjust the volume slider to increase or decrease the loudness of the piano.
         </example_output_1>
         """
 
