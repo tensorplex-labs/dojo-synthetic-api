@@ -1,6 +1,5 @@
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Any
 
 import uvicorn
 from dotenv import load_dotenv
@@ -63,20 +62,20 @@ async def main():
     )
     logger.info(f"Using uvicorn config: {config.__dict__}")
     server = uvicorn.Server(config)
-    # create any background tasks here
-    running_tasks: list[asyncio.Task[Any]] = []
 
-    await server.serve()
+    try:
+        # ctrl-c will already send keyboard interrupt to uvicorn/fastapi to handle
+        await server.serve()
+        logger.info("No longer serving FastAPI app...")
+    finally:
+        # Cancel all running tasks except the current one
+        tasks = [
+            task for task in asyncio.all_tasks() if task is not asyncio.current_task()
+        ]
 
-    for task in running_tasks:
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            logger.info(f"Cancelled task {task.get_name()}")
-        except Exception as e:
-            logger.error(f"Task {task.get_name()} raised an exception: {e}")
-            pass
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     logger.info("Exiting main function.")
 
