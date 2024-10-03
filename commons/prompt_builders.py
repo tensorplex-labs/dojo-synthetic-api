@@ -74,7 +74,7 @@ def build_code_answer_prompt(
             - When creating visuals, keep in mind clarity and recognizability. Visuals should be realistic when possible.
             - Make sure to check for correct orientation and location of all objects.
             - Ensure that any moving components are animated smoothly for maximum clarity.
-            - Ensure that your solution does not require any external supplementary files such as images, videos or audio files.
+            - Ensure that your solution does not use any external files such as images, videos or audio files.
             - Ensure your solution awaits for any required components to load before executing.
             - Your implementation will be viewed from a computer web browser.
             - Always explain to the user how to interact with the program in a minimal and unintrusive manner.
@@ -198,7 +198,7 @@ def build_code_generation_question_prompt(
     print(f"Generating {topic} question with {num_requirements} requirements")
     # reduce num of user requirements for games.
     if topic == Topics.GAMES:
-        num_requirements = random.choices([1, 2], weights=[0.3, 0.7])[0]
+        num_requirements = random.choices([2, 3], weights=[0.7, 0.3])[0]
     if persona:
         return build_question_with_persona(persona, num_requirements, topic=topic)
     else:
@@ -288,7 +288,7 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
     if topic == Topics.GAMES:
         subject = "fun, streamlined, hyper-casual web game"
     elif topic == Topics.SCIENCE:
-        subject = "science simulation"
+        subject = "streamlined, science simulation"
     else:
         subject = "interactive visualization"
     persona_question_examples = f"""
