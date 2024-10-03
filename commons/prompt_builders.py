@@ -288,7 +288,7 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
     if topic == Topics.GAMES:
         subject = "fun, streamlined, hyper-casual web game"
     elif topic == Topics.SCIENCE:
-        subject = "science simulation"
+        subject = "streamlined, science simulation"
     else:
         subject = "interactive visualization"
     persona_question_examples = f"""

@@ -331,130 +331,61 @@ def _get_game_question_examples() -> str:
     """
 
 
-def get_persona_question_examples(topic: Topics) -> str:
-    if topic == Topics.GAMES:
-        return _get_game_question_examples()
-    if topic == Topics.SCIENCE:
-        return """
+def _get_science_question_examples() -> str:
+    return """
     <example_input_1>
-            Generate a self-contained coding problem that requires the programmer to implement a science simulation with persona inspired visuals and content, with 3 requirements for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
+            Generate a self-contained coding problem that requires the programmer to implement a streamlined science simulation with persona inspired visuals and content, with 2 user actions for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
     </example_input_1>
 
     <example_output_1>
         Create an interactive simulation of the Monty Hall problem to challenge skeptical users and demonstrate probability concepts.
 
-        Visual features:
-        - Three closed doors displayed prominently on the screen
-        - A scoreboard showing the number of wins and losses
-        - A reset button to start a new game
-        - Visual indicators for door selection and reveal
-        - A background of a corridor with relevant decorations.
+        Features:
+        • Create three closed doors displayed prominently on the screen.
+        • Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch. 
+        • A scoreboard showing the number of wins and losses
+        • A reset button to start a new game
+        • Visual indicators for door selection and reveal (eg. a prize displayed behind the winning door, and a goat for the non-winning doors.)
+        • A background of a corridor with relevant decorations.
+        • Create a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.at 
 
-        Requirements:
-        1. Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch.
-
-        2. Add an interactive element where users can click on doors to make their initial selection and decide whether to switch after a door is revealed.
-
-        3. Include a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.
-
+        User Actions:        
+        1. Click on a door to reveal what is behind it, then decide wheter to switch or stay. 
+        
+        2. Click on the 'Run Simulation' button to simulate the game 1000 times. 
     </example_output_1>
     """
-    if topic == Topics.ANIMATION:
-        # put this into a  function
-        return """
+
+
+def _get_animation_question_examples() -> str:
+    return """
         <example_input_1>
-            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 3 requirements for the following persona: "A high school music teacher who passionately believes in making music resources more accessible to society".
+            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 2 user actions for the following persona: "A high school music teacher who passionately believes in making music resources more accessible to society".
         </example_input_1>
 
         <example_output_1>
-            "Create an interactive piano visualization using HTML, CSS, and JavaScript. The piano should have 88 keys (52 white keys and 36 black keys). Implement the following user interactions:
-
-                1. When the user hovers over a key, it should visually highlight to indicate it can be played.
-
-                2. Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
-
-                3. Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
-
-                Ensure the visualization is responsive and works well on different screen sizes. Use only built-in JavaScript libraries and features for this implementation.
-                Note:
-                - The visualization should be implemented in JavaScript with HTML and CSS.
-                - Ensure that the output has both index.js and index.html files"
+            "Create an interactive piano visualization using HTML, CSS, and JavaScript. 
+                
+                Features:
+                • User playable piano that should have 88 keys (52 white keys and 36 black keys). The user can play the piano by clicking on the piano keys.
+                • When the user hovers over a key, it should visually highlight to indicate it can be played.
+                • Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
+                • Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
+                
+                User Actions:
+                1. Click on a piano key to play that note.
+                2. Adjust the volume slider to increase or decrease the loudness of the piano.  
         </example_output_1>
         """
 
 
-#     Create an interactive naval battle minigame inspired by a Navy sailor's experience in the Pacific theater during World War II. The game should simulate the challenges faced during combat at sea.
-
-# Visual features:
-# • A top-down view of a naval battlefield, with a blue ocean background
-# • A player-controlled destroyer ship represented by a gray triangle
-# • Enemy ships represented by red triangles
-# • Depth charges represented by small black circles
-# • Explosions represented by expanding orange circles
-
-# Requirements:
-
-# 1. Implement ship movement for the player's destroyer using the arrow keys. The ship should rotate and move forward/backward based on key presses.
-
-# 2. Generate enemy ships that move in random patterns across the screen. Enemy ships should appear periodically from the edges of the screen.
-
-# 3. Create a depth charge deployment mechanism. When the spacebar is pressed, a depth charge should be released from the player's ship and sink slowly, expanding in size as it descends.
-
-# 4. Implement a collision detection system. When a depth charge reaches its maximum size and collides with an enemy ship, trigger an explosion animation and remove both the depth charge and the enemy ship from the screen.
-
-# The game should challenge the player to navigate the treacherous waters while strategically deploying depth charges to eliminate enemy vessels. Focus on creating a tense and immersive experience that captures the essence of naval warfare in the Pacific theater.
-# Note:
-# - Your output should be implemented in JavaScript with HTML and CSS.
-# - Ensure that the output has both index.js and index.html files
-
-
-# Create an interactive cybersecurity firewall simulation game with the following visual features and requirements:
-
-# Visual features:
-# • A dark-themed interface with neon blue and green accents to represent a futuristic cybersecurity environment
-# • A central circular area representing the protected network, surrounded by concentric rings symbolizing layers of firewall protection
-# • Animated particles moving around the screen to represent data packets and potential threats
-# • A sidebar displaying real-time statistics and controls
-
-# Requirements:
-
-# 1. Implement a particle system where blue particles represent legitimate data packets and red particles represent potential threats. The particles should move randomly across the screen towards the center.
-
-# 2. Create an interactive ring around the central protected area that the user can rotate using mouse movement. This ring acts as the AI-powered firewall, blocking red particles on contact while allowing blue particles to pass through.
-
-# 3. Develop a scoring system that increases when threats are blocked and decreases when legitimate packets are blocked or threats penetrate the firewall. Display the current score prominently on the screen and end the game if the score drops below zero.
-# Note:
-# - Your output should be implemented in JavaScript with HTML and CSS.
-# - Ensure that the output has both index.js and index.html files
-
-# "A talented guitarist who has had to adjust their playing style due to hearing loss"
-# ///
-
-# Implement a fun, streamlined, hyper-casual web game called 'Silent Strings' inspired by a guitarist adapting to hearing loss. The game should challenge players to 'play' guitar chords using visual cues instead of audio feedback.
-
-# General Features:
-# - Create a virtual guitar fretboard displayed on the screen.
-# - Show a series of chord diagrams that the player needs to match on the fretboard.
-# - Implement a scoring system based on the accuracy and speed of the player's chord formations.
-# - Display a timer counting down from 60 seconds for each game session.
-# - Show the current score and high score on the screen.
-
-# Visual Features:
-# - Design a stylized guitar fretboard with 6 strings and 5 frets.
-# - Use different colors for each string (e.g., yellow, blue, red, green, orange, purple).
-# - Represent finger positions on the fretboard as circular markers.
-# - Display chord diagrams above the fretboard using a simplified notation (colored dots on a grid).
-# - Create visual feedback for correct (green glow) and incorrect (red flash) chord formations.
-# - Implement a pulsing effect on the strings when a correct chord is formed to simulate vibration.
-# - Design a minimal, high-contrast interface suitable for players with visual impairments.
-
-# User Actions:
-# 1. Click or drag on the fretboard to place finger position markers.
-# 2. Press the spacebar to submit the current chord formation for scoring.
-# 3. Click a 'New Game' button to reset the timer and start a new 60-second session.
-# Note:
-# - Your output should be implemented in JavaScript with HTML and CSS.
-# - Ensure that the output has both index.js and index.html files
+def get_persona_question_examples(topic: Topics) -> str:
+    if topic == Topics.GAMES:
+        return _get_game_question_examples()
+    if topic == Topics.SCIENCE:
+        return _get_science_question_examples()
+    if topic == Topics.ANIMATION:
+        return _get_animation_question_examples()
 
 
 def _get_animation_answer_examples() -> str:
