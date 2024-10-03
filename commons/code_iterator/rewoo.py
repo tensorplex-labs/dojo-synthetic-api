@@ -5,12 +5,14 @@ This exists to decouple our implementation of the code iterator from the main fu
 
 import asyncio
 import datetime
+import functools
 import re
 import textwrap
 from typing import Callable, Iterable
 
 import instructor
 from dotenv import load_dotenv
+from langfuse.decorators import langfuse_context, observe
 from loguru import logger
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
@@ -20,6 +22,7 @@ from commons.code_iterator.types import HtmlCode, Plan, ReWOOState, Step, Tool
 from commons.config import get_settings
 from commons.llm import Provider, _get_llm_api_kwargs, get_llm_api_client
 from commons.utils import func_to_pydantic_model, get_function_signature
+from commons.utils.logging import get_kwargs_from_partial
 
 load_dotenv()
 
@@ -318,6 +321,7 @@ async def _execute_step_with_deps(step: Step, rewoo_state: ReWOOState):
     return
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def _generate_plan(task: str) -> Plan | None:
     """Generate plan before executing subsequent tools to solve the task"""
     try:
@@ -328,11 +332,23 @@ async def _generate_plan(task: str) -> Plan | None:
                 "content": plan_prompt.format(task=task),
             }
         ]
-        completion: Plan = await client.chat.completions.create(
+        partial_func = functools.partial(
+            client.chat.completions.create,
             messages=messages,  # type: ignore
             model=get_settings().rewoo.planner,
             stream=False,
             response_model=Plan,
+        )
+
+        completion: Plan = await partial_func()
+        kwargs = get_kwargs_from_partial(partial_func)
+        langfuse_context.update_current_observation(
+            input=kwargs.pop("messages"),
+            model=kwargs.pop("model"),
+            output=completion.model_dump(),
+            metadata={
+                **kwargs,
+            },
         )
 
         logger.debug(f"Generated plan... {completion=}")
@@ -344,6 +360,7 @@ async def _generate_plan(task: str) -> Plan | None:
     return None
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def _solve(rewoo_state: ReWOOState) -> str:
     plan_str: str = ""
     results_str: str = ""
@@ -366,16 +383,29 @@ async def _solve(rewoo_state: ReWOOState) -> str:
 
     client = get_llm_api_client()
 
-    completion: HtmlCode = await client.chat.completions.create(
+    partial_func = functools.partial(
+        client.chat.completions.create,
         messages=[{"role": "user", "content": prompt}],
         model=get_settings().rewoo.solver,
         response_model=HtmlCode,
+    )
+
+    kwargs = get_kwargs_from_partial(partial_func)
+    completion: HtmlCode = await partial_func()
+    langfuse_context.update_current_observation(
+        input=kwargs.pop("messages"),
+        model=kwargs.pop("model"),
+        output=completion.model_dump(),
+        metadata={
+            **kwargs,
+        },
     )
 
     logger.debug(f"Rewoo Solver got {completion=}")
     return completion.html_code
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def plan_and_solve(html_code: str):
     # TODO implement backtracking to be able to figure out when LLM's iteration actually makes code worse
     task = _build_task_prompt(html_code)
@@ -385,15 +415,19 @@ async def plan_and_solve(html_code: str):
 
     # initial results
     results = {initial_state_key: html_code}
-    rewoo_strat = ReWOOState(task=task, plan=plan, results=results)
+    rewoo_state = ReWOOState(task=task, plan=plan, results=results)
 
     sorted_steps = sorted(plan.steps, key=lambda s: s.step_id)
 
     # let tools execute in parallel
     await asyncio.gather(
-        *[_execute_step_with_deps(step, rewoo_strat) for step in sorted_steps]
+        *[_execute_step_with_deps(step, rewoo_state) for step in sorted_steps]
     )
 
-    solution = await _solve(rewoo_strat)
+    solution = await _solve(rewoo_state)
     logger.info(f"Plan and Solve approach using ReWOO got solution:{solution=}")
     return solution
+
+
+if __name__ == "__main__":
+    asyncio.run(_generate_plan("hello"))
