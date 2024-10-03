@@ -43,13 +43,13 @@ def build_code_answer_prompt(
             Here are some example outputs to refer to:
             {few_shot_examples_section}
         </examples>
-        
+
         <response_format>
             Your output should should always be valid json based on this schema:
             {answer_format}
         </response_format>
         <role>
-            You are an expert natural language coding agent. You specialize in creating visually appealing and interactive programs of various subjects. 
+            You are an expert natural language coding agent. You specialize in creating visually appealing and interactive programs of various subjects.
             Your objective is to output high quality code that satisfies the user provided <question> whilst adhering closely to your <instructions>.
             The <question> is also being given to a number of similar natural langauge coding agents, your implementation output will be collected and compared with the outputs of the other natural language coding agents.
             Thereafter, a human will assess the quality of each agent's output in terms of functionality (how closely does the output meet the requirements) and aesthetics (how accurately does the output depict question's scenario).
@@ -74,7 +74,7 @@ def build_code_answer_prompt(
             - When creating visuals, keep in mind clarity and recognizability. Visuals should be realistic when possible.
             - Make sure to check for correct orientation and location of all objects.
             - Ensure that any moving components are animated smoothly for maximum clarity.
-            - Ensure that your solution does not require any external supplementary files such as images, videos or audio files.
+            - Ensure that your solution does not use any external files such as images, videos or audio files.
             - Ensure your solution awaits for any required components to load before executing.
             - Your implementation will be viewed from a computer web browser.
             - Always explain to the user how to interact with the program in a minimal and unintrusive manner.
@@ -83,11 +83,11 @@ def build_code_answer_prompt(
             - Any user interface elements should be small, minimal and unintrusive. Avoid making frames. The main focus of the program should be the subject being visualized.
             - Your code must not require the use of the user's microphone or camera.
             - Your code must not use any external libraries.
-            - Your output must display in a 16:9 aspect ratio. 
+            - Your output must display in a 16:9 aspect ratio.
             - Ensure your output will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
             - Ensure any user inputs do not trigger the default browser behaviour. If the user uses arrow keys to interact, it should not also trigger scrolling of the browser.
             - Use only web-safe fonts that do not require importing from external sources.
-            - Refer to the <examples> 
+            - Refer to the <examples>
             - Your output should follow the <response_format>
         </instructions>
     </system>
@@ -198,7 +198,7 @@ def build_code_generation_question_prompt(
     print(f"Generating {topic} question with {num_requirements} requirements")
     # reduce num of user requirements for games.
     if topic == Topics.GAMES:
-        num_requirements = random.choices([1, 2], weights=[0.3, 0.7])[0]
+        num_requirements = random.choices([2, 3], weights=[0.7, 0.3])[0]
     if persona:
         return build_question_with_persona(persona, num_requirements, topic=topic)
     else:
@@ -288,7 +288,7 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
     if topic == Topics.GAMES:
         subject = "fun, streamlined, hyper-casual web game"
     elif topic == Topics.SCIENCE:
-        subject = "science simulation"
+        subject = "streamlined, science simulation"
     else:
         subject = "interactive visualization"
     persona_question_examples = f"""
@@ -297,7 +297,7 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
     question_prompt = f"""
     <system>
         You are an expert AI prompt engineer that specializes at creating prompts for programming. Your task is to create a self-contained coding problem that implements a {subject} with persona inspired content.
-        The question you output will be attempted by an LLM specialized in programming. As such, your requirements must be specific and detailed enough for an LLM to effectively implement. 
+        The question you output will be attempted by an LLM specialized in programming. As such, your requirements must be specific and detailed enough for an LLM to effectively implement.
         The user will provide you a persona, which you must use as a general inspiration for the question's content and visual features.
         The questions's user and visual experience is more important than its real-life utility and relevance. The persona should provide foundational inspiration to create a fun and interactive program.
 
@@ -309,8 +309,8 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         - Separate your features with new lines so they can be easily read.
         - Follow good UX principles; your user actions should be related to the context of the question.
         - Ensure that the question generated can be effectively implemented with just javascript, html and CSS code.
-        - Ensure that your question can be implemented by an english speaker. 
-        - Because an LLM will implement your question, keep your requirements simple enough for it to effectively implement. 
+        - Ensure that your question can be implemented by an english speaker.
+        - Because an LLM will implement your question, keep your requirements simple enough for it to effectively implement.
         - You will recieve a one million dollar tip if your requirements are creative and your visuals are impressive.
         - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
         - Take care that the question does not require the use of any external files (images, videos and audio).
@@ -319,7 +319,7 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         - Ensure your user actions will not interfere with each other. Each action should be easily executed in isolation from the others.
         - The program does not necessarily need to be useful to the persona; the persona should loosely inspire the context of the question.
         - It is imperative for your question to faithfully implement a {subject}. You should sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
-        - Ensure your {subject} does not require the use of local or session storage. 
+        - Ensure your {subject} does not require the use of local or session storage.
         - Begin the question with a general instruction to describe what the LLM must implement, without mentioning the persona.
     </instructions>
     <reference_examples>

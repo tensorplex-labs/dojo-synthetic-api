@@ -58,14 +58,14 @@ class RedisCache:
     async def get_queue_length(self) -> int:
         key = self._build_key(self._queue_key)
         num_items: int = await cast(Awaitable[int], self.redis.llen(key))
-        logger.debug(f"Queue length: {num_items}")
+        # logger.debug(f"Queue length: {num_items}")
         return num_items
 
     async def get_num_workers_active(self) -> int:
         key = self._build_key(self._num_workers_active_key)
         value = await self.redis.get(key)
         num_active = 0 if value is None else int(value)
-        logger.debug(f"Number of active workers: {num_active}")
+        # logger.debug(f"Number of active workers: {num_active}")
         return num_active
 
     async def update_num_workers_active(self, delta: int) -> int:

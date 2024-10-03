@@ -10,108 +10,108 @@ def get_answer_examples(topic: Topics) -> str:
         return _get_science_answer_examples()
 
     # deprecated examples below
-    EXAMPLE_OUTPUTS = """
-    <example_question_1>:
-    "Create a Solar System Orbit Simulator using JavaScript, HTML, and CSS. The simulator should display the Sun at the center of the screen and at least 4 planets orbiting around it.
-        Requirements:
-        1. Implement a slider that controls the speed of the planets' orbits. The slider should allow users to adjust the simulation speed from very slow to very fast.
+    # EXAMPLE_OUTPUTS = """
+    # <example_question_1>:
+    # "Create a Solar System Orbit Simulator using JavaScript, HTML, and CSS. The simulator should display the Sun at the center of the screen and at least 4 planets orbiting around it.
+    #     Requirements:
+    #     1. Implement a slider that controls the speed of the planets' orbits. The slider should allow users to adjust the simulation speed from very slow to very fast.
 
-        2. Add a feature that allows users to click on a planet to display its name and basic information (e.g., size, distance from the Sun) in a small pop-up or sidebar.
+    #     2. Add a feature that allows users to click on a planet to display its name and basic information (e.g., size, distance from the Sun) in a small pop-up or sidebar.
 
-        3. Include a button that toggles the visibility of planet orbit paths. When enabled, it should show the elliptical paths of the planets' orbits.
+    #     3. Include a button that toggles the visibility of planet orbit paths. When enabled, it should show the elliptical paths of the planets' orbits.
 
-        Ensure that the planets' sizes and distances are proportional (though not necessarily to scale) to represent the relative differences in the solar system. Use only built-in JavaScript libraries and features for this implementation.
-        Note:
-        - The visualization should be implemented in JavaScript with HTML and CSS.
-        - Ensure that the output has both index.js and index.html files",
-    </example_question_1>:
+    #     Ensure that the planets' sizes and distances are proportional (though not necessarily to scale) to represent the relative differences in the solar system. Use only built-in JavaScript libraries and features for this implementation.
+    #     Note:
+    #     - The visualization should be implemented in JavaScript with HTML and CSS.
+    #     - Ensure that the output has both index.js and index.html files",
+    # </example_question_1>:
 
-    <example_answer_1>
-    {
-        "files": [
-            {
-                "filename": "index.js",
-                "content": "const canvas=document.getElementById("canvas");const ctx=canvas.getContext("2d");const speedSlider=document.getElementById("speed");const toggleOrbitsBtn=document.getElementById("toggleOrbits");const infoDiv=document.getElementById("info");let width=(canvas.width=window.innerWidth);let height=(canvas.height=window.innerHeight);let centerX=width/2;let centerY=height/2;let showOrbits=false;const planets=[{name:"Mercury",color:"#8c7e6d",radius:5,distance:60,speed:0.04,angle:0,info:"Smallest planet, closest to Sun"},{name:"Venus",color:"#e3bb76",radius:8,distance:100,speed:0.015,angle:0,info:"Hottest planet, rotates backwards"},{name:"Earth",color:"#4f94cd",radius:9,distance:150,speed:0.01,angle:0,info:"Our home planet, supports life"},{name:"Mars",color:"#c1440e",radius:7,distance:200,speed:0.008,angle:0,info:"The Red Planet, has polar ice caps"}];function drawSun(){ctx.beginPath();ctx.arc(centerX,centerY,20,0,Math.PI*2);ctx.fillStyle="#ffd700";ctx.fill();}function drawPlanet(planet){const x=centerX+Math.cos(planet.angle)*planet.distance;const y=centerY+Math.sin(planet.angle)*planet.distance;if(showOrbits){ctx.beginPath();ctx.arc(centerX,centerY,planet.distance,0,Math.PI*2);ctx.strokeStyle="rgba(255, 255, 255, 0.2)";ctx.stroke();}ctx.beginPath();ctx.arc(x,y,planet.radius,0,Math.PI*2);ctx.fillStyle=planet.color;ctx.fill();}function updatePlanets(){const speed=parseFloat(speedSlider.value);planets.forEach((planet)=>{planet.angle+=planet.speed*speed;});}let stars=[];function initStars(){stars=[];for(let i=0;i<200;i++){stars.push({x:Math.random()*width,y:Math.random()*height,size:Math.random()*1.5,speed:Math.random()*0.08+0.01});}}function drawStars(){ctx.fillStyle="#ffffff";for(const star of stars){ctx.beginPath();ctx.arc(star.x,star.y,star.size,0,Math.PI*2);ctx.fill();star.y+=star.speed;if(star.y>height){star.y=0;star.x=Math.random()*width;}}}function animate(){ctx.clearRect(0,0,width,height);drawStars();drawSun();planets.forEach(drawPlanet);updatePlanets();requestAnimationFrame(animate);}function handleResize(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;centerX=width/2;centerY=height/2;initStars();}function showPlanetInfo(event){const rect=canvas.getBoundingClientRect();const mouseX=event.clientX-rect.left;const mouseY=event.clientY-rect.top;for(const planet of planets){const planetX=centerX+Math.cos(planet.angle)*planet.distance;const planetY=centerY+Math.sin(planet.angle)*planet.distance;const distance=Math.sqrt((mouseX-planetX)**2+(mouseY-planetY)**2);if(distance<=planet.radius){infoDiv.innerHTML=`<h3>${planet.name}</h3><p>${planet.info}</p>`;infoDiv.style.display="block";return;}}infoDiv.style.display="none";}toggleOrbitsBtn.addEventListener("click",()=>{showOrbits=!showOrbits;});canvas.addEventListener("click",showPlanetInfo);window.addEventListener("resize",handleResize);initStars();animate();//# sourceMappingURL=index.js.map",
-                "language": "javascript"
-            },
-            {
-                "filename": "index.html",
-                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Solar System Orbit Simulator</title><style>body{background-color:#000;margin:0;font-family:Arial,sans-serif;overflow:hidden}#canvas{display:block}#controls{color:#fff;position:absolute;top:10px;left:10px}#info{color:#fff;background-color:#000000b3;border-radius:5px;padding:10px;display:none;position:absolute;top:10px;right:10px}.slider{width:200px}</style></head><body><canvas id="canvas"></canvas><div id="controls"><label for="speed">Orbit Speed:</label><input type="range" id="speed" class="slider" min="0.1" max="5" step="0.1" value="1" /><button id="toggleOrbits">Toggle Orbit Paths</button></div><div id="info"></div><script src="./index.js"></script></body></html>",
-                "language": "html"
-            }
-        ],
-        "installation_commands": "null",
-        "additional_notes": "The code uses built-in libraries so no additional commands are required."
-    }
-    </example_answer_1>
+    # <example_answer_1>
+    # {
+    #     "files": [
+    #         {
+    #             "filename": "index.js",
+    #             "content": "const canvas=document.getElementById("canvas");const ctx=canvas.getContext("2d");const speedSlider=document.getElementById("speed");const toggleOrbitsBtn=document.getElementById("toggleOrbits");const infoDiv=document.getElementById("info");let width=(canvas.width=window.innerWidth);let height=(canvas.height=window.innerHeight);let centerX=width/2;let centerY=height/2;let showOrbits=false;const planets=[{name:"Mercury",color:"#8c7e6d",radius:5,distance:60,speed:0.04,angle:0,info:"Smallest planet, closest to Sun"},{name:"Venus",color:"#e3bb76",radius:8,distance:100,speed:0.015,angle:0,info:"Hottest planet, rotates backwards"},{name:"Earth",color:"#4f94cd",radius:9,distance:150,speed:0.01,angle:0,info:"Our home planet, supports life"},{name:"Mars",color:"#c1440e",radius:7,distance:200,speed:0.008,angle:0,info:"The Red Planet, has polar ice caps"}];function drawSun(){ctx.beginPath();ctx.arc(centerX,centerY,20,0,Math.PI*2);ctx.fillStyle="#ffd700";ctx.fill();}function drawPlanet(planet){const x=centerX+Math.cos(planet.angle)*planet.distance;const y=centerY+Math.sin(planet.angle)*planet.distance;if(showOrbits){ctx.beginPath();ctx.arc(centerX,centerY,planet.distance,0,Math.PI*2);ctx.strokeStyle="rgba(255, 255, 255, 0.2)";ctx.stroke();}ctx.beginPath();ctx.arc(x,y,planet.radius,0,Math.PI*2);ctx.fillStyle=planet.color;ctx.fill();}function updatePlanets(){const speed=parseFloat(speedSlider.value);planets.forEach((planet)=>{planet.angle+=planet.speed*speed;});}let stars=[];function initStars(){stars=[];for(let i=0;i<200;i++){stars.push({x:Math.random()*width,y:Math.random()*height,size:Math.random()*1.5,speed:Math.random()*0.08+0.01});}}function drawStars(){ctx.fillStyle="#ffffff";for(const star of stars){ctx.beginPath();ctx.arc(star.x,star.y,star.size,0,Math.PI*2);ctx.fill();star.y+=star.speed;if(star.y>height){star.y=0;star.x=Math.random()*width;}}}function animate(){ctx.clearRect(0,0,width,height);drawStars();drawSun();planets.forEach(drawPlanet);updatePlanets();requestAnimationFrame(animate);}function handleResize(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;centerX=width/2;centerY=height/2;initStars();}function showPlanetInfo(event){const rect=canvas.getBoundingClientRect();const mouseX=event.clientX-rect.left;const mouseY=event.clientY-rect.top;for(const planet of planets){const planetX=centerX+Math.cos(planet.angle)*planet.distance;const planetY=centerY+Math.sin(planet.angle)*planet.distance;const distance=Math.sqrt((mouseX-planetX)**2+(mouseY-planetY)**2);if(distance<=planet.radius){infoDiv.innerHTML=`<h3>${planet.name}</h3><p>${planet.info}</p>`;infoDiv.style.display="block";return;}}infoDiv.style.display="none";}toggleOrbitsBtn.addEventListener("click",()=>{showOrbits=!showOrbits;});canvas.addEventListener("click",showPlanetInfo);window.addEventListener("resize",handleResize);initStars();animate();//# sourceMappingURL=index.js.map",
+    #             "language": "javascript"
+    #         },
+    #         {
+    #             "filename": "index.html",
+    #             "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Solar System Orbit Simulator</title><style>body{background-color:#000;margin:0;font-family:Arial,sans-serif;overflow:hidden}#canvas{display:block}#controls{color:#fff;position:absolute;top:10px;left:10px}#info{color:#fff;background-color:#000000b3;border-radius:5px;padding:10px;display:none;position:absolute;top:10px;right:10px}.slider{width:200px}</style></head><body><canvas id="canvas"></canvas><div id="controls"><label for="speed">Orbit Speed:</label><input type="range" id="speed" class="slider" min="0.1" max="5" step="0.1" value="1" /><button id="toggleOrbits">Toggle Orbit Paths</button></div><div id="info"></div><script src="./index.js"></script></body></html>",
+    #             "language": "html"
+    #         }
+    #     ],
+    #     "installation_commands": "null",
+    #     "additional_notes": "The code uses built-in libraries so no additional commands are required."
+    # }
+    # </example_answer_1>
 
-    <example_question_2>:
-      "Create a web page that displays an interactive piano visualization using HTML, CSS, and JavaScript. The piano should have 88 keys (52 white keys and 36 black keys). Implement the following user interactions:
+    # <example_question_2>:
+    #   "Create a web page that displays an interactive piano visualization using HTML, CSS, and JavaScript. The piano should have 88 keys (52 white keys and 36 black keys). Implement the following user interactions:
 
-      1. When the user hovers over a key, it should visually highlight to indicate it can be played.
+    #   1. When the user hovers over a key, it should visually highlight to indicate it can be played.
 
-      2. Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
+    #   2. Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
 
-      3. Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
+    #   3. Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
 
-      Ensure the visualization is responsive and works well on different screen sizes. Use only built-in JavaScript libraries and features for this implementation.
-      Note:
-      - The visualization should be implemented in JavaScript with HTML and CSS.
-      - Ensure that the output has both index.js and index.html files"
-    </example_question_2>
+    #   Ensure the visualization is responsive and works well on different screen sizes. Use only built-in JavaScript libraries and features for this implementation.
+    #   Note:
+    #   - The visualization should be implemented in JavaScript with HTML and CSS.
+    #   - Ensure that the output has both index.js and index.html files"
+    # </example_question_2>
 
-    <example_answer_2>
-    {
-        "files": [
-            {
-                "filename": "index.js",
-                "content": "const pianoKeys = [{note: 'A0', type: 'white'}, {note: 'A#0', type: 'black'}, {note: 'B0', type: 'white'}, {note: 'C1', type: 'white'}, {note: 'C#1', type: 'black'}, {note: 'D1', type: 'white'}, {note: 'D#1', type: 'black'}, {note: 'E1', type: 'white'}, {note: 'F1', type: 'white'}, {note: 'F#1', type: 'black'}, {note: 'G1', type: 'white'}, {note: 'G#1', type: 'black'}, {note: 'A1', type: 'white'}, {note: 'A#1', type: 'black'}, {note: 'B1', type: 'white'}, {note: 'C2', type: 'white'}, {note: 'C#2', type: 'black'}, {note: 'D2', type: 'white'}, {note: 'D#2', type: 'black'}, {note: 'E2', type: 'white'}, {note: 'F2', type: 'white'}, {note: 'F#2', type: 'black'}, {note: 'G2', type: 'white'}, {note: 'G#2', type: 'black'}, {note: 'A2', type: 'white'}, {note: 'A#2', type: 'black'}, {note: 'B2', type: 'white'}, {note: 'C3', type: 'white'}, {note: 'C#3', type: 'black'}, {note: 'D3', type: 'white'}, {note: 'D#3', type: 'black'}, {note: 'E3', type: 'white'}, {note: 'F3', type: 'white'}, {note: 'F#3', type: 'black'}, {note: 'G3', type: 'white'}, {note: 'G#3', type: 'black'}, {note: 'A3', type: 'white'}, {note: 'A#3', type: 'black'}, {note: 'B3', type: 'white'}, {note: 'C4', type: 'white'}, {note: 'C#4', type: 'black'}, {note: 'D4', type: 'white'}, {note: 'D#4', type: 'black'}, {note: 'E4', type: 'white'}, {note: 'F4', type: 'white'}, {note: 'F#4', type: 'black'}, {note: 'G4', type: 'white'}, {note: 'G#4', type: 'black'}, {note: 'A4', type: 'white'}, {note: 'A#4', type: 'black'}, {note: 'B4', type: 'white'}, {note: 'C5', type: 'white'}, {note: 'C#5', type: 'black'}, {note: 'D5', type: 'white'}, {note: 'D#5', type: 'black'}, {note: 'E5', type: 'white'}, {note: 'F5', type: 'white'}, {note: 'F#5', type: 'black'}, {note: 'G5', type: 'white'}, {note: 'G#5', type: 'black'}, {note: 'A5', type: 'white'}, {note: 'A#5', type: 'black'}, {note: 'B5', type: 'white'}, {note: 'C6', type: 'white'}, {note: 'C#6', type: 'black'}, {note: 'D6', type: 'white'}, {note: 'D#6', type: 'black'}, {note: 'E6', type: 'white'}, {note: 'F6', type: 'white'}, {note: 'F#6', type: 'black'}, {note: 'G6', type: 'white'}, {note: 'G#6', type: 'black'}, {note: 'A6', type: 'white'}, {note: 'A#6', type: 'black'}, {note: 'B6', type: 'white'}, {note: 'C7', type: 'white'}, {note: 'C#7', type: 'black'}, {note: 'D7', type: 'white'}, {note: 'D#7', type: 'black'}, {note: 'E7', type: 'white'}, {note: 'F7', type: 'white'}, {note: 'F#7', type: 'black'}, {note: 'G7', type: 'white'}, {note: 'G#7', type: 'black'}, {note: 'A7', type: 'white'}, {note: 'A#7', type: 'black'}, {note: 'B7', type: 'white'}, {note: 'C8', type: 'white'}]; const piano = document.getElementById('piano'); const volumeSlider = document.getElementById('volumeSlider'); let audioContext; function createKey(note, type) { const key = document.createElement('div'); key.className = `key ${type}-key`; key.dataset.note = note; key.addEventListener('mousedown', playNote); key.addEventListener('mouseup', stopNote); key.addEventListener('mouseleave', stopNote); return key; } function initializePiano() { pianoKeys.forEach(key => { piano.appendChild(createKey(key.note, key.type)); }); } function playNote(event) { if (!audioContext) { audioContext = new (window.AudioContext || window.webkitAudioContext)(); } const note = event.target.dataset.note; const frequency = getFrequency(note); const oscillator = audioContext.createOscillator(); const gainNode = audioContext.createGain(); oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime); gainNode.gain.setValueAtTime(parseFloat(volumeSlider.value), audioContext.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1); oscillator.connect(gainNode); gainNode.connect(audioContext.destination); oscillator.start(); oscillator.stop(audioContext.currentTime + 1); event.target.classList.add('active'); } function stopNote(event) { event.target.classList.remove('active'); } function getFrequency(note) { const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']; const octave = parseInt(note.slice(-1)); const semitone = notes.indexOf(note.slice(0, -1)); return 440 * Math.pow(2, (octave - 4) + (semitone - 9) / 12); } initializePiano();",
-                "language": "javascript"
-            },
-            {
-                "filename": "index.html",
-                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Interactive Piano Visualization</title><style>body{background:linear-gradient(#1a2a6c,#b21f1f,#fdbb2d);justify-content:center;align-items:center;min-height:100vh;margin:0;padding:0;font-family:Arial,sans-serif;display:flex}.piano-container{background-color:#222;border-radius:10px;padding:20px;box-shadow:0 0 20px #00000080}.piano{display:flex;position:relative}.key{cursor:pointer;transition:all .1s;position:relative}.white-key{z-index:1;background:linear-gradient(#f0f0f0,#fff);border:1px solid #ccc;border-radius:0 0 5px 5px;width:40px;height:200px}.black-key{z-index:2;background:linear-gradient(#333,#000);border-radius:0 0 3px 3px;width:25px;height:120px;margin-left:-12.5px;margin-right:-12.5px}.white-key:hover{background:linear-gradient(#e0e0e0,#f5f5f5)}.black-key:hover{background:linear-gradient(#444,#222)}.white-key:active,.white-key.active{background:linear-gradient(#d0d0d0,#e5e5e5);transform:translateY(2px)}.black-key:active,.black-key.active{background:linear-gradient(#555,#333);transform:translateY(2px)}.volume-control{color:#fff;justify-content:center;align-items:center;margin-top:20px;display:flex}.volume-slider{width:200px;margin:0 10px}</style></head><body><div class="piano-container"><div class="piano" id="piano"></div><div class="volume-control"><span>Volume:</span><input type="range" min="0" max="1" step="0.1" value="0.5" class="volume-slider" id="volumeSlider"></div></div><script src="/index.js"></script></body></html>",
-                "language": "html"
-            }
-        ],
-        "installation_commands": "null",
-        "additional_notes": "The code uses built-in libraries so no additional commands are required."
-    },
-    </example_answer_2>
+    # <example_answer_2>
+    # {
+    #     "files": [
+    #         {
+    #             "filename": "index.js",
+    #             "content": "const pianoKeys = [{note: 'A0', type: 'white'}, {note: 'A#0', type: 'black'}, {note: 'B0', type: 'white'}, {note: 'C1', type: 'white'}, {note: 'C#1', type: 'black'}, {note: 'D1', type: 'white'}, {note: 'D#1', type: 'black'}, {note: 'E1', type: 'white'}, {note: 'F1', type: 'white'}, {note: 'F#1', type: 'black'}, {note: 'G1', type: 'white'}, {note: 'G#1', type: 'black'}, {note: 'A1', type: 'white'}, {note: 'A#1', type: 'black'}, {note: 'B1', type: 'white'}, {note: 'C2', type: 'white'}, {note: 'C#2', type: 'black'}, {note: 'D2', type: 'white'}, {note: 'D#2', type: 'black'}, {note: 'E2', type: 'white'}, {note: 'F2', type: 'white'}, {note: 'F#2', type: 'black'}, {note: 'G2', type: 'white'}, {note: 'G#2', type: 'black'}, {note: 'A2', type: 'white'}, {note: 'A#2', type: 'black'}, {note: 'B2', type: 'white'}, {note: 'C3', type: 'white'}, {note: 'C#3', type: 'black'}, {note: 'D3', type: 'white'}, {note: 'D#3', type: 'black'}, {note: 'E3', type: 'white'}, {note: 'F3', type: 'white'}, {note: 'F#3', type: 'black'}, {note: 'G3', type: 'white'}, {note: 'G#3', type: 'black'}, {note: 'A3', type: 'white'}, {note: 'A#3', type: 'black'}, {note: 'B3', type: 'white'}, {note: 'C4', type: 'white'}, {note: 'C#4', type: 'black'}, {note: 'D4', type: 'white'}, {note: 'D#4', type: 'black'}, {note: 'E4', type: 'white'}, {note: 'F4', type: 'white'}, {note: 'F#4', type: 'black'}, {note: 'G4', type: 'white'}, {note: 'G#4', type: 'black'}, {note: 'A4', type: 'white'}, {note: 'A#4', type: 'black'}, {note: 'B4', type: 'white'}, {note: 'C5', type: 'white'}, {note: 'C#5', type: 'black'}, {note: 'D5', type: 'white'}, {note: 'D#5', type: 'black'}, {note: 'E5', type: 'white'}, {note: 'F5', type: 'white'}, {note: 'F#5', type: 'black'}, {note: 'G5', type: 'white'}, {note: 'G#5', type: 'black'}, {note: 'A5', type: 'white'}, {note: 'A#5', type: 'black'}, {note: 'B5', type: 'white'}, {note: 'C6', type: 'white'}, {note: 'C#6', type: 'black'}, {note: 'D6', type: 'white'}, {note: 'D#6', type: 'black'}, {note: 'E6', type: 'white'}, {note: 'F6', type: 'white'}, {note: 'F#6', type: 'black'}, {note: 'G6', type: 'white'}, {note: 'G#6', type: 'black'}, {note: 'A6', type: 'white'}, {note: 'A#6', type: 'black'}, {note: 'B6', type: 'white'}, {note: 'C7', type: 'white'}, {note: 'C#7', type: 'black'}, {note: 'D7', type: 'white'}, {note: 'D#7', type: 'black'}, {note: 'E7', type: 'white'}, {note: 'F7', type: 'white'}, {note: 'F#7', type: 'black'}, {note: 'G7', type: 'white'}, {note: 'G#7', type: 'black'}, {note: 'A7', type: 'white'}, {note: 'A#7', type: 'black'}, {note: 'B7', type: 'white'}, {note: 'C8', type: 'white'}]; const piano = document.getElementById('piano'); const volumeSlider = document.getElementById('volumeSlider'); let audioContext; function createKey(note, type) { const key = document.createElement('div'); key.className = `key ${type}-key`; key.dataset.note = note; key.addEventListener('mousedown', playNote); key.addEventListener('mouseup', stopNote); key.addEventListener('mouseleave', stopNote); return key; } function initializePiano() { pianoKeys.forEach(key => { piano.appendChild(createKey(key.note, key.type)); }); } function playNote(event) { if (!audioContext) { audioContext = new (window.AudioContext || window.webkitAudioContext)(); } const note = event.target.dataset.note; const frequency = getFrequency(note); const oscillator = audioContext.createOscillator(); const gainNode = audioContext.createGain(); oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime); gainNode.gain.setValueAtTime(parseFloat(volumeSlider.value), audioContext.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1); oscillator.connect(gainNode); gainNode.connect(audioContext.destination); oscillator.start(); oscillator.stop(audioContext.currentTime + 1); event.target.classList.add('active'); } function stopNote(event) { event.target.classList.remove('active'); } function getFrequency(note) { const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']; const octave = parseInt(note.slice(-1)); const semitone = notes.indexOf(note.slice(0, -1)); return 440 * Math.pow(2, (octave - 4) + (semitone - 9) / 12); } initializePiano();",
+    #             "language": "javascript"
+    #         },
+    #         {
+    #             "filename": "index.html",
+    #             "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Interactive Piano Visualization</title><style>body{background:linear-gradient(#1a2a6c,#b21f1f,#fdbb2d);justify-content:center;align-items:center;min-height:100vh;margin:0;padding:0;font-family:Arial,sans-serif;display:flex}.piano-container{background-color:#222;border-radius:10px;padding:20px;box-shadow:0 0 20px #00000080}.piano{display:flex;position:relative}.key{cursor:pointer;transition:all .1s;position:relative}.white-key{z-index:1;background:linear-gradient(#f0f0f0,#fff);border:1px solid #ccc;border-radius:0 0 5px 5px;width:40px;height:200px}.black-key{z-index:2;background:linear-gradient(#333,#000);border-radius:0 0 3px 3px;width:25px;height:120px;margin-left:-12.5px;margin-right:-12.5px}.white-key:hover{background:linear-gradient(#e0e0e0,#f5f5f5)}.black-key:hover{background:linear-gradient(#444,#222)}.white-key:active,.white-key.active{background:linear-gradient(#d0d0d0,#e5e5e5);transform:translateY(2px)}.black-key:active,.black-key.active{background:linear-gradient(#555,#333);transform:translateY(2px)}.volume-control{color:#fff;justify-content:center;align-items:center;margin-top:20px;display:flex}.volume-slider{width:200px;margin:0 10px}</style></head><body><div class="piano-container"><div class="piano" id="piano"></div><div class="volume-control"><span>Volume:</span><input type="range" min="0" max="1" step="0.1" value="0.5" class="volume-slider" id="volumeSlider"></div></div><script src="/index.js"></script></body></html>",
+    #             "language": "html"
+    #         }
+    #     ],
+    #     "installation_commands": "null",
+    #     "additional_notes": "The code uses built-in libraries so no additional commands are required."
+    # },
+    # </example_answer_2>
 
-    <example_question_3>
-    "Create a web page that visualizes a desert landscape using HTML, CSS, and JavaScript. The visualization should include sand dunes, a sun, and at least one cactus. Implement the following interactive features:
+    # <example_question_3>
+    # "Create a web page that visualizes a desert landscape using HTML, CSS, and JavaScript. The visualization should include sand dunes, a sun, and at least one cactus. Implement the following interactive features:
 
-    1. When the user moves their mouse across the screen, small dust particles should appear and follow the mouse movement, simulating a light breeze in the desert.
+    # 1. When the user moves their mouse across the screen, small dust particles should appear and follow the mouse movement, simulating a light breeze in the desert.
 
-    2. Allow the user to click anywhere on the screen to 'plant' a new cactus at that location. The cactus should grow from small to full size over a short period of time.
+    # 2. Allow the user to click anywhere on the screen to 'plant' a new cactus at that location. The cactus should grow from small to full size over a short period of time.
 
-    Ensure that the visualization is responsive and works well on different screen sizes. Use only built-in JavaScript functions and avoid external libraries.
-    Note:
-    - The visualization should be implemented in JavaScript with HTML and CSS.
-    - Ensure that the output has both index.js and index.html files"
-    </example_question_3>
+    # Ensure that the visualization is responsive and works well on different screen sizes. Use only built-in JavaScript functions and avoid external libraries.
+    # Note:
+    # - The visualization should be implemented in JavaScript with HTML and CSS.
+    # - Ensure that the output has both index.js and index.html files"
+    # </example_question_3>
 
-    <example_answer_3>
-    {
-    "files": [
-        {
-            "filename": "index.js",
-            "content": "document.addEventListener("DOMContentLoaded",()=>{const desert=document.getElementById("desert");const dustParticles=[];createCactus(window.innerWidth/2,window.innerHeight*0.7);desert.addEventListener("mousemove",(e)=>{createDustParticle(e.clientX,e.clientY)});desert.addEventListener("click",(e)=>{createCactus(e.clientX,e.clientY)});function createCactus(x,y){const cactus=document.createElement("div");cactus.className="cactus";cactus.style.left=`${x}px`;cactus.style.bottom=`${window.innerHeight-y}px`;cactus.style.height="0px";desert.appendChild(cactus);setTimeout(()=>{cactus.style.height="100px"},50)}function createDustParticle(x,y){const dust=document.createElement("div");dust.className="dust";dust.style.left=`${x}px`;dust.style.top=`${y}px`;desert.appendChild(dust);dustParticles.push(dust);if(dustParticles.length>50){const oldDust=dustParticles.shift();oldDust.remove()}animateDust(dust)}function animateDust(dust){let opacity=1;let size=3;let posX=parseFloat(dust.style.left);let posY=parseFloat(dust.style.top);function updateDust(){opacity-=0.02;size-=0.05;posX+=(Math.random()-0.5)*2;posY-=0.5;if(opacity<=0||size<=0){dust.remove();return}dust.style.opacity=opacity;dust.style.width=`${size}px`;dust.style.height=`${size}px`;dust.style.left=`${posX}px`;dust.style.top=`${posY}px`;requestAnimationFrame(updateDust)}requestAnimationFrame(updateDust)}window.addEventListener("resize",()=>{const cacti=document.querySelectorAll(".cactus");cacti.forEach((cactus)=>{const bottomPercentage=parseFloat(cactus.style.bottom)/window.innerHeight*100;cactus.style.bottom=`${bottomPercentage}%`})})});",
-            "language": "javascript"
-        },
-        {
-            "filename": "index.html",
-            "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Desert Landscape</title><style>body, html {height: 100%;margin: 0;padding: 0;overflow: hidden;}#desert {background: linear-gradient(gold, orange);width: 100%;height: 100%;position: relative;overflow: hidden;}.sand-dune {background: tan;border-radius: 50% 50% 0 0;width: 100%;height: 30%;position: absolute;bottom: 0;}#sun {background: tomato;border-radius: 50%;width: 100px;height: 100px;position: absolute;top: 10%;left: 10%;box-shadow: 0 0 50px tomato;}.cactus {background: #2e8b57;border-radius: 10px;width: 40px;transition: height 1s ease-out;position: absolute;bottom: 30%;}.cactus:before, .cactus:after {content: "";background: #2e8b57;border-radius: 10px;width: 20px;height: 30px;position: absolute;}.cactus:before {top: 30%;left: -15px;transform: rotate(45deg);}.cactus:after {top: 60%;right: -15px;transform: rotate(-45deg);}.dust {pointer-events: none;background: #d2b48cb3;border-radius: 50%;width: 3px;height: 3px;position: absolute;}</style></head><body><div id="desert"><div id="sun"></div><div class="sand-dune"></div></div><script src="/index.js"></script></body></html>",
-            "language": "html"
-        }
-    ],
-    "installation_commands": "null",
-    "additional_notes": "The code uses built-in libraries so no additional commands are required."
-    },
-    </example_answer_3>
-    """
-    return EXAMPLE_OUTPUTS
+    # <example_answer_3>
+    # {
+    # "files": [
+    #     {
+    #         "filename": "index.js",
+    #         "content": "document.addEventListener("DOMContentLoaded",()=>{const desert=document.getElementById("desert");const dustParticles=[];createCactus(window.innerWidth/2,window.innerHeight*0.7);desert.addEventListener("mousemove",(e)=>{createDustParticle(e.clientX,e.clientY)});desert.addEventListener("click",(e)=>{createCactus(e.clientX,e.clientY)});function createCactus(x,y){const cactus=document.createElement("div");cactus.className="cactus";cactus.style.left=`${x}px`;cactus.style.bottom=`${window.innerHeight-y}px`;cactus.style.height="0px";desert.appendChild(cactus);setTimeout(()=>{cactus.style.height="100px"},50)}function createDustParticle(x,y){const dust=document.createElement("div");dust.className="dust";dust.style.left=`${x}px`;dust.style.top=`${y}px`;desert.appendChild(dust);dustParticles.push(dust);if(dustParticles.length>50){const oldDust=dustParticles.shift();oldDust.remove()}animateDust(dust)}function animateDust(dust){let opacity=1;let size=3;let posX=parseFloat(dust.style.left);let posY=parseFloat(dust.style.top);function updateDust(){opacity-=0.02;size-=0.05;posX+=(Math.random()-0.5)*2;posY-=0.5;if(opacity<=0||size<=0){dust.remove();return}dust.style.opacity=opacity;dust.style.width=`${size}px`;dust.style.height=`${size}px`;dust.style.left=`${posX}px`;dust.style.top=`${posY}px`;requestAnimationFrame(updateDust)}requestAnimationFrame(updateDust)}window.addEventListener("resize",()=>{const cacti=document.querySelectorAll(".cactus");cacti.forEach((cactus)=>{const bottomPercentage=parseFloat(cactus.style.bottom)/window.innerHeight*100;cactus.style.bottom=`${bottomPercentage}%`})})});",
+    #         "language": "javascript"
+    #     },
+    #     {
+    #         "filename": "index.html",
+    #         "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Desert Landscape</title><style>body, html {height: 100%;margin: 0;padding: 0;overflow: hidden;}#desert {background: linear-gradient(gold, orange);width: 100%;height: 100%;position: relative;overflow: hidden;}.sand-dune {background: tan;border-radius: 50% 50% 0 0;width: 100%;height: 30%;position: absolute;bottom: 0;}#sun {background: tomato;border-radius: 50%;width: 100px;height: 100px;position: absolute;top: 10%;left: 10%;box-shadow: 0 0 50px tomato;}.cactus {background: #2e8b57;border-radius: 10px;width: 40px;transition: height 1s ease-out;position: absolute;bottom: 30%;}.cactus:before, .cactus:after {content: "";background: #2e8b57;border-radius: 10px;width: 20px;height: 30px;position: absolute;}.cactus:before {top: 30%;left: -15px;transform: rotate(45deg);}.cactus:after {top: 60%;right: -15px;transform: rotate(-45deg);}.dust {pointer-events: none;background: #d2b48cb3;border-radius: 50%;width: 3px;height: 3px;position: absolute;}</style></head><body><div id="desert"><div id="sun"></div><div class="sand-dune"></div></div><script src="/index.js"></script></body></html>",
+    #         "language": "html"
+    #     }
+    # ],
+    # "installation_commands": "null",
+    # "additional_notes": "The code uses built-in libraries so no additional commands are required."
+    # },
+    # </example_answer_3>
+    # """
+    # return EXAMPLE_OUTPUTS
 
 
 # to do: depreceate
@@ -182,20 +182,20 @@ def _get_game_answer_examples() -> str:
     # return ""
     return """
         <example_input_1>
-            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene. 
-            
+            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
+
             Features
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
             • One pedestrian figure representing the pickpocket, visually distinct
-            • One police officer figure that can be smoothly controlled by the user using WASD keys.
+            • One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled.
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-        
+
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
-            
+
             Note:
             - Your output should be implemented in JavaScript with HTML and CSS.
             - Ensure that the output has both index.js and index.html files
@@ -206,31 +206,95 @@ def _get_game_answer_examples() -> str:
                     {
                         "filename": "index.js",
                         "content": "const canvas=document.getElementById('gameCanvas');const ctx=canvas.getContext('2d');const scoreTimerElement=document.getElementById('scoreTimer');const gameOverScreen=document.getElementById('gameOverScreen');const finalScoreElement=document.getElementById('finalScore');const restartButton=document.getElementById('restartButton');let canvasWidth=1600;let canvasHeight=900;let scale=1;function resizeCanvas(){const container=document.getElementById('gameContainer');const containerWidth=container.clientWidth;const containerHeight=container.clientHeight;scale=Math.min(containerWidth/canvasWidth,containerHeight/canvasHeight);canvas.width=canvasWidth*scale;canvas.height=canvasHeight*scale;ctx.scale(scale,scale);}window.addEventListener('resize',resizeCanvas);resizeCanvas();const PEDESTRIAN_COUNT=30;const PEDESTRIAN_SIZE=30;const POLICE_SIZE=40;const PICKPOCKET_SIZE=35;const DETECTION_RADIUS=120;const GAME_DURATION=120;let score=0;let timeLeft=GAME_DURATION;let gameInterval;let timerInterval;let backgroundCanvas;class Character{constructor(x,y,size,color,speed){this.x=x;this.y=y;this.size=size;this.color=color;this.speed=speed;this.direction=Math.random()*Math.PI*2;}draw(){ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.x,this.y,this.size/2,0,Math.PI*2);ctx.fill();}move(){this.x+=Math.cos(this.direction)*this.speed;this.y+=Math.sin(this.direction)*this.speed;this.x=(this.x+canvasWidth)%canvasWidth;this.y=(this.y+canvasHeight)%canvasHeight;if(Math.random()<0.02){this.direction=Math.random()*Math.PI*2;}}}class Police extends Character{constructor(x,y){super(x,y,POLICE_SIZE,'#1E90FF',6);this.movementX=0;this.movementY=0;}draw(){super.draw();ctx.fillStyle='#FFFFFF';ctx.beginPath();ctx.arc(this.x,this.y-7,7,0,Math.PI*2);ctx.fill();}move(){this.x+=this.movementX*this.speed;this.y+=this.movementY*this.speed;this.x=(this.x+canvasWidth)%canvasWidth;this.y=(this.y+canvasHeight)%canvasHeight;}}class Pickpocket extends Character{constructor(x,y){super(x,y,PICKPOCKET_SIZE,'#FF4500',4.5);this.normalColor='#FF4500';this.detectedColor='#FF69B4';}draw(){super.draw();ctx.fillStyle='#000000';ctx.beginPath();ctx.arc(this.x-7,this.y-7,4,0,Math.PI*2);ctx.arc(this.x+7,this.y-7,4,0,Math.PI*2);ctx.fill();}reset(){this.x=Math.random()*canvasWidth;this.y=Math.random()*canvasHeight;this.color=this.normalColor;this.direction=Math.random()*Math.PI*2;}}const police=new Police(canvasWidth/2,canvasHeight/2);const pickpocket=new Pickpocket(Math.random()*canvasWidth,Math.random()*canvasHeight);const pedestrians=[];for(let i=0;i<PEDESTRIAN_COUNT;i++){pedestrians.push(new Character(Math.random()*canvasWidth,Math.random()*canvasHeight,PEDESTRIAN_SIZE,`rgb(${Math.random()*200+55}, ${Math.random()*200+55}, ${Math.random()*200+55})`,4));}function createBackground(){backgroundCanvas=document.createElement('canvas');backgroundCanvas.width=canvasWidth;backgroundCanvas.height=canvasHeight;const bgCtx=backgroundCanvas.getContext('2d');bgCtx.fillStyle='#8B8B8B';bgCtx.fillRect(0,0,canvasWidth,canvasHeight);bgCtx.fillStyle='#555555';bgCtx.fillRect(0,canvasHeight/2-50,canvasWidth,100);bgCtx.fillRect(canvasWidth/2-50,0,100,canvasHeight);bgCtx.fillStyle='#A9A9A9';bgCtx.fillRect(0,canvasHeight/2-60,canvasWidth,10);bgCtx.fillRect(0,canvasHeight/2+50,canvasWidth,10);bgCtx.fillRect(canvasWidth/2-60,0,10,canvasHeight);bgCtx.fillRect(canvasWidth/2+50,0,10,canvasHeight);bgCtx.fillStyle='#FFFFFF';for(let i=0;i<canvasWidth;i+=40){bgCtx.fillRect(i,canvasHeight/2-30,20,60);}for(let i=0;i<canvasHeight;i+=40){bgCtx.fillRect(canvasWidth/2-30,i,60,20);}const buildingAreas=[{x:0,y:0,width:canvasWidth/2-60,height:canvasHeight/2-60},{x:canvasWidth/2+60,y:0,width:canvasWidth/2-60,height:canvasHeight/2-60},{x:0,y:canvasHeight/2+60,width:canvasWidth/2-60,height:canvasHeight/2-60},{x:canvasWidth/2+60,y:canvasHeight/2+60,width:canvasWidth/2-60,height:canvasHeight/2-60}];buildingAreas.forEach(area=>{for(let i=0;i<3;i++){for(let j=0;j<3;j++){bgCtx.fillStyle=`rgb(${Math.random()*100+100}, ${Math.random()*100+100}, ${Math.random()*100+100})`;const buildingWidth=area.width/3-20;const buildingHeight=area.height/3-20;bgCtx.fillRect(area.x+i*(area.width/3)+10,area.y+j*(area.height/3)+10,buildingWidth,buildingHeight);}}})}function drawBackground(){ctx.drawImage(backgroundCanvas,0,0);}function drawDetectionRadius(){ctx.strokeStyle='rgba(255, 255, 0, 0.3)';ctx.beginPath();ctx.arc(police.x,police.y,DETECTION_RADIUS,0,Math.PI*2);ctx.stroke();}function checkCollision(){const dx=police.x-pickpocket.x;const dy=police.y-pickpocket.y;const distance=Math.sqrt(dx*dx+dy*dy);if(distance<(POLICE_SIZE+PICKPOCKET_SIZE)/2){score++;pickpocket.reset();}if(distance<DETECTION_RADIUS){pickpocket.color=pickpocket.detectedColor;}else{pickpocket.color=pickpocket.normalColor;}}function updateScore(){scoreTimerElement.textContent=`Score: ${score} | Time: ${timeLeft}s`;}function gameLoop(){ctx.clearRect(0,0,canvasWidth,canvasHeight);drawBackground();drawDetectionRadius();pedestrians.forEach(pedestrian=>{pedestrian.move();pedestrian.draw();});police.move();police.draw();pickpocket.move();pickpocket.draw();checkCollision();updateScore();}function startGame(){score=0;timeLeft=GAME_DURATION;pickpocket.reset();gameOverScreen.style.display='none';createBackground();clearInterval(gameInterval);clearInterval(timerInterval);gameInterval=setInterval(gameLoop,1000/60);timerInterval=setInterval(()=>{timeLeft--;if(timeLeft<=0){endGame();}},1000);}function endGame(){clearInterval(gameInterval);clearInterval(timerInterval);finalScoreElement.textContent=score;gameOverScreen.style.display='block';}restartButton.addEventListener('click',startGame);const keys={};window.addEventListener('keydown',(e)=>{keys[e.key]=true;e.preventDefault();});window.addEventListener('keyup',(e)=>{keys[e.key]=false;e.preventDefault();});function updatePoliceMovement(){police.movementX=0;police.movementY=0;if(keys['ArrowUp']||keys['w'])police.movementY-=1;if(keys['ArrowDown']||keys['s'])police.movementY+=1;if(keys['ArrowLeft']||keys['a'])police.movementX-=1;if(keys['ArrowRight']||keys['d'])police.movementX+=1;if(police.movementX!==0&&police.movementY!==0){police.movementX*=Math.SQRT1_2;police.movementY*=Math.SQRT1_2;}}setInterval(updatePoliceMovement,1000/60);startGame();",
-                        "language": "javascript",
+                        "language": "javascript"
                     },
                     {
                         "filename": "index.html",
-                        "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Police Officer Catch the Pickpocket</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:Arial,sans-serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;background-color:#8B8B8B}#scoreTimer{position:absolute;top:10px;left:10px;color:white;font-size:18px;background-color:rgba(0,0,0,0.5);padding:5px 10px;border-radius:5px}#gameOverScreen{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background-color:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;text-align:center;display:none}#restartButton{margin-top:10px;padding:10px 20px;font-size:16px;cursor:pointer}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="scoreTimer">Score: 0 | Time: 120s</div><div id="gameOverScreen"><h2>Game Over</h2><p>Final Score: <span id="finalScore"></span></p><button id="restartButton">Restart</button></div></div><script src="index.js"></script></body></html>",
-                        "language": "html",
+                        "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Police Officer Catch the Pickpocket</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:Arial,sans-serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;background-color:#8B8B8B}#scoreTimer{position:absolute;top:10px;left:10px;color:white;font-size:18px;background-color:rgba(0,0,0,0.5);padding:5px 10px;border-radius:5px}#gameOverScreen{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background-color:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;text-align:center;display:none}#restartButton{margin-top:10px;padding:10px 20px;font-size:16px;cursor:pointer}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="scoreTimer">Score: 0 | Time: 120s</div><div id="gameOverScreen"><h2>Game Over</h2><p>Final Score: <span id="finalScore"></span></p><button id="restartButton">Restart</button></div></div></body></html>",
+                        "language": "html"
                     }
                 ],
                 "installation_commands": "null",
                 "additional_notes": "The code uses built-in libraries so no additional commands are required."
             }
         </example_output_1>
+        <example_input_2>
+            Implement a fun, streamlined web game called 'Turbulent Skies' where players navigate an airplane through various weather conditions and obstacles.
+
+            Features:
+            • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
+            • Display an airplane sprite that the player can move up and down.
+            • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
+            • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement.
+            • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
+            • Add floating luggage items that appear randomly on the screen and move from right to left.
+            • Display a score counter that increases over time and when luggage items are collected.
+            • Create visual effects for weather changes.
+            • Implement a 'game over' condition when the turbulence meter is full, showing the final score and a 'Play Again' button.
+            • Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
+
+            User Actions:
+            1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
+            2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
+
+            Note:
+            - Your output should be implemented in JavaScript with HTML and CSS.
+            - Ensure that the output has both index.js and index.html files
+        </example_input_2>
+        <example_output_2>
+            {
+            "files": [
+                    {
+                        "filename": "index.js",
+                        "content": "const canvas=document.getElementById("gameCanvas"),ctx=canvas.getContext("2d"),turbulenceMeter=document.getElementById("turbulenceFill"),fuelGauge=document.getElementById("fuelFill"),scoreElement=document.getElementById("score"),gameOverScreen=document.getElementById("gameOver"),finalScoreElement=document.getElementById("finalScore"),playAgainButton=document.getElementById("playAgain"),smoothAirCooldownElement=document.getElementById("smoothAirCooldown");let canvasWidth=1600,canvasHeight=900,scale=1;let gameInterval;function resizeCanvas(){const e=document.getElementById("gameContainer"),t=e.clientWidth,n=e.clientHeight;(scale=Math.min(t/canvasWidth,n/canvasHeight)),(canvas.width=canvasWidth*scale),(canvas.height=canvasHeight*scale),ctx.scale(scale,scale);}window.addEventListener("resize",resizeCanvas),resizeCanvas();const airplane={x:100,y:canvasHeight/2,width:100,height:50,speed:5,},clouds=[],luggageItems=[],fuelCanisters=[];let turbulence=0,fuel=100,score=0,gameOver=!1,smoothAirActive=!1,smoothAirCooldown=0;const weatherConditions=["clear","stormy","turbulent"];let currentWeather="clear";function createCloud(){return{x:canvasWidth,y:Math.random()*canvasHeight,width:100*Math.random()+50,height:50*Math.random()+25,speed:2*Math.random()+1,};}function createLuggage(){return{x:canvasWidth,y:Math.random()*canvasHeight,width:40,height:40,speed:3*Math.random()+2,};}function createFuel(){return{x:canvasWidth,y:Math.random()*canvasHeight,width:40,height:40,speed:3*Math.random()+2,};}function drawFuelCanisters(){(ctx.fillStyle="#32CD32"),fuelCanisters.forEach((e)=>{ctx.beginPath(),ctx.arc(e.x,e.y,e.size,0,2*Math.PI),ctx.fill();});}function updateFuelCanisters(){fuelCanisters.forEach((e)=>{(e.x-=e.speed),e.x+e.size<0&&(e.x=canvasWidth);}),Math.random()<0.002&&fuelCanisters.push({x:canvasWidth,y:Math.random()*(canvasHeight-20),size:15,speed:3*Math.random()+2,});}function drawAirplane(){(ctx.fillStyle="#4A4A4A"),ctx.beginPath(),ctx.moveTo(airplane.x,airplane.y),ctx.lineTo(airplane.x+airplane.width,airplane.y+airplane.height/2),ctx.lineTo(airplane.x,airplane.y+airplane.height),ctx.closePath(),ctx.fill(),(ctx.fillStyle="#C0C0C0");for(let e=0;e<3;e++)ctx.fillRect(airplane.x+5+20*e,airplane.y+15,15,10);(ctx.fillStyle="#4A4A4A"),ctx.beginPath(),ctx.moveTo(airplane.x+30,airplane.y+airplane.height-10),ctx.lineTo(airplane.x+20,airplane.y+airplane.height+20),ctx.lineTo(airplane.x+50,airplane.y+airplane.height-15),ctx.closePath(),ctx.fill();}function drawCloud(e){(ctx.fillStyle="rgba(255, 255, 255, 0.8)"),ctx.beginPath(),ctx.arc(e.x,e.y,e.width/2,0,2*Math.PI),ctx.arc(e.x+e.width/4,e.y-e.height/4,e.width/3,0,2*Math.PI),ctx.arc(e.x+e.width/2,e.y,e.width/3,0,2*Math.PI),ctx.closePath(),ctx.fill();}function drawLuggage(e){(ctx.fillStyle="#8B4513"),ctx.fillRect(e.x,e.y,e.width,e.height),(ctx.fillStyle="#DAA520"),ctx.fillRect(e.x+5,e.y+5,e.width-10,e.height-10);}function drawWeatherEffects(){if("stormy"===currentWeather){(ctx.fillStyle="rgba(0, 0, 0, 0.3)"),ctx.fillRect(0,0,canvasWidth,canvasHeight);for(let e=0;e<50;e++){(ctx.strokeStyle="#FFFFFF"),ctx.beginPath();const t=Math.random()*canvasWidth,n=Math.random()*canvasHeight;ctx.moveTo(t,n),ctx.lineTo(t+10,n+10),ctx.stroke();}}else"turbulent"===currentWeather&&((ctx.fillStyle="rgba(255, 165, 0, 0.2)"),ctx.fillRect(0,0,canvasWidth,canvasHeight));}function updateAirplane(){keys.ArrowUp&&airplane.y>0&&(airplane.y-=airplane.speed),keys.ArrowDown&&airplane.y<canvasHeight-airplane.height&&(airplane.y+=airplane.speed);}function updateFuel(){(fuel-=0.05)<=0&&((gameOver=!0),showGameOver());}function checkCollisions(){luggageItems.forEach((e,t)=>{(e.x-=e.speed),e.x+e.width<0&&luggageItems.splice(t,1),airplane.x<e.x+e.width&&airplane.x+airplane.width>e.x&&airplane.y<e.y+e.height&&airplane.y+airplane.height>e.y&&(luggageItems.splice(t,1),(score+=500));}),fuelCanisters.forEach((e)=>{airplane.x<e.x+e.size&&airplane.x+airplane.width>e.x-e.size&&airplane.y<e.y+e.size&&airplane.y+airplane.height>e.y-e.size&&((fuel=Math.min(fuel+20,100)),(e.x=canvasWidth));});}function updateAirplane(){keys.ArrowUp&&airplane.y>0&&(airplane.y-=airplane.speed),keys.ArrowDown&&airplane.y<canvasHeight-airplane.height&&(airplane.y+=airplane.speed);}function updateClouds(){clouds.forEach((e)=>{(e.x-=e.speed),e.x+e.width<0&&((e.x=canvasWidth),(e.y=Math.random()*canvasHeight));});}function updateTurbulence(){"turbulent"===currentWeather&&!smoothAirActive?(turbulence+=0.15):"stormy"===currentWeather&&!smoothAirActive?(turbulence+=0.08):(turbulence=Math.max(0,turbulence-0.1)),turbulence>=100&&((gameOver=!0),showGameOver());}function updateWeather(){Math.random()<0.006&&(currentWeather=weatherConditions[Math.floor(Math.random()*weatherConditions.length)]);}function updateGame(){gameOver||(updateAirplane(),updateClouds(),updateFuelCanisters(),checkCollisions(),updateTurbulence(),updateFuel(),updateWeather(),score++,smoothAirCooldown>0?(smoothAirCooldown--,(smoothAirCooldownElement.textContent=`Smooth Air Active for: ${Math.ceil(smoothAirCooldown/60)}s`)):smoothAirActive||(smoothAirCooldownElement.textContent="Smooth Air: Ready"),Math.random()<0.02&&luggageItems.push(createLuggage()),Math.random()<0.01&&fuelCanisters.push(createFuel()));}function drawGame(){ctx.clearRect(0,0,canvasWidth,canvasHeight),(ctx.fillStyle="#87CEEB"),ctx.fillRect(0,0,canvasWidth,canvasHeight),drawWeatherEffects(),clouds.forEach(drawCloud),luggageItems.forEach(drawLuggage),drawFuelCanisters(),drawAirplane(),(turbulenceMeter.style.width=`${turbulence}%`),(fuelGauge.style.width=`${fuel}%`),(scoreElement.textContent=`Score: ${score}`);}function gameLoop(){gameOver||(updateGame(),drawGame());}function startGame(){startTime=Date.now();(airplane.y=canvasHeight/2),(clouds.length=0),(luggageItems.length=0),(turbulence=0),(fuel=100),(score=0),(gameOver=!1),(currentWeather="clear"),(smoothAirActive=!1),(smoothAirCooldown=0);for(let e=0;e<5;e++)clouds.push(createCloud());(gameOverScreen.style.display="none"),clearInterval(gameInterval);gameInterval=setInterval(gameLoop,1000/60);}function showGameOver(){(finalScoreElement.textContent=score),(gameOverScreen.style.display="block");}const keys={};playAgainButton.addEventListener("click",startGame),document.addEventListener("keydown",(e)=>{(keys[e.code]=!0),["ArrowUp","ArrowDown","Space"].includes(e.code)&&e.preventDefault()," "===e.key&&!smoothAirActive&&0===smoothAirCooldown&&((smoothAirActive=!0),(smoothAirCooldown=1800),setTimeout(()=>{smoothAirActive=!1;},3e4));}),document.addEventListener("keyup",(e)=>{keys[e.code]=!1;}),startGame();",
+                        "language": "javascript"
+                    },
+                    {
+                        "filename": "index.html",
+                        "content": "<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta content="width=device-width, initial-scale=1.0" name="viewport" /><title>Turbulent Skies</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:Arial,sans-serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%;background-color:#7dc9e7}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%}#turbulenceMeter{position:absolute;top:10px;left:10px;width:200px;height:20px;background-color:rgba(255,255,255,0.5);border:2px solid #333}#turbulenceFill{width:0%;height:100%;background-color:#ff4500}#score{position:absolute;top:10px;right:10px;color:white;font-size:24px;text-shadow:2px 2px 4px rgba(0,0,0,0.5)}#gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background-color:rgba(0,0,0,0.7);color:white;padding:20px;border-radius:10px;text-align:center;display:none}#playAgain{margin-top:20px;padding:10px 20px;font-size:18px;cursor:pointer}#smoothAirCooldown{position:absolute;bottom:10px;left:10px;color:white;font-size:18px;text-shadow:2px 2px 4px rgba(0,0,0,0.5)}#fuelGauge{position:absolute;top:40px;left:10px;width:200px;height:20px;background-color:rgba(255,255,255,0.5);border:2px solid #333}#fuelFill{width:100%;height:100%;background-color:#32cd32;transition:width 0.3s}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="turbulenceMeter"><div id="turbulenceFill"></div></div><div id="fuelGauge"><div id="fuelFill"></div></div><div id="score">Score: 0</div><div id="smoothAirCooldown">Smooth Air: Ready</div><div id="gameOver"><h2>Game Over</h2><p>Your Score: <span id="finalScore"></span></p><button id="playAgain">Play Again</button></div></div></body></html>",
+                        "language": "html"
+                    }
+                ],
+                "installation_commands": "null",
+                "additional_notes": "The code uses built-in libraries so no additional commands are required."
+            }
+        </example_output_2>
     """
 
 
 def _get_game_question_examples() -> str:
+    # depreceated rythmn game example
+    #     <example_input_2>
+    #     Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 3 user actions for the following persona: a longtime hip-hop enthusiast who used to attend live shows all the time.
+    # </example_input_2>
+
+    # <example_output_2>
+    #     Implement a fun, streamlined web game called 'Rhythm Master' that challenges players to match beats and create their own hip-hop tracks.
+
+    #     Features:
+    #     •  Create a game board as 4x4 grid of colorful buttons. The game board should resemble a DJ's mixing panel.
+    #     •  Use neon colors (e.g., hot pink, electric blue, lime green, and bright orange) for the buttons.
+    #     •  Display a score counter at the top of the screen
+    #     •  Show a 'Play' button to start the game and a 'Reset' button to restart
+    #     •  Implement a timer that counts down from 60 seconds. When the timer ends, display a "Game Over" screen displaying the final score.
+    #     •  Generate a random sequence of button highlights for the player to follow.
+    #     •  The game should increase in difficulty as the player's score increases by speeding up the sequence and adding more buttons to remember.
+    #     •  Provide distinct visual feedback for correct and incorrect button presses.
+    #     •  Add visual effects like confetti when the player successfully completes a sequence
+
+    #     User Actions:
+    #     1. Click the 'Play' button to start the game and begin the countdown timer
+    #     2. Click on the colorful buttons in the correct sequence to match the generated pattern
+    #     3. Press the 'R' key to stop the current game and reset the score to zero
+    # </example_output_2>
     return """
         <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 3 user actions for the following persona: A police officer who is constantly trying to catch the pickpocket artist in the act.
         </example_input_1>
-    
-    
+
         <example_output_1>
-            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene. 
-            
+            Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
+
             Features
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
@@ -239,170 +303,98 @@ def _get_game_question_examples() -> str:
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-        
+
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
         </example_output_1>
-        
+
         <example_input_2>
-            Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 3 user actions for the following persona: a longtime hip-hop enthusiast who used to attend live shows all the time.
+            Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 2 user actions for the following persona: A middle-aged son who is a flight attendant, bonded with air travel stories.
         </example_input_2>
-        
         <example_output_2>
-            Implement a fun, streamlined web game called 'Rhythm Master' that challenges players to match beats and create their own hip-hop tracks.
-            
-            Features:
-            •  Create a game board as 4x4 grid of colorful buttons. The game board should resemble a DJ's mixing panel.
-            •  Use neon colors (e.g., hot pink, electric blue, lime green, and bright orange) for the buttons.
-            •  Display a score counter at the top of the screen 
-            •  Show a 'Play' button to start the game and a 'Reset' button to restart
-            •  Implement a timer that counts down from 60 seconds. When the timer ends, display a "Game Over" screen displaying the final score.
-            •  Generate a random sequence of button highlights for the player to follow.
-            •  The game should increase in difficulty as the player's score increases by speeding up the sequence and adding more buttons to remember. 
-            •  Provide audio feedback for correct and incorrect button presses using synthesized drum and bass sounds.
-            •  Animate button presses with a 'glow' effect, this effect should be distinct and easy for the player to identify.
-            •  Add visual effects like confetti when the player successfully completes a sequence
-            
-            User Actions:
-            1. Click the 'Play' button to start the game and begin the countdown timer 
-            2. Click on the colorful buttons in the correct sequence to match the generated pattern
-            3. Press the 'R' key to stop the current game and reset the score to zero 
-            
+            Implement a fun, streamlined web game called 'Turbulent Skies' where players navigate an airplane through various weather conditions and obstacles.
+
+                Features:
+                • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
+                • Display an airplane sprite that the player can move up and down.
+                • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
+                • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement.
+                • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
+                • Add floating luggage items that appear randomly on the screen and move from right to left.
+                • Display a score counter that increases over time and when luggage items are collected.
+                • Create corresponding visuals for weather changes.
+                • Implement a 'game over' condition when the turbulence meter is full, showing the final score and a 'Play Again' button.
+                • Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
+
+                User Actions:
+                1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
+                2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
         </example_output_2>
     """
+
+
+def _get_science_question_examples() -> str:
+    return """
+    <example_input_1>
+            Generate a self-contained coding problem that requires the programmer to implement a streamlined science simulation with persona inspired visuals and content, with 2 user actions for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
+    </example_input_1>
+
+    <example_output_1>
+        Create an interactive simulation of the Monty Hall problem to challenge skeptical users and demonstrate probability concepts.
+
+        Features:
+        • Create three closed doors displayed prominently on the screen.
+        • Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch.
+        • A scoreboard showing the number of wins and losses
+        • A reset button to start a new game
+        • Visual indicators for door selection and reveal (eg. a prize displayed behind the winning door, and a goat for the non-winning doors.)
+        • A background of a corridor with relevant decorations.
+        • Create a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.at
+
+        User Actions:
+        1. Click on a door to reveal what is behind it, then decide wheter to switch or stay.
+
+        2. Click on the 'Run Simulation' button to simulate the game 1000 times.
+    </example_output_1>
+    """
+
+
+def _get_animation_question_examples() -> str:
+    return """
+        <example_input_1>
+            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 2 user actions for the following persona: "A high school music teacher who passionately believes in making music resources more accessible to society".
+        </example_input_1>
+
+        <example_output_1>
+            "Create an interactive piano visualization using HTML, CSS, and JavaScript.
+
+                Features:
+                • User playable piano that should have 88 keys (52 white keys and 36 black keys). The user can play the piano by clicking on the piano keys.
+                • When the user hovers over a key, it should visually highlight to indicate it can be played.
+                • Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
+                • Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
+
+                User Actions:
+                1. Click on a piano key to play that note.
+                2. Adjust the volume slider to increase or decrease the loudness of the piano.
+        </example_output_1>
+        """
 
 
 def get_persona_question_examples(topic: Topics) -> str:
     if topic == Topics.GAMES:
         return _get_game_question_examples()
     if topic == Topics.SCIENCE:
-        return """
-    <example_input_1>
-            Generate a self-contained coding problem that requires the programmer to implement a science simulation with persona inspired visuals and content, with 3 requirements for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
-    </example_input_1>
-    
-    <example_output_1>
-        Create an interactive simulation of the Monty Hall problem to challenge skeptical users and demonstrate probability concepts.
-
-        Visual features:
-        - Three closed doors displayed prominently on the screen
-        - A scoreboard showing the number of wins and losses
-        - A reset button to start a new game
-        - Visual indicators for door selection and reveal
-        - A background of a corridor with relevant decorations.
-
-        Requirements:
-        1. Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch.
-
-        2. Add an interactive element where users can click on doors to make their initial selection and decide whether to switch after a door is revealed.
-
-        3. Include a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.
-
-    </example_output_1> 
-    """
+        return _get_science_question_examples()
     if topic == Topics.ANIMATION:
-        # put this into a  function
-        return """
-        <example_input_1>
-            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 3 requirements for the following persona: "A high school music teacher who passionately believes in making music resources more accessible to society".
-        </example_input_1>
-        
-        <example_output_1>
-            "Create an interactive piano visualization using HTML, CSS, and JavaScript. The piano should have 88 keys (52 white keys and 36 black keys). Implement the following user interactions:
-
-                1. When the user hovers over a key, it should visually highlight to indicate it can be played.
-
-                2. Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
-
-                3. Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
-
-                Ensure the visualization is responsive and works well on different screen sizes. Use only built-in JavaScript libraries and features for this implementation.
-                Note:
-                - The visualization should be implemented in JavaScript with HTML and CSS.
-                - Ensure that the output has both index.js and index.html files"
-        </example_output_1>
-        """
-
-
-#     Create an interactive naval battle minigame inspired by a Navy sailor's experience in the Pacific theater during World War II. The game should simulate the challenges faced during combat at sea.
-
-# Visual features:
-# • A top-down view of a naval battlefield, with a blue ocean background
-# • A player-controlled destroyer ship represented by a gray triangle
-# • Enemy ships represented by red triangles
-# • Depth charges represented by small black circles
-# • Explosions represented by expanding orange circles
-
-# Requirements:
-
-# 1. Implement ship movement for the player's destroyer using the arrow keys. The ship should rotate and move forward/backward based on key presses.
-
-# 2. Generate enemy ships that move in random patterns across the screen. Enemy ships should appear periodically from the edges of the screen.
-
-# 3. Create a depth charge deployment mechanism. When the spacebar is pressed, a depth charge should be released from the player's ship and sink slowly, expanding in size as it descends.
-
-# 4. Implement a collision detection system. When a depth charge reaches its maximum size and collides with an enemy ship, trigger an explosion animation and remove both the depth charge and the enemy ship from the screen.
-
-# The game should challenge the player to navigate the treacherous waters while strategically deploying depth charges to eliminate enemy vessels. Focus on creating a tense and immersive experience that captures the essence of naval warfare in the Pacific theater.
-# Note:
-# - Your output should be implemented in JavaScript with HTML and CSS.
-# - Ensure that the output has both index.js and index.html files
-
-
-# Create an interactive cybersecurity firewall simulation game with the following visual features and requirements:
-
-# Visual features:
-# • A dark-themed interface with neon blue and green accents to represent a futuristic cybersecurity environment
-# • A central circular area representing the protected network, surrounded by concentric rings symbolizing layers of firewall protection
-# • Animated particles moving around the screen to represent data packets and potential threats
-# • A sidebar displaying real-time statistics and controls
-
-# Requirements:
-
-# 1. Implement a particle system where blue particles represent legitimate data packets and red particles represent potential threats. The particles should move randomly across the screen towards the center.
-
-# 2. Create an interactive ring around the central protected area that the user can rotate using mouse movement. This ring acts as the AI-powered firewall, blocking red particles on contact while allowing blue particles to pass through.
-
-# 3. Develop a scoring system that increases when threats are blocked and decreases when legitimate packets are blocked or threats penetrate the firewall. Display the current score prominently on the screen and end the game if the score drops below zero.
-# Note:
-# - Your output should be implemented in JavaScript with HTML and CSS.
-# - Ensure that the output has both index.js and index.html files
-
-# "A talented guitarist who has had to adjust their playing style due to hearing loss"
-# ///
-
-# Implement a fun, streamlined, hyper-casual web game called 'Silent Strings' inspired by a guitarist adapting to hearing loss. The game should challenge players to 'play' guitar chords using visual cues instead of audio feedback.
-
-# General Features:
-# - Create a virtual guitar fretboard displayed on the screen.
-# - Show a series of chord diagrams that the player needs to match on the fretboard.
-# - Implement a scoring system based on the accuracy and speed of the player's chord formations.
-# - Display a timer counting down from 60 seconds for each game session.
-# - Show the current score and high score on the screen.
-
-# Visual Features:
-# - Design a stylized guitar fretboard with 6 strings and 5 frets.
-# - Use different colors for each string (e.g., yellow, blue, red, green, orange, purple).
-# - Represent finger positions on the fretboard as circular markers.
-# - Display chord diagrams above the fretboard using a simplified notation (colored dots on a grid).
-# - Create visual feedback for correct (green glow) and incorrect (red flash) chord formations.
-# - Implement a pulsing effect on the strings when a correct chord is formed to simulate vibration.
-# - Design a minimal, high-contrast interface suitable for players with visual impairments.
-
-# User Actions:
-# 1. Click or drag on the fretboard to place finger position markers.
-# 2. Press the spacebar to submit the current chord formation for scoring.
-# 3. Click a 'New Game' button to reset the timer and start a new 60-second session.
-# Note:
-# - Your output should be implemented in JavaScript with HTML and CSS.
-# - Ensure that the output has both index.js and index.html files
+        return _get_animation_question_examples()
 
 
 def _get_animation_answer_examples() -> str:
     return """
     <example_input_1>
-        Create an interactive visualization of a vaccine molecular structure. 
-        
+        Create an interactive visualization of a vaccine molecular structure.
+
         Features:
         • Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
         • Each atom should be represented by a sphere, with connecting lines between atoms.
@@ -411,11 +403,11 @@ def _get_animation_answer_examples() -> str:
         • Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
         • Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
         • Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
-        
+
         User actions:
         1. Hover over an atom to view more information about the atom.
         2. Adjust the slider to control the rotation speed of the molecule animation.
-        3. Click and drag the molecule to rotate it manually. 
+        3. Click and drag the molecule to rotate it manually.
     </example_input_1>
     <example_output_1>
         {
@@ -472,7 +464,7 @@ def _get_science_answer_examples() -> str:
             ],
             "installation_commands": "null",
             "additional_notes": "null"
-        }        
+        }
     </example_output_1>
     </example_input_2>
         Create an interactive golf ball trajectory simulator that models the physics of a golf ball's flight, incorporating factors like wind speed and direction.
@@ -513,7 +505,7 @@ def _get_science_answer_examples() -> str:
             ],
             "installation_commands": "null",
             "additional_notes": "null"
-        }        
+        }
     </example_output_2>
-    
+
     """
