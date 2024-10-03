@@ -1,6 +1,6 @@
 """
-Implementation of plan & solve approach using ReWOO, instead of suffering from abstraction hell.
-This exists to decouple our implementation of the code iterator from the main function in `iterator.py
+Implementation of plan & solve approach using ReWOO, instead of suffering from abstraction hell that is LangChain.
+This exists to decouple our implementation of the code iterator from the main function in `iterator.py`
 """
 
 import asyncio
