@@ -171,18 +171,18 @@ def _remove_error_logging_js(html_code: str) -> str:
     script_tags = soup.find_all("script")
 
     # Search for the script tag containing the pattern "function logErrorToServer"
-    error_logging_script = None
+    count = 0
     for script in script_tags:
         # make sure this matches whatever is inside errorLogging.js
-        if script.string and re.search("function logErrorToServer", script.string):
-            error_logging_script = script
-            break
-
-    # If the error logging script is found, remove it
-    if error_logging_script:
-        error_logging_script.decompose()
-    else:
-        logger.warning("Error logging script not found in the HTML code!!!")
+        # aggressively remove the script tag
+        if script.string and re.search(
+            r"function.*logErrorToServer.*\(errorData\)", script.string
+        ):
+            script.decompose()
+            count += 1
+            logger.debug(
+                f"Removed error logging script tag from the HTML code, total: {count}"
+            )
 
     html_code_stripped = str(soup)
     assert (
