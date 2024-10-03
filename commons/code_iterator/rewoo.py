@@ -178,6 +178,7 @@ def _map_tool_to_function(tool: Tool):
         raise NotImplementedError(f"Tool {tool.name} not implemented")
 
 
+@observe(as_type="generation", capture_input=False, capture_output=False)
 async def build_func_call(func: Callable, step: Step, rewoo_state: ReWOOState):
     logger.info(f"Building tool call for step {step.step_id}")
 
@@ -203,6 +204,9 @@ async def build_func_call(func: Callable, step: Step, rewoo_state: ReWOOState):
         Context: {rewoo_state.task}
         """
 
+    response_model = func_to_pydantic_model(func)
+    logger.debug(f"Inferred JSON schema: {response_model.model_json_schema()}")
+
     tool_client = instructor.from_openai(  # type: ignore
         AsyncOpenAI(
             **_get_llm_api_kwargs(Provider.OPENROUTER),  # type: ignore
@@ -210,21 +214,30 @@ async def build_func_call(func: Callable, step: Step, rewoo_state: ReWOOState):
         mode=instructor.Mode.PARALLEL_TOOLS,
     )
 
-    response_model = func_to_pydantic_model(func)
-    logger.debug(f"Inferred JSON schema: {response_model.model_json_schema()}")
-
     # parallel tool only for gpt-4-turbo tho
-    exec_args = await tool_client.chat.completions.create(
+    partial_func = functools.partial(
+        tool_client.chat.completions.create,
         messages=[{"role": "user", "content": tool_prompt}],
         model=get_settings().rewoo.func_call_builder,
         response_model=Iterable[response_model],
         max_tokens=8192,
     )
 
+    kwargs = get_kwargs_from_partial(partial_func)
+    exec_args = await partial_func()
     collected_args = []
     for exec_arg in exec_args:
         logger.debug(f"Got tool call params: {exec_arg} for step {step.tool=}")
         collected_args.append(exec_arg.model_dump())
+
+    langfuse_context.update_current_observation(
+        input=kwargs.pop("messages"),
+        model=kwargs.pop("model"),
+        output=collected_args,
+        metadata={
+            **kwargs,
+        },
+    )
 
     logger.debug(f"Collected args: {collected_args}")
     assert len(collected_args) == 1
