@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 name = "dojo-synthetic-api"
 description = "dojo synthetic api"
 readme = "README.md"
-authors = [{name = "jarvis8x7b"}]
+authors = [{name = "jarvis8x7b"}, {name = "mediumsizeworkingdog"}]
 license = {text = "MIT"}
 classifiers = [
   "Development Status :: 3 - Alpha",
