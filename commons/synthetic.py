@@ -322,7 +322,9 @@ async def generate_question(
             logger.error("No generator models left to try.")
             return None, None
         new_model = random.choice(remaining_models)
-        return await generate_question(client, new_model, _topic, persona)
+        return await generate_question(
+            client=client, model=new_model, _topic=_topic, persona=persona
+        )
     except Exception as e:
         print(f"Error occurred while generating question: {e}")
 
