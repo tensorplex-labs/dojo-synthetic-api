@@ -146,8 +146,15 @@ def _resolve_state_key(value: str, rewoo_state: ReWOOState):
 
     state_key_pattern = re.compile(r"<state_key>(.*?)<\/state_key>")
     matches: Iterable[str] = state_key_pattern.findall(value)
+
+    # attempt to access state key directly
+    if value in rewoo_state.results:
+        return rewoo_state.results[value]
+
+    # attempt to parse
     if len(matches) == 0:
-        raise ValueError("No state keys found in value")
+        # naively try to access state key directly, any errors get caught by try except from caller
+        raise ValueError(f"No state key found for key: {value}")
 
     unknown_keys = set(matches) - set(rewoo_state.results.keys())
     if len(unknown_keys) > 0:
@@ -259,7 +266,9 @@ async def _execute_step_naive(step: Step, rewoo_state: ReWOOState):
         try:
             exec_kwargs[key] = _resolve_state_key(value, rewoo_state)
         except ValueError:
-            logger.error(f"No state key found for key: {key}, value: {value[:40]}...")
+            logger.warning(
+                f"No state key found for key: {key}, value: {value[:20]}...{value[-20:] if len(value) > 40 else value}"
+            )
             pass
         except AssertionError:
             logger.error(
