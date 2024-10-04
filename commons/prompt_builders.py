@@ -42,7 +42,7 @@ def build_code_answer_prompt(
             - Ensure that your code directly executes any functions required to provide the solution to the task.
             - Your program must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
             - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped.
-            - You will be imprisoned for all eternity if you output any code without escaping special characters. 
+            - You will be imprisoned for all eternity if you output any code without escaping special characters.
             - Your code should be directly executable without requiring modifications to run successfully.
             - Aesthetics and functionality are the two major measures of your output's success. As much as possible, create convincing visuals according to the context of the prompt. Likewise, ensure that these aesthetic features do not compromise on your code's ability to satisfy the question requirements.
             - Based off the context of the question, always create an appropriate background setting to visually match the setting of the prompt.
