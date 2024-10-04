@@ -315,16 +315,18 @@ async def generate_question(
         logger.error(
             f"Failed to generate question after {MAX_RETRIES} attempts. Switching model."
         )
-        used_models.add(model)
-        remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
-        # return if no models remaining
-        if not remaining_models:
-            logger.error("No generator models left to try.")
-            return None, None
-        new_model = random.choice(remaining_models)
-        return await generate_question(
-            client=client, model=new_model, _topic=_topic, persona=persona
-        )
+        raise
+
+        # used_models.add(model)
+        # remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
+        # # return if no models remaining
+        # if not remaining_models:
+        #     logger.error("No generator models left to try.")
+        #     return None, None
+        # new_model = random.choice(remaining_models)
+        # return await generate_question(
+        #     client=client, model=new_model, _topic=_topic, persona=persona
+        # )
     except Exception as e:
         logger.error(f"Error occurred while generating question: {e}")
 
