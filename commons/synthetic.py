@@ -61,12 +61,6 @@ class CodeAnswer(BaseModel):
     files: List[FileObject] = Field(
         description="Array of FileObject, that are part of the code solution. Must include index.html, and index.js a Javascript solution"
     )
-    installation_commands: str = Field(
-        description="Terminal commands for the code to be able to run to install any third-party packages for the code to be able to run"
-    )
-    additional_notes: str | None = Field(
-        description="Any additional notes or comments about the code solution"
-    )
 
 
 class ErrorAnswer(BaseModel):
@@ -593,11 +587,7 @@ def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
         if file.filename == "index.html":
             file.content = str(soup)
 
-    return CodeAnswer(
-        files=new_files,
-        installation_commands=ans.installation_commands,
-        additional_notes=ans.additional_notes,
-    )
+    return CodeAnswer(files=new_files)
 
 
 # use trace to avoid double dipping cost logging on nested observations
@@ -743,11 +733,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         responses.append(
             {
                 "model": model,
-                "completion": {
-                    "files": formatted_files,
-                    "installation_commands": result.installation_commands,
-                    "additional_notes": result.additional_notes,
-                },
+                "completion": {"files": formatted_files},
                 "cid": completion_id,
             }
         )
