@@ -47,7 +47,7 @@ class GenerationSettings(BaseSettings):
 
 class ReWOOSettings(BaseSettings):
     # used to generate the plan
-    planner: str = Field(default="anthropic/claude-3.5-sonnet")
+    planner: str = Field(default="openai/gpt-4-turbo")
     # used to determine if given the plan, task, and evidence, the solution fulfils the task
     solver: str = Field(default="anthropic/claude-3.5-sonnet")
     # we MUST use gpt-4-turbo, only this is supported for parallel tool calls, used to generate the tool call params
