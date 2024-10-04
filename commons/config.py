@@ -45,7 +45,7 @@ class GenerationSettings(BaseSettings):
     buffer_size: int = Field(default=4)
 
 
-class ReWOOModelConfig(BaseSettings):
+class ReWOOSettings(BaseSettings):
     # used to generate the plan
     planner: str = Field(default="anthropic/claude-3.5-sonnet")
     # used to determine if given the plan, task, and evidence, the solution fulfils the task
@@ -55,6 +55,8 @@ class ReWOOModelConfig(BaseSettings):
 
     # used as a maximum time that a step has to wait for dependencies to resolve
     max_dep_resolve_sec: int = Field(default=60)
+    # used as a maximum time that the WHOLE process takes for `plan_and_solve`
+    max_solve_time: int = Field(default=180)
 
     class ToolCallModelConfig(BaseSettings):
         # let an LLM call another LLM
@@ -71,7 +73,7 @@ class Settings(BaseSettings):
     llm_api: LlmApiSettings = LlmApiSettings()
     uvicorn: UvicornSettings = UvicornSettings()
     generation: GenerationSettings = GenerationSettings()
-    rewoo: ReWOOModelConfig = ReWOOModelConfig()
+    rewoo: ReWOOSettings = ReWOOSettings()
 
     assert rewoo.func_call_builder == "openai/gpt-4-turbo"
 
