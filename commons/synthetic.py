@@ -496,7 +496,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     # logger.info(f"@@@@@ persona: {persona}")
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
-    selected_topic = random.choices(list(Topics), weights=[0, 0, 1], k=1)
+    selected_topic = random.choices(list(Topics), weights=[0.33, 0.33, 0.33], k=1)
 
     # 3. generate a question using the topic
     question_prompt, _ = await generate_question(
