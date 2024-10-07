@@ -128,7 +128,6 @@ async def generate_question(
                     "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
                 }
 
-                logger.info(kwargs["messages"][0])
                 response_model = await client.chat.completions.create(**kwargs)
                 coding_question = response_model.question
                 coding_question = additional_notes_for_question_prompt(coding_question)
@@ -148,7 +147,7 @@ async def generate_question(
                         **kwargs_clone,
                     },
                 )
-                logger.success(f"Generated question: {coding_question}")
+                logger.success(f"Completed generating base question: {coding_question}")
                 previous_coding_question = coding_question
                 return coding_question, kwargs
     except RetryError:
@@ -354,10 +353,7 @@ async def augment_question(
             **kwargs_clone,
         },
     )
-    logger.success(f"Original question: {question}")
-    logger.success(
-        f"Augmented question and level:  {augmentation_level}, {response_model.question}"
-    )
+    logger.success(f"Completed generating augmentation {augmentation_level}")
     return response_model.question
 
 
