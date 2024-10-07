@@ -292,7 +292,7 @@ def _get_game_question_examples() -> str:
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-            
+
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
         </example_output_1>
