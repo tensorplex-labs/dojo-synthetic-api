@@ -49,7 +49,6 @@ def build_code_answer_prompt(
             - Avoid using default colours such as 'red' and 'blue'. Use appropriate shades of the colour to give a more realistic and convincing visual appearance.
             - When creating visuals, keep in mind clarity and recognizability. Visuals should be realistic when possible.
             - Ensure that your code does not use any external files such as images, videos or audio files.
-            - Your program should have a stable frame rate across different computer displays. You do not need to cater for mobile devices.
             - Ensure your code awaits for any required components to load before executing.
             - Your implementation will be viewed from a computer web browser.
             - Always explain to the user how to interact with the program in a minimal and unintrusive manner.
