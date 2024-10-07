@@ -61,6 +61,7 @@ def build_code_answer_prompt(
             - Ensure your output will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
             - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it should not also cause the browser to scroll.
             - Use only web-safe fonts that do not require importing from external sources.
+            - Ensure any implementations of time are accurate and not dependent on device frame rate.
             - Refer to the <examples>
             - Your output should follow the <response_format>
         </instructions>

@@ -223,9 +223,9 @@ def _get_game_answer_examples() -> str:
             • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement. Create corresponding visual changes for the weather events.
             • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
             • Add floating luggage items that appear randomly on the screen and move from right to left.
-            • Display a score counter that increases over time and when luggage items are collected.
-            • Implement a 'game over' condition when the turbulence meter is full, showing the final score and a 'Play Again' button.
+            • Display a score counter that increases when luggage items are collected.
             • Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
+            • Implement a 'game over' condition when the turbulence meter is full, or if the fuel gauge is empty, showing the final score and a 'Play Again' button.
 
             User Actions:
             1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
@@ -288,11 +288,11 @@ def _get_game_question_examples() -> str:
             • Create a stable 2D city for the players and NPC to move through.
             • Multiple animated pedestrian figures moving smoothly around the city
             • One pedestrian figure representing the pickpocket, visually distinct
-            • One police officer figure that can be smoothly controlled by the user using WASD keys.
+            • One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled.
             • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
             • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
             • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
-
+            
             User Actions:
             • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
         </example_output_1>
@@ -303,21 +303,20 @@ def _get_game_question_examples() -> str:
         <example_output_2>
             Implement a fun, streamlined web game called 'Turbulent Skies' where players navigate an airplane through various weather conditions and obstacles.
 
-                Features:
-                • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
-                • Display an airplane sprite that the player can move up and down.
-                • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
-                • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement.
-                • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
-                • Add floating luggage items that appear randomly on the screen and move from right to left.
-                • Display a score counter that increases over time and when luggage items are collected.
-                • Create corresponding visuals for weather changes.
-                • Implement a 'game over' condition when the turbulence meter is full, showing the final score and a 'Play Again' button.
-                • Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
+            Features:
+            • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
+            • Display an airplane sprite that the player can move up and down.
+            • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
+            • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement. Create corresponding visual changes for the weather events.
+            • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
+            • Add floating luggage items that appear randomly on the screen and move from right to left.
+            • Display a score counter that increases when luggage items are collected.
+            • Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
+            • Implement a 'game over' condition when the turbulence meter is full, or if the fuel gauge is empty, showing the final score and a 'Play Again' button.
 
-                User Actions:
-                1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
-                2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
+            User Actions:
+            1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
+            2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
         </example_output_2>
     """
 
