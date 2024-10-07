@@ -427,8 +427,7 @@ async def _solve(rewoo_state: ReWOOState) -> str:
     return completion.html_code
 
 
-@observe(as_type="generation", capture_input=False, capture_output=False)
-async def plan_and_solve(html_code: str):
+async def _plan_and_solve(html_code: str):
     # TODO implement backtracking to be able to figure out when LLM's iteration actually makes code worse
     task = _build_task_prompt(html_code)
     plan = await _generate_plan(task)
@@ -449,6 +448,26 @@ async def plan_and_solve(html_code: str):
     solution = await _solve(rewoo_state)
     logger.info(f"Plan and Solve approach using ReWOO got solution:{solution=}")
     return solution
+
+
+@observe(as_type="generation", capture_input=False, capture_output=False)
+async def plan_and_solve(html_code: str):
+    timeout_sec = get_settings().rewoo.max_solve_time
+    try:
+        solution = await asyncio.wait_for(
+            _plan_and_solve(html_code), timeout=timeout_sec
+        )
+        return solution
+    except asyncio.TimeoutError:
+        logger.error(
+            f"Plan and solve approach using ReWOO timed out after {timeout_sec} seconds, returning original code."
+        )
+        return html_code
+    except Exception as exc:
+        logger.error(
+            f"Error in plan and solve approach using ReWOO: {exc}, returning original code."
+        )
+        return html_code
 
 
 if __name__ == "__main__":

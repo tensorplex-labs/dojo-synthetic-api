@@ -210,9 +210,7 @@ def _get_game_answer_examples() -> str:
                         "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Police Officer Catch the Pickpocket</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:Arial,sans-serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;background-color:#8B8B8B}#scoreTimer{position:absolute;top:10px;left:10px;color:white;font-size:18px;background-color:rgba(0,0,0,0.5);padding:5px 10px;border-radius:5px}#gameOverScreen{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background-color:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;text-align:center;display:none}#restartButton{margin-top:10px;padding:10px 20px;font-size:16px;cursor:pointer}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="scoreTimer">Score: 0 | Time: 120s</div><div id="gameOverScreen"><h2>Game Over</h2><p>Final Score: <span id="finalScore"></span></p><button id="restartButton">Restart</button></div></div></body></html>",
                         "language": "html"
                     }
-                ],
-                "installation_commands": "null",
-                "additional_notes": "The code uses built-in libraries so no additional commands are required."
+                ]
             }
         </example_output_1>
         <example_input_2>
@@ -248,9 +246,7 @@ def _get_game_answer_examples() -> str:
                         "content": "<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta content="width=device-width, initial-scale=1.0" name="viewport" /><title>Turbulent Skies</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:Arial,sans-serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%;background-color:#7dc9e7}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%}#turbulenceMeter{position:absolute;top:10px;left:10px;width:200px;height:20px;background-color:rgba(255,255,255,0.5);border:2px solid #333}#turbulenceFill{width:0%;height:100%;background-color:#ff4500}#score{position:absolute;top:10px;right:10px;color:white;font-size:24px;text-shadow:2px 2px 4px rgba(0,0,0,0.5)}#gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background-color:rgba(0,0,0,0.7);color:white;padding:20px;border-radius:10px;text-align:center;display:none}#playAgain{margin-top:20px;padding:10px 20px;font-size:18px;cursor:pointer}#smoothAirCooldown{position:absolute;bottom:10px;left:10px;color:white;font-size:18px;text-shadow:2px 2px 4px rgba(0,0,0,0.5)}#fuelGauge{position:absolute;top:40px;left:10px;width:200px;height:20px;background-color:rgba(255,255,255,0.5);border:2px solid #333}#fuelFill{width:100%;height:100%;background-color:#32cd32;transition:width 0.3s}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="turbulenceMeter"><div id="turbulenceFill"></div></div><div id="fuelGauge"><div id="fuelFill"></div></div><div id="score">Score: 0</div><div id="smoothAirCooldown">Smooth Air: Ready</div><div id="gameOver"><h2>Game Over</h2><p>Your Score: <span id="finalScore"></span></p><button id="playAgain">Play Again</button></div></div></body></html>",
                         "language": "html"
                     }
-                ],
-                "installation_commands": "null",
-                "additional_notes": "The code uses built-in libraries so no additional commands are required."
+                ]
             }
         </example_output_2>
     """
@@ -416,9 +412,7 @@ def _get_animation_answer_examples() -> str:
                 "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Solar System Orbit Simulator</title><style>body{background-color:#000;margin:0;font-family:Arial,sans-serif;overflow:hidden}#canvas{display:block}#controls{color:#fff;position:absolute;top:10px;left:10px}#info{color:#fff;background-color:#000000b3;border-radius:5px;padding:10px;display:none;position:absolute;top:10px;right:10px}.slider{width:200px}</style></head><body><canvas id="canvas"></canvas><div id="controls"><label for="speed">Orbit Speed:</label><input type="range" id="speed" class="slider" min="0.1" max="5" step="0.1" value="1" /><button id="toggleOrbits">Toggle Orbit Paths</button></div><div id="info"></div><script src="./index.js"></script></body></html>",
                 "language": "html"
             }
-            ],
-            "installation_commands": "null",
-            "additional_notes": "The code uses built-in libraries so no additional commands are required."
+            ]
         }
     </example_output_1>
     """
@@ -455,9 +449,7 @@ def _get_science_answer_examples() -> str:
                 "content": "<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'unsafe-inline'; img-src data: blob: https://threejsfundamentals.org; connect-src 'none'; form-action 'none'; base-uri 'none';"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Newton's Cradle</title><style>body{}#content-wrapper{}::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:hsla(60,17%,0%,0);}::-webkit-scrollbar-thumb{background:hsla(175,100%,36%,0.387);border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:hsl(175,100%,36%);}body{margin:0;overflow:hidden;background-color:#f0f0f0;}canvas{display:block;}#speedSlider{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:200px;}#instructions{position:absolute;top:10px;left:10px;color:#333;font-family:Arial,sans-serif;font-size:14px;}</style></head><body><canvas id="newtonsCradle"></canvas><input type="range" id="speedSlider" min="0.1" max="2" step="0.1" value="1"><div id="instructions">Click and drag the leftmost or rightmost ball to interact</div><script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script><script src="index.js"></script></body></html>",
                 "language": "html"
             }
-            ],
-            "installation_commands": "null",
-            "additional_notes": "null"
+            ]
         }
     </example_output_1>
     </example_input_2>
@@ -496,9 +488,7 @@ def _get_science_answer_examples() -> str:
                 "content": "<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'unsafe-inline'; img-src data: blob: https://threejsfundamentals.org; connect-src 'none'; form-action 'none'; base-uri 'none';"><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>Golf Ball Trajectory Simulator</title><style>body { } #content-wrapper { } ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: hsla(60, 17%, 0%, 0); } ::-webkit-scrollbar-thumb { background: hsla(175, 100%, 36%, 0.387); border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: hsl(175, 100%, 36%); } body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; } #canvas { display: block; } #controls { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 5px; } #controls input { width: 100px; } #swingButton { margin-top: 10px; } #scoreboard { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 5px; }</style></head><body><canvas id="canvas"></canvas><div id="controls"><label>Power: <input id="powerSlider" max="100" min="0" type="range" value="50"/></label><br/><label>Angle: <input id="angleSlider" max="90" min="0" type="range" value="45"/></label><br/><label>Wind Speed: <input id="windSpeedSlider" max="20" min="0" type="range" value="0"/></label><br/><label>Wind Direction: <input id="windDirectionSlider" max="360" min="0" type="range" value="0"/></label><br/><button id="swingButton">Swing!</button></div><div id="scoreboard"><p>Current Distance: <span id="currentDistance">0</span> m</p><p>Best Distance: <span id="bestDistance">0</span> m</p></div><script src="index.js"></script></body></html>",
                 "language": "html"
             }
-            ],
-            "installation_commands": "null",
-            "additional_notes": "null"
+            ]
         }
     </example_output_2>
 
