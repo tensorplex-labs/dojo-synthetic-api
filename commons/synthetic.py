@@ -182,7 +182,7 @@ async def generate_answer(
     code: str | None = None,
 ) -> Tuple[str, CodeAnswer | None]:
     """Generates a coding question answer for a given coding question."""
-    import commons.config as config
+    # import commons.config as config
 
     logger.info(f"Generating code answer with model: {model}")
     if bool(err) != bool(code):
@@ -249,14 +249,15 @@ async def generate_answer(
         logger.error(
             f"Failed to generate answer after {MAX_RETRIES} attempts. Switching model."
         )
-        used_models.add(model)
-        remaining_models = [m for m in config.ANSWER_MODELS if m not in used_models]
-        # return if no models remaining
-        if not remaining_models:
-            logger.error("No answer models left to try.")
-            return model, None
-        new_model = random.choice(remaining_models)
-        return await generate_answer(client, new_model, question, topic=topic)
+        raise
+        # used_models.add(model)
+        # remaining_models = [m for m in config.ANSWER_MODELS if m not in used_models]
+        # # return if no models remaining
+        # if not remaining_models:
+        #     logger.error("No answer models left to try.")
+        #     return model, None
+        # new_model = random.choice(remaining_models)
+        # return await generate_answer(client, new_model, question, topic=topic)
     except Exception as e:
         logger.error(f"Error occurred while generating code answer: {e}")
 
@@ -438,7 +439,8 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         level: AugmentationLevel | None = None,
     ):
         model, result = await generate_answer(client, model, question, topic=topic)
-
+        if result is None:
+            raise ValueError("generate_answer() returned none")
         # TODO remove after testing ensure single index.html file just for now
         ans_with_index_html = build_single_index_html(result)
         html_file = next(
@@ -492,14 +494,15 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     # logger.info(f"@@@@@ persona: {persona}")
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
-    selected_topic = random.choices(list(Topics), weights=[0.33, 0.33, 0.33], k=1)
+    selected_topic = random.choices(list(Topics), weights=[0.33, 0.66, 0], k=1)
 
     # 3. generate a question using the topic
     question_prompt, _ = await generate_question(
         client, question_model, selected_topic[0], persona
     )
 
-    assert type(question_prompt) is str
+    if question_prompt is None:
+        raise ValueError("generate_question() returned null")
 
     augmented_prompts = []
     if response_strategy == ResponseStrategy.NO_AUGMENTATION:
