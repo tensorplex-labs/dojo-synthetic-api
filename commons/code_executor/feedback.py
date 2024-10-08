@@ -147,9 +147,25 @@ def _inject_error_logging_js(html_code: str) -> str:
     html_tag = soup.find("html")
 
     if html_tag:
-        new_tag = soup.new_tag("script")
-        new_tag.string = error_logging_js
-        html_tag.insert(1, new_tag)
+        # Check for existing commented logging code
+        existing_script = soup.find("script")
+        if (
+            existing_script
+            and existing_script.string
+            and re.search(
+                r"/\*\s*function\s+logErrorToServer\s*\(errorData\)",
+                existing_script.string,
+                re.DOTALL,
+            )
+        ):
+            # Uncomment the existing code
+            uncommented_code = re.sub(r"/\*|\*/", "", existing_script.string)
+            existing_script.string = uncommented_code
+        else:
+            # If no commented code found, then inject logging code
+            new_tag = soup.new_tag("script")
+            new_tag.string = error_logging_js
+            html_tag.insert(1, new_tag)
     else:
         logger.warning("No <html> tag found in the HTML code")
 
@@ -331,7 +347,40 @@ async def get_feedback(html_code: str, preserve_files: bool = False) -> tuple[st
         # remove the sandbox work dir
         await asyncio.to_thread(shutil.rmtree, run_dir, ignore_errors=True)
 
-    return nodejs_server_feedback, modified_code
+    # comment out injected code before returning
+    commented_html = _comment_injected_code(modified_code)
+    return nodejs_server_feedback, commented_html
+
+
+def _comment_injected_code(code_with_injections: str) -> str:
+    """
+    comments out the previously inserted JS logging code from the HTML.
+
+    Args:
+    code_with_injections (str): The HTML code to comment the error logging JavaScript from.
+
+    Returns:
+    str: The modified HTML code with the error logging JavaScript commented out.
+    """
+    soup = BeautifulSoup(code_with_injections, "html.parser")
+    html_tag = soup.find("html")
+    if html_tag:
+        script_tag = soup.find("script")
+        if (
+            script_tag
+            and script_tag.string
+            and re.search(
+                r"function.*logErrorToServer.*\(errorData\)", script_tag.string
+            )
+        ):
+            commented_content = f"/*{script_tag.string}*/"
+            script_tag.string = commented_content
+        else:
+            logger.warning("No <script> tag found in the html tag")
+    else:
+        logger.warning("No <html> tag found in the HTML code")
+
+    return str(soup)
 
 
 async def _ensure_docker_image_built():
@@ -381,3 +430,42 @@ async def _ensure_docker_image_built():
 #             continue
 
 #     return error_messages
+
+
+# main for testing commenting and uncommenting injected code.
+def main():
+    """
+    1. call _inject_code and save as file
+    2. comment that code and save as file
+    3. call _inject on the file from 2.
+    """
+    html_code: str = ""
+    try:
+        with open(FILE_DIR + "/clean.html") as f:
+            html_code = f.read()
+    except Exception as e:
+        logger.error(f"Error reading clean.html: {e}")
+
+    # 1. inject code save as injected.html
+    injected_code = _inject_error_logging_js(html_code)
+    with open(FILE_DIR + "/injected.html", "w") as f:
+        f.write(injected_code)
+    print(f"logging code injected. Output saved to {FILE_DIR}/injected.html")
+
+    # 2 comment code save as commented.html
+    commented_code = _comment_injected_code(injected_code)
+    with open(FILE_DIR + "/commented.html", "w") as f:
+        f.write(commented_code)
+    print(f"logging code commented. Output saved to {FILE_DIR}/commented.html")
+
+    # 3 inject on commented code
+    uncommented = _inject_error_logging_js(commented_code)
+    with open(FILE_DIR + "/uncommented.html", "w") as f:
+        f.write(uncommented)
+    print(
+        f"Error logging JavaScript removed. Output saved to {FILE_DIR}/uncommented.html"
+    )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

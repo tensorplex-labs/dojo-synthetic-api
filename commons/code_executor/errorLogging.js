@@ -1,5 +1,4 @@
 function logErrorToServer(errorData) {
-  // sends errors to endpoint defined in server.js
   fetch("/log-error", {
     method: "POST",
     headers: {
@@ -21,7 +20,7 @@ window.onunhandledrejection = function (event) {
 
 window.addEventListener("error", function (event) {
   const errorData = {
-    type: event.error ? event.error.name : "Error", // Default to "Error" if event.error is undefined
+    type: event.error ? event.error.name : "Error",
     message: event.error ? event.error.message : event.message,
     source: event.filename,
     lineno: event.lineno,
