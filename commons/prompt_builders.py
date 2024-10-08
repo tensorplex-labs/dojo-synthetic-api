@@ -1,4 +1,3 @@
-import random
 import textwrap
 
 from loguru import logger
@@ -15,30 +14,6 @@ from commons.types import Topics
 def build_code_answer_prompt(
     question: str, include_few_shot_examples: bool, topic: Topics, answer_format
 ) -> str:
-    # use separate examples for games topic
-    # games_examples_section = ""
-    # if topic == Topics.GAMES:
-    #     CODE_ANS_PROMPT = f"""
-    #     <user>
-    #     Generate me a game using HTML, JS, and CSS according to these instructions: \n {question}
-
-    #     Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
-
-    #     Here is an example for your reference:
-    #     {games_examples_section}
-
-    #     Answer according to the JSON_SCHEMA:
-    #     </user>
-    #     """
-    #     if include_few_shot_examples:
-    #         games_examples_section = f"""
-    #         {get_games_examples()}
-
-    #     """
-    #     return textwrap.dedent(
-    #         CODE_ANS_PROMPT.format(games_examples_section=games_examples_section)
-    #     )
-
     CODE_ANS_PROMPT = """
     <system>
         <examples>
@@ -60,35 +35,33 @@ def build_code_answer_prompt(
         </role>
         <instructions>
             Always follow these instructions:
-            - You must assume that you do not have access to the file system, therefore if any test data is provided, you must store it in memory appropriately in the necessary variable and not in a file.
+            - You do not have access to the file system. Do not store any data in storage or as a file.
             - You must not provide any other text or explanations.
-            - You must provide all code required to ensure that your solution is complete.
+            - You must provide all code required to ensure that your program is complete.
             - Do not leave out any details for brevity.
-            - Ensure that your code solution directly executes any functions required to provide the solution to the task.
-            - Your solution must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
-            - You are able to write to multiple output file formats depending on your specific use case
-            - Remember to include installation commands for any dependencies required for the code to run
-            - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
-            - The provided code solution should be directly executable without requiring modifications to run successfully.
+            - Ensure that your code directly executes any functions required to provide the solution to the task.
+            - Your program must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
+            - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped.
+            - You will be imprisoned for all eternity if you output any code without escaping special characters.
+            - Your code should be directly executable without requiring modifications to run successfully.
             - Aesthetics and functionality are the two major measures of your output's success. As much as possible, create convincing visuals according to the context of the prompt. Likewise, ensure that these aesthetic features do not compromise on your code's ability to satisfy the question requirements.
             - Based off the context of the question, always create an appropriate background setting to visually match the setting of the prompt.
-            - When possible, avoid using default colours such as 'red' and 'blue'. Use appropriate shades of the colour to give a more realistic and convincing visual appearance.
+            - Avoid using default colours such as 'red' and 'blue'. Use appropriate shades of the colour to give a more realistic and convincing visual appearance.
             - When creating visuals, keep in mind clarity and recognizability. Visuals should be realistic when possible.
-            - Make sure to check for correct orientation and location of all objects.
-            - Ensure that any moving components are animated smoothly for maximum clarity.
-            - Ensure that your solution does not use any external files such as images, videos or audio files.
-            - Ensure your solution awaits for any required components to load before executing.
+            - Ensure that your code does not use any external files such as images, videos or audio files.
+            - Ensure your code awaits for any required components to load before executing.
             - Your implementation will be viewed from a computer web browser.
             - Always explain to the user how to interact with the program in a minimal and unintrusive manner.
             - For performance reasons, do not create an unlimited number of objects.
             - Use colour to contrast different elements from one another.
             - Any user interface elements should be small, minimal and unintrusive. Avoid making frames. The main focus of the program should be the subject being visualized.
             - Your code must not require the use of the user's microphone or camera.
-            - Your code must not use any external libraries.
+            - Your code must not use any external libraries, data or APIs.
             - Your output must display in a 16:9 aspect ratio.
             - Ensure your output will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
-            - Ensure any user inputs do not trigger the default browser behaviour. If the user uses arrow keys to interact, it should not also trigger scrolling of the browser.
+            - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it should not also cause the browser to scroll.
             - Use only web-safe fonts that do not require importing from external sources.
+            - Ensure any implementations of time are accurate and not dependent on device frame rate.
             - Refer to the <examples>
             - Your output should follow the <response_format>
         </instructions>
@@ -109,6 +82,7 @@ def build_code_answer_prompt(
         {get_answer_examples(topic)}
         """
     topic_context = ""
+    # if topic == Topics.GAMES:
 
     # if topic == Topics.THREE_D:
     #     topic_context = """
@@ -200,7 +174,7 @@ def build_code_generation_question_prompt(
     logger.info(f"Generating {topic} question with {num_requirements} requirements")
     # reduce num of user requirements for games.
     if topic == Topics.GAMES:
-        num_requirements = random.choices([2, 3], weights=[0.7, 0.3])[0]
+        num_requirements = 2
     if persona:
         return build_question_with_persona(persona, num_requirements, topic=topic)
     else:
@@ -287,8 +261,10 @@ def build_code_generation_question_prompt(
 
 
 def build_question_with_persona(persona: str, num_requirements: int, topic: Topics):
+    topic_context = ""
     if topic == Topics.GAMES:
         subject = "fun, streamlined, hyper-casual web game"
+        topic_context = "- Your question should not contain any audio features."
     elif topic == Topics.SCIENCE:
         subject = "streamlined, science simulation"
     else:
@@ -315,7 +291,7 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         - Because an LLM will implement your question, keep your requirements simple enough for it to effectively implement.
         - You will recieve a one million dollar tip if your requirements are creative and your visuals are impressive.
         - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
-        - Take care that the question does not require the use of any external files (images, videos and audio).
+        - Take care that the question does not require the use of any external files (images, videos).
         - Ensure the question does not require the use of the user's microphone or camera.
         - The program will be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user actions should be designed with a desktop user in mind.
         - Ensure your user actions will not interfere with each other. Each action should be easily executed in isolation from the others.
@@ -323,6 +299,7 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         - It is imperative for your question to faithfully implement a {subject}. You should sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
         - Ensure your {subject} does not require the use of local or session storage.
         - Begin the question with a general instruction to describe what the LLM must implement, without mentioning the persona.
+        {topic_context}
     </instructions>
     <reference_examples>
         Here are some example outputs for your reference:
