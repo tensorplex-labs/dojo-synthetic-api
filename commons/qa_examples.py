@@ -179,7 +179,6 @@ def get_answer_examples(topic: Topics) -> str:
 
 
 def _get_game_answer_examples() -> str:
-    # return ""
     return """
         <example_input_1>
             Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.

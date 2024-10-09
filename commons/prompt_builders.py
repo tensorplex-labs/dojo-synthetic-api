@@ -1,13 +1,7 @@
 import textwrap
 
-from loguru import logger
-
 from commons.qa_examples import get_answer_examples, get_persona_question_examples
 from commons.types import Topics
-
-# class Language(Enum):
-#     PYTHON = "Python"
-#     JAVASCRIPT = "Javascript"
 
 
 # answer_format should be the type of dict[Str, Any].
@@ -82,22 +76,7 @@ def build_code_answer_prompt(
         {get_answer_examples(topic)}
         """
     topic_context = ""
-    # if topic == Topics.GAMES:
 
-    # if topic == Topics.THREE_D:
-    #     topic_context = """
-    #     - If the question requires 3D visualization, use the threeJS library to help you with your 3D coding. Do not use any other external libraries.
-    #     - Ensure your threeJS code does not require additional external files such as images, videos or audio files.
-    #     - Import the threeJS library from unpkg.com  in a script tag inside of index.html. Import any additional threeJS sublibraries with the same method if you use them.
-    #     - In your implementation, build with clarity. It is preferred to create fewer but higher quality recognizable elements rather than many non-descript elements. Quality over quantity.
-    #     - Do not neglect the aesthetics of your program. Avoid using default colours to create a more realistic and beautiful visual.
-    #     - Include relevant background elements to suit the environment of the question.
-    #     - The point of view of the user must be fixed. All elements should be viewable by the user without the need for a change of view or camera navigation.
-    #     - Ensure your solution does not require the use of supplementary files such as images, audio or videos.
-    #     - Your solution should only have visual elements. Do not include audio.
-    #     - Your code must be functional (compile and execute without errors) whilst adhering to the question requirements.
-    #     - Use inbuilt textures. Do not import any textures the threejs website
-    #     """
     return textwrap.dedent(
         CODE_ANS_PROMPT.format(
             question=question,
@@ -169,102 +148,19 @@ def build_game_meta_prompt() -> str:
 def build_code_generation_question_prompt(
     num_requirements: int,
     topic: Topics,
-    persona: str | None,
+    persona: str,
 ) -> str:
-    logger.info(f"Generating {topic} question with {num_requirements} requirements")
     # reduce num of user requirements for games.
     if topic == Topics.GAMES:
         num_requirements = 2
-    if persona:
-        return build_question_with_persona(persona, num_requirements, topic=topic)
-    else:
-        return "deprecated"
-    # CODE_GEN_PROMPT = """
-    # <system>
-    # You are an expert AI prompt engineer that specializes at creating prompts for programming. Your task is to create self-contained coding problems with a specific topic and number of requirements, which will be provided by the user.
-    # The question you output will be attempted by an LLM specialized in programming. As such the more specific your instructions are the better.
-
-    # Always follow these guidelines:
-    # - Your output must start by detailing the visual features of your question in detail. Your description should be in bullet points.
-    # - After your visual features, you must state your specific requirements as a numbered list. Avoid repeating information from the overview in your requirements.
-    # - Be sure to separate your requirements with new lines for readability.
-    # - Be specific in your instructions. State clearly what features are required both visualy and functionally.
-    # - The question you output must specify both the functional and visual features required.
-    # - Visuals should be recognizable but without compromising on functionality.
-    # - At least one of your requirements should be a user interaction, but not all of your requirements can be user interactions either.
-    # - Adhere to good UX principles. Your user interactions should be intuitive to the context of the question.
-    # - Ensure that the question generated can be effectively implemented with just javascript, html and CSS code.
-    # - Do not ask for ASCII art in your question.
-    # - Given the #Previous Coding Question#, you must ensure that the #Unique Coding Question# is totally different than #Previous Coding Question# in terms of functionality requirement, i.e. should not include keystrokes if #Previous Coding Question# includes keystrokes.
-    # - If you reuse similar requirements in #Previous Coding Question#, you will be fined 1 million dollars and sentenced to 100 years in prison.
-    # - I will tip you five hundred thousand dollars if you are creative with your #Unique Coding Question#.
-    # - #Unique Coding Question# generated must require the programmer to code using only Javascript, HTML and CSS.
-    # - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
-    # - Ensure that the question does not require the use of external files (images, videos and audio).
-    # - The program will ultimately be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user interactions should be designed with a desktop user in mind.
-    # - Ensure your user interactions will not interfere with each other, each interaction should be easily executed in isolation from the others.
-    # - Your question must use new lines to separate the requirements section from the rest of your questions to improve human readability.
-    # - {topic_context}
-
-    # #Previous Coding Question# (the final output should not include the objects used in the Previous Coding Question examples):
-    # {previous_coding_question}
-
-    # Here are the instructions from your user:
-    # Generate a short, self-contained coding problem that requires the programmer to output a {output}, through the piece of code with {num_requirements} requirements.
-
-    # Adhere to the guidelines given to you.
-
-    # </system>
-
-    # #Unique Coding Question#:
-    # """
-    # #    - The question you are generating will subsequently be implemented by an AI large language model. Please ensure that the question is one that can be effectively implemented by an LLM with a high degree of success.
-    # #    - The question should not require the depiction of objects in 3D.
-    # # - Use your expertise to decide if the subject is best represented in 3D.
-    # #    - The interactions must require the programmer to have a mental model of any objects being visualized.
-    # #     - The interactions must require the programmer to have a mental model of any objects being visualized.
-    # #    - If the generated question is for Javascript, it should strictly command the usage of only built-in libraries.
-
-    # output = ""
-    # language_requirement = ""
-    # topic_context = ""
-    # # if language == Language.JAVASCRIPT:
-    # #     # output = JAVASCRIPT_OUTPUT.format(objects=", ".join(sampled_objects))
-    # #     # language_requirement = "Javascript with HTML and CSS"
-    # # elif language == Language.PYTHON:
-    # #     output = PYTHON_OUTPUT
-    # #     language_requirement = "Python"
-    # # if topic == Topics.THREE_D:
-    # #     topic_context = """
-    # #     - Make your visualization a simple, computationally light and easily implmeneted 3D interactive environment.
-    # #     - Ensure that user's point-of-view is fixed. Do not create interactions that will require the user to rotate or zoom their view. All elements should be clearly visible from the user's view without any need for navigation.
-    # #     - Limit your number of user interactions to 1. The remaining requirements should not ask for user actions.
-    # #     - Your question should be simple and focused. Make the single user interaction the main feature of the question. The remaining requirements should help provide visual context for the main feature.
-    # #     - Don't create a dynamic weather system as a requirement.
-    # #     - Do not implement a day/night cycle.
-    # #     - As this is a simple 3D environment, keep your background elements simple yet recognizable. Realism can be sacrificed (ie. shadows) for the sake of simplicity.
-
-    # #     """
-    # if topic == Topics.GAMES:
-    #     CODE_GEN_PROMPT = build_game_meta_prompt()
-    #     return textwrap.dedent(text=CODE_GEN_PROMPT)
-    # return textwrap.dedent(
-    #     CODE_GEN_PROMPT.format(
-    #         output=output,
-    #         num_requirements=num_requirements,
-    #         language=language_requirement,
-    #         # coding_question_json=coding_question_json,
-    #         previous_coding_question=previous_coding_question,
-    #         topic_context=topic_context,
-    #     )
-    # )
+    return build_question_with_persona(persona, num_requirements, topic=topic)
 
 
 def build_question_with_persona(persona: str, num_requirements: int, topic: Topics):
     topic_context = ""
     if topic == Topics.GAMES:
         subject = "fun, streamlined, hyper-casual web game"
-        topic_context = "- Your question should not contain any audio features."
+        topic_context = "- Your question must not contain any audio features."
     elif topic == Topics.SCIENCE:
         subject = "streamlined, science simulation"
     else:
