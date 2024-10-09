@@ -57,7 +57,7 @@ Run docker to launch synthetic-api:
 docker compose up -d
 ```
 
-# code executor
+# [wip] code executor
 
 ## rationale
 
@@ -85,8 +85,9 @@ the following is how `get_feedback` is supposed to work, which is the main funct
 ## todo
 
 - [ ] errors that occur during interaction of different components
+- [ ] works in a dockerized environment
 
-# code iterator
+# [wip] code iterator
 
 Based on the ReWOO paper (https://arxiv.org/abs/2305.18323), we use this to be able to fix any buggy code that the LLM outputs.
 

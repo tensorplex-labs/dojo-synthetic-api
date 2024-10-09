@@ -11,9 +11,6 @@ services:
     env_file:
       - .env
     image: redis/redis-stack-server:7.4.0-v0
-    environment:
-      # CHANGE THE PASSWORD TO A PASSWORD YOU WANT TO USE
-      REDIS_ARGS: "--requirepass ${REDIS_PASSWORD} --user ${REDIS_USERNAME} on >${REDIS_PASSWORD} ~* allcommands"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

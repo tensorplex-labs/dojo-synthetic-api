@@ -18,7 +18,6 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.code_iterator import debug_initial_code
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.dataset.personas import get_random_persona
 from commons.llm import get_llm_api_client
@@ -456,34 +455,34 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         else:
             raise ValueError("No index.html file found in the answer")
 
-        iteration_state = await debug_initial_code(
-            initial_html_code=html_file.content,
-        )
-        # print some stats to figure out are we doing shit or nah
+        # iteration_state = await debug_initial_code(
+        #     initial_html_code=html_file.content,
+        # )
+        # # print some stats to figure out are we doing shit or nah
 
-        num_errors_total = sum(
-            1 if iteration.error else 0 for iteration in iteration_state.iterations
-        )
-        is_final_iter_fixed = (
-            True
-            if iteration_state.latest_iteration
-            and not iteration_state.latest_iteration.error
-            else False
-        )
+        # num_errors_total = sum(
+        #     1 if iteration.error else 0 for iteration in iteration_state.iterations
+        # )
+        # is_final_iter_fixed = (
+        #     True
+        #     if iteration_state.latest_iteration
+        #     and not iteration_state.latest_iteration.error
+        #     else False
+        # )
 
-        logger.info(
-            f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
-        )
+        # logger.info(
+        #     f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
+        # )
 
-        # final html file
-        final_html = iteration_state.latest_iteration.code
+        # # final html file
+        # final_html = iteration_state.latest_iteration.code
 
         # replace whole CodeAnswer with a single final_html file
         result.files = [file for file in result.files if file.filename == "index.html"]
 
         # replace old html with updated html with inlined JS and CSS.
         if result.files:
-            result.files[0].content = final_html
+            result.files[0].content = html_file.content
         else:
             raise ValueError("No index.html file found in the result")
 
