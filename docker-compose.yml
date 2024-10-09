@@ -39,7 +39,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_DB=0
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_USER=${REDIS_USERNAME}
+      - REDIS_USERNAME=${REDIS_USERNAME}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     networks:
       - dojo-synthetic-api-network

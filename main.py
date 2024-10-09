@@ -20,7 +20,6 @@ install(show_locals=True)
 @asynccontextmanager
 async def _lifespan_context(app: FastAPI):  # noqa: ARG001 #pyright: ignore[reportUnusedParameter]
     # Load persona dataset
-    # persona_dataset = load_persona_dataset()
     app.state.persona_dataset = load_persona_dataset()
     logger.info("Performed startup tasks")
     # wrap worker.run in a task so it can be cancelled
