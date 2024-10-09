@@ -18,7 +18,6 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.code_iterator import debug_initial_code
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.dataset.personas import get_random_persona
 from commons.llm import get_llm_api_client
@@ -423,6 +422,30 @@ def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
     return CodeAnswer(files=new_files)
 
 
+def _execute_rewoo():
+    # iteration_state = await debug_initial_code(
+    #     initial_html_code=html_file.content,
+    # )
+
+    # num_errors_total = sum(
+    #     1 if iteration.error else 0 for iteration in iteration_state.iterations
+    # )
+    # is_final_iter_fixed = (
+    #     True
+    #     if iteration_state.latest_iteration
+    #     and not iteration_state.latest_iteration.error
+    #     else False
+    # )
+
+    # logger.info(
+    #     f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
+    # )
+
+    # final html file
+    # final_html = iteration_state.latest_iteration.code
+    return
+
+
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
 async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
@@ -456,34 +479,16 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         else:
             raise ValueError("No index.html file found in the answer")
 
-        iteration_state = await debug_initial_code(
-            initial_html_code=html_file.content,
-        )
-        # print some stats to figure out are we doing shit or nah
-
-        num_errors_total = sum(
-            1 if iteration.error else 0 for iteration in iteration_state.iterations
-        )
-        is_final_iter_fixed = (
-            True
-            if iteration_state.latest_iteration
-            and not iteration_state.latest_iteration.error
-            else False
-        )
-
-        logger.info(
-            f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
-        )
-
-        # final html file
-        final_html = iteration_state.latest_iteration.code
+        #  rewoo implementation unfinished
+        # _execute_rewoo()
 
         # replace whole CodeAnswer with a single final_html file
         result.files = [file for file in result.files if file.filename == "index.html"]
 
         # replace old html with updated html with inlined JS and CSS.
         if result.files:
-            result.files[0].content = final_html
+            # result.files[0].content = final_html
+            result.files[0].content = html_file.content
         else:
             raise ValueError("No index.html file found in the result")
 
@@ -494,7 +499,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     # logger.info(f"@@@@@ persona: {persona}")
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
-    selected_topic = random.choices(list(Topics), weights=[0.33, 0.66, 0], k=1)
+    selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)
 
     # 3. generate a question using the topic
     question_prompt, _ = await generate_question(
@@ -507,7 +512,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     augmented_prompts = []
     if response_strategy == ResponseStrategy.NO_AUGMENTATION:
         for model in answer_models:
-            tasks.append(_generate_response(model, question_prompt))
+            tasks.append(_generate_response(model, question_prompt, selected_topic[0]))
     elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
         # 4. augment questions
         # if augmenting, use same model for both question and answer generation
