@@ -315,8 +315,8 @@ async def augment_question(
                 "augmentation_level": augmentation_level,
             }
         )
-    # create unique QA_id
-    QA_id = str(uuid.uuid4())
+    # create unique qa_id
+    qa_id = str(uuid.uuid4())
     kwargs = {
         "response_model": CodingQuestion,
         "model": model,
@@ -350,10 +350,10 @@ async def augment_question(
                 **kwargs_clone,
             },
         )
-        logger.info(f"{QA_id}: ❔  {augmentation_level} Completed")
-        return response_model.question, QA_id
+        logger.info(f"{qa_id}: ❔  {augmentation_level} Completed")
+        return response_model.question, qa_id
     except Exception as e:
-        logger.error(f"{QA_id}: failed to augment question: {e}")
+        logger.error(f"{qa_id}: failed to augment question: {e}")
         raise RuntimeError from (e)
 
 
@@ -528,7 +528,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         assert type(answer_models) is str
 
         for level in AugmentationLevel:
-            augmented_question, QA_id = await augment_question(
+            augmented_question, qa_id = await augment_question(
                 client, question_model, question_prompt, level, selected_topic[0]
             )
             augmented_prompts.append(
@@ -541,7 +541,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
                     augmented_question,
                     topic=selected_topic[0],
                     level=level,
-                    qa_id=QA_id,
+                    qa_id=qa_id,
                 )
             )
 
