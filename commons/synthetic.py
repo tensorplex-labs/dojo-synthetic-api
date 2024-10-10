@@ -466,7 +466,7 @@ def _build_answer_augment_prompt(
     if augmentation == AnswerAugmentation.ADD_ONE:
         augment = "You must implement one small new feature"
 
-    prompt = f""" 
+    prompt = f"""
     <system>
         Here is the base HTML file with in-line Javascript code you must make adjustments to:
         <base_answer>
@@ -476,18 +476,18 @@ def _build_answer_augment_prompt(
         <question>
             {base_question}
         </question>
-        
+
         <response_format>
         your response must always be valid json based on this schema:
         {answer_format}
         </response_format>
-        
+
         <role>
              You are an expert natural language coding agent. Your objective is to change <base_answer> such that {augment} from <base_question>.
         </role>
     </system>
     <user>
-        You must modify <base_answer> such that {augment} from <base_question>. 
+        You must modify <base_answer> such that {augment} from <base_question>.
     </user>
     """
     return prompt
