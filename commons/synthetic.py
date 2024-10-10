@@ -82,6 +82,12 @@ class AugmentationLevel(Enum):
     CHANGE_ANIMATION_OBJECT = 3
 
 
+class AnswerAugmentation(Enum):
+    REMOVE_ONE = 0
+    REMOVE_TWO = 1
+    ADD_ONE = 2
+
+
 class ResponseStrategy(Enum):
     AUGMENTATION_DETERIORIATE = 0
     NO_AUGMENTATION = 1
@@ -446,6 +452,91 @@ def _execute_rewoo():
     return
 
 
+def _build_answer_augment_prompt(
+    base_answer: CodeAnswer,
+    base_question: str,
+    augmentation: AnswerAugmentation,
+    answer_format,
+) -> str:
+    augment = ""
+    if augmentation == AnswerAugmentation.REMOVE_ONE:
+        augment = "You must remove one features"
+    if augmentation == AnswerAugmentation.REMOVE_TWO:
+        augment = "You must remove two features"
+    if augmentation == AnswerAugmentation.ADD_ONE:
+        augment = "You must implement one small new feature"
+
+    prompt = f""" 
+    <system>
+        Here is the base HTML file with in-line Javascript code you must make adjustments to:
+        <base_answer>
+            {base_answer}
+        </base_answer>
+        Here are the specifications that were used to create the <base_answer>:
+        <question>
+            {base_question}
+        </question>
+        
+        <response_format>
+        your response must always be valid json based on this schema:
+        {answer_format}
+        </response_format>
+        
+        <role>
+             You are an expert natural language coding agent. Your objective is to change <base_answer> such that {augment} from <base_question>.
+        </role>
+    </system>
+    <user>
+        You must modify <base_answer> such that {augment} from <base_question>. 
+    </user>
+    """
+    return prompt
+
+
+async def _augment_answer(
+    client: LlmClient,
+    model: str,
+    answer: CodeAnswer,
+    question: str,
+    augmentation: AnswerAugmentation,
+):
+    """
+    takes in a base answer, base question and augmentation type?
+    applies desired augmentation based on type
+
+    returns model, result, level, qa_id
+    """
+
+    answer_format = CodeAnswer.model_json_schema()
+    messages = [
+        {
+            "role": "system",
+            "content": _build_answer_augment_prompt(
+                answer, question, augmentation, answer_format
+            ),
+        },
+    ]
+
+    kwargs = {
+        "response_model": CodeAnswer,
+        "model": model,
+        "messages": messages,
+        "temperature": 0.0,
+        "max_tokens": 8192,
+        "top_p": random.uniform(0.9, 1.0),
+    }
+
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
+
+    try:
+        result = await client.chat.completions.create(**kwargs)
+        logger.info(f" ☑️ {augmentation} answer generated")
+        return model, result, augmentation, str(uuid.uuid4())
+    except Exception as e:
+        logger.error(f"failed to generate augmented question: {e}")
+
+
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
 async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
@@ -453,7 +544,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     question_model = random.choice(GENERATOR_MODELS)
 
     tasks = []
-    answer_models = get_answer_model_ids(response_strategy)
+    # answer_models = get_answer_model_ids(response_strategy)
 
     async def _generate_response(
         model: str,
@@ -461,6 +552,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         topic: Topics,
         qa_id: str,
         level: AugmentationLevel | None = None,
+        # answer_augment: AnswerAugmentation | None = None,
     ):
         model, result = await generate_answer(
             client, model, question, topic=topic, qa_id=qa_id
@@ -514,12 +606,27 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
     augmented_prompts = []
     if response_strategy == ResponseStrategy.NO_AUGMENTATION:
-        for model in answer_models:
+        # 1. generate base answer
+        model, base_answer, _, qa_id = await _generate_response(
+            question_model, question_prompt, selected_topic[0], qa_id=str(uuid.uuid4())
+        )
+        # base_response = (model, base_answer, _, qa_id)
+
+        if base_answer is None:
+            raise ValueError("_generate_response() returned None for CodeAnswer")
+
+        # 2. generate augments
+        for augmentation in AnswerAugmentation:
             tasks.append(
-                _generate_response(
-                    model, question_prompt, selected_topic[0], qa_id="placeholder"
+                _augment_answer(
+                    client=client,
+                    model=model,
+                    answer=base_answer,
+                    question=question_prompt,
+                    augmentation=augmentation,
                 )
             )
+
     elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
         # 4. augment questions
         # if augmenting, use same model for both question and answer generation
@@ -545,8 +652,11 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
                 )
             )
 
+    # 11 oct to-do: add base response into results. will have to refactor AnswerAugmentation
     results: list[
-        tuple[str, CodeAnswer | None, AugmentationLevel | None, str]
+        tuple[
+            str, CodeAnswer | None, AugmentationLevel | AnswerAugmentation | None, str
+        ]
     ] = await asyncio.gather(*tasks)
 
     responses = []
