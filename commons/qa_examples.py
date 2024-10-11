@@ -355,16 +355,36 @@ def _get_animation_question_examples() -> str:
         <example_output_1>
             "Create an interactive piano visualization using HTML, CSS, and JavaScript.
 
-                Features:
-                • User playable piano that should have 88 keys (52 white keys and 36 black keys). The user can play the piano by clicking on the piano keys.
-                • When the user hovers over a key, it should visually highlight to indicate it can be played.
-                • Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
-                • Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
+            Features:
+            • User playable piano that should have 88 keys (52 white keys and 36 black keys). The user can play the piano by clicking on the piano keys.
+            • When the user hovers over a key, it should visually highlight to indicate it can be played.
+            • Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
+            • Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
 
-                User Actions:
-                1. Click on a piano key to play that note.
-                2. Adjust the volume slider to increase or decrease the loudness of the piano.
+            User Actions:
+            1. Click on a piano key to play that note.
+            2. Adjust the volume slider to increase or decrease the loudness of the piano.
         </example_output_1>
+        <example_input_2>
+            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 3 user actions for the following persona: "An immunologist An immunologist studying the development of vaccines against infectious diseases".
+        </example_input_2>
+        <example_output_2>
+            Create an interactive visualization of a vaccine molecular structure.
+
+            Features:
+            • Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
+            • Each atom should be represented by a sphere, with connecting lines between atoms.
+            • Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
+            • Implement a smooth rotation animation of the molecule
+            • Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
+            • Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
+            • Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
+
+            User actions:
+            1. Hover over an atom to view more information about the atom.
+            2. Adjust the slider to control the rotation speed of the molecule animation.
+            3. Click and drag the molecule to rotate it manually.
+        </example_output_2>
         """
 
 
@@ -406,12 +426,45 @@ def _get_animation_answer_examples() -> str:
             },
             {
                 "filename": "index.html",
-                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Solar System Orbit Simulator</title><style>body{background-color:#000;margin:0;font-family:Arial,sans-serif;overflow:hidden}#canvas{display:block}#controls{color:#fff;position:absolute;top:10px;left:10px}#info{color:#fff;background-color:#000000b3;border-radius:5px;padding:10px;display:none;position:absolute;top:10px;right:10px}.slider{width:200px}</style></head><body><canvas id="canvas"></canvas><div id="controls"><label for="speed">Orbit Speed:</label><input type="range" id="speed" class="slider" min="0.1" max="5" step="0.1" value="1" /><button id="toggleOrbits">Toggle Orbit Paths</button></div><div id="info"></div><script src="./index.js"></script></body></html>",
+                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Vaccine Molecular Structure Visualization</title><style>body { } #content-wrapper { } ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: hsla(60, 17%, 0%, 0); } ::-webkit-scrollbar-thumb { background: hsla(175, 100%, 36%, 0.387); border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: hsl(175, 100%, 36%); } body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; font-family: Arial, sans-serif; } #canvas { border: 1px solid #ccc; background-color: #fff; } #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background-color: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 5px; } #speedSlider { width: 200px; margin: 0 10px; } #tooltip { position: absolute; background-color: rgba(0, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; pointer-events: none; display: none; } </style></head><body><canvas id="canvas" width="800" height="600"></canvas><div id="controls"><span>Rotation Speed:</span><input type="range" id="speedSlider" min="0" max="100" value="50" /></div><div id="tooltip"></div><script src="index.js"></script></body></html>",
                 "language": "html"
             }
             ]
         }
     </example_output_1>
+    <example_input_2>
+        Create an interactive visualization of a secure intelligence communication network. The visualization should feature the following visual elements:
+        
+        Features:
+        • Implement a network of at least 5 interconnected nodes, with the central node being larger and brighter to represent the main intelligence asset.
+        • Create an animation effect where the connecting lines pulse periodically, simulating active secure channels.
+        • Glowing nodes representing intelligence assets, with a larger central node for the main asset
+        • Pulsing lines connecting the nodes, representing secure communication channels
+        • Occasional bursts of light traveling along the lines to simulate data transfer
+        • Use a dark background representing a covert operations environment
+        • Add a user interaction where clicking on any node causes a burst of light to travel from that node to all connected nodes, representing a data broadcast.
+        • Implement a feature where hovering over a node displays a small pop-up with fictional agent codenames and their current status (e.g., 'Agent Raven: Active', 'Agent Falcon: Standby').
+
+        User Actions:
+        1. Click on any node to trigger a data broadcast
+        2. Hover over any node to display an agent's current status. 
+    </example_input_2>
+    <example_output_2>
+        {
+        "files": [
+            {
+                "filename": "index.js",
+                "content": "const canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d"),tooltip=document.getElementById("tooltip");let width=canvas.width=window.innerWidth,height=canvas.height=window.innerHeight;const nodes=[{id:0,x:0,y:0,radius:20,color:"#00ffff",codename:"Agent Raven",status:"Active"},{id:1,x:0,y:0,radius:10,color:"#00ff00",codename:"Agent Falcon",status:"Standby"},{id:2,x:0,y:0,radius:10,color:"#ff00ff",codename:"Agent Eagle",status:"Active"},{id:3,x:0,y:0,radius:10,color:"#ffff00",codename:"Agent Hawk",status:"Active"},{id:4,x:0,y:0,radius:10,color:"#ff8000",codename:"Agent Owl",status:"Standby"}],edges=[{source:0,target:1},{source:0,target:2},{source:0,target:3},{source:0,target:4},{source:1,target:2},{source:2,target:3},{source:3,target:4},{source:4,target:1}];function applyCircularLayout(){const e=width/2,t=height/2,o=Math.min(width,height)/3;nodes.forEach((n,r)=>{0===r?(n.x=e,n.y=t):(n.x=e+o*Math.cos(((r-1)/(nodes.length-1))*Math.PI*2),n.y=t+o*Math.sin(((r-1)/(nodes.length-1))*Math.PI*2))})}function drawNetwork(){ctx.clearRect(0,0,width,height),edges.forEach(e=>{const t=nodes[e.source],o=nodes[e.target];ctx.beginPath(),ctx.moveTo(t.x,t.y),ctx.lineTo(o.x,o.y),ctx.strokeStyle="rgba(255, 255, 255, 0.2)",ctx.lineWidth=2,ctx.stroke()}),nodes.forEach(e=>{ctx.beginPath(),ctx.arc(e.x,e.y,e.radius,0,2*Math.PI),ctx.fillStyle=e.color,ctx.fill(),ctx.strokeStyle="white",ctx.lineWidth=2,ctx.stroke()})}function pulsateEdges(){edges.forEach(e=>{const t=nodes[e.source],o=nodes[e.target],n=o.x-t.x,r=o.y-t.y,a=Math.sqrt(n*n+r*r);ctx.beginPath(),ctx.moveTo(t.x,t.y),ctx.lineTo(o.x,o.y);const i=ctx.createLinearGradient(t.x,t.y,o.x,o.y);i.addColorStop(0,"rgba(255, 255, 255, 0.1)"),i.addColorStop(.5,"rgba(255, 255, 255, 0.5)"),i.addColorStop(1,"rgba(255, 255, 255, 0.1)"),ctx.strokeStyle=i,ctx.lineWidth=2,ctx.stroke();const s=Date.now()%2e3/2e3,c=t.x+n*s,d=t.y+r*s;ctx.beginPath(),ctx.arc(c,d,3,0,2*Math.PI),ctx.fillStyle="white",ctx.fill()})}function animate(){drawNetwork(),pulsateEdges(),requestAnimationFrame(animate)}function handleClick(e){const t=canvas.getBoundingClientRect(),o=e.clientX-t.left,n=e.clientY-t.top;nodes.forEach(e=>{const t=o-e.x,r=n-e.y;Math.sqrt(t*t+r*r)<=e.radius&&broadcastData(e)})}function broadcastData(e){edges.forEach(t=>{if(t.source===e.id||t.target===e.id){const o=nodes[t.source===e.id?t.target:t.source];animateDataTransfer(e,o)}})}function animateDataTransfer(e,t){const o=Date.now();!function n(){const r=Date.now()-o,a=Math.min(r/1e3,1),i=e.x+(t.x-e.x)*a,s=e.y+(t.y-e.y)*a;ctx.beginPath(),ctx.arc(i,s,5,0,2*Math.PI),ctx.fillStyle="white",ctx.fill(),a<1&&requestAnimationFrame(n)}()}function handleMouseMove(e){const t=canvas.getBoundingClientRect(),o=e.clientX-t.left,n=e.clientY-t.top;let r=null;if(nodes.forEach(e=>{const t=o-e.x,a=n-e.y;Math.sqrt(t*t+a*a)<=e.radius&&(r=e)}),r){tooltip.style.display="block",tooltip.style.left=`${e.clientX+10}px`,tooltip.style.top=`${e.clientY+10}px`,tooltip.textContent=`${r.codename}: ${r.status}`}else tooltip.style.display="none"}function handleResize(){width=canvas.width=window.innerWidth,height=canvas.height=window.innerHeight,applyCircularLayout()}function init(){applyCircularLayout(),animate(),canvas.addEventListener("click",handleClick),canvas.addEventListener("mousemove",handleMouseMove),window.addEventListener("resize",handleResize)}init();const instructions=document.createElement("div");instructions.style.position="absolute",instructions.style.bottom="10px",instructions.style.left="10px",instructions.style.color="white",instructions.style.fontSize="14px",instructions.innerHTML="Click on a node to broadcast data. Hover over nodes to see agent information.",document.body.appendChild(instructions);",
+                "language": "javascript"
+            },
+            {
+                "filename": "index.html",
+                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Secure Intelligence Communication Network</title><style>body{}#content-wrapper{}::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:hsla(60,17%,0%,0);}::-webkit-scrollbar-thumb{background:hsla(175,100%,36%,0.387);border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:hsl(175,100%,36%);}body{margin:0;overflow:hidden;background-color:#000;font-family:Arial,sans-serif;}#canvas{display:block;}#controls{position:absolute;top:10px;left:10px;color:#fff;}#tooltip{position:absolute;background-color:rgba(0,0,0,0.8);color:#fff;padding:5px;border-radius:5px;display:none;}</style></head><body><canvas id="canvas"></canvas><div id="tooltip"></div><script src="index.js"></script></body></html>",
+                "language": "html"
+            }
+            ]
+        }
+    </example_output_2>
     """
 
 
