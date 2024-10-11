@@ -242,7 +242,7 @@ async def generate_answer(
                     },
                 )
                 # logger.warning(f"@@@@@ generate_answer(): {response_model} \n")
-                logger.info(f"{qa_id} ☑️  Answer Generation Completed ")
+                logger.info(f"{qa_id} Answer Generation Completed ")
                 return model, response_model
     except RetryError:
         logger.error(f"{qa_id} Failed after {MAX_RETRIES} attempts. Switching model.")
@@ -350,7 +350,7 @@ async def augment_question(
                 **kwargs_clone,
             },
         )
-        logger.info(f"{qa_id}: ❔  {augmentation_level} Completed")
+        logger.info(f"{qa_id} {augmentation_level} Completed")
         return response_model.question, qa_id
     except Exception as e:
         logger.error(f"{qa_id}: failed to augment question: {e}")
