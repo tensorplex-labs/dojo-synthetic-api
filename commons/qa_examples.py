@@ -434,7 +434,7 @@ def _get_animation_answer_examples() -> str:
     </example_output_1>
     <example_input_2>
         Create an interactive visualization of a secure intelligence communication network. The visualization should feature the following visual elements:
-        
+
         Features:
         • Implement a network of at least 5 interconnected nodes, with the central node being larger and brighter to represent the main intelligence asset.
         • Create an animation effect where the connecting lines pulse periodically, simulating active secure channels.
@@ -447,7 +447,7 @@ def _get_animation_answer_examples() -> str:
 
         User Actions:
         1. Click on any node to trigger a data broadcast
-        2. Hover over any node to display an agent's current status. 
+        2. Hover over any node to display an agent's current status.
     </example_input_2>
     <example_output_2>
         {
