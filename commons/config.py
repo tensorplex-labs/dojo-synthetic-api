@@ -98,21 +98,15 @@ def parse_cli_args():
 
     if args.trace:
         logger.remove()
-        logger.add(
-            sys.stderr, level="TRACE", backtrace=False, diagnose=False, colorize=True
-        )
+        logger.add(sys.stderr, level="TRACE", backtrace=False, diagnose=False)
         logger.trace("Enabled TRACE logging")
     elif args.debug:
         logger.remove()
-        logger.add(
-            sys.stderr, level="DEBUG", backtrace=False, diagnose=False, colorize=True
-        )
+        logger.add(sys.stderr, level="DEBUG", backtrace=False, diagnose=False)
         logger.debug("Enabled DEBUG logging")
     else:
         logger.remove()
-        logger.add(
-            sys.stderr, level="INFO", backtrace=False, diagnose=False, colorize=True
-        )
+        logger.add(sys.stderr, level="INFO", backtrace=False, diagnose=False)
         logger.add("Enabled INFO logging")
 
     return args
