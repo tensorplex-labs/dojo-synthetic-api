@@ -137,6 +137,10 @@ class RedisCache:
             # fuck it and push the data into the queue as well, instead of it being a reference to the persistent data
             # this also simplifies dequeuing logic
             num_items: int = await self.redis.rpush(queue_key, str_data)  # type: ignore
+
+            # collect cids for each answer and log successful upload to DB
+            ids: list[str] = [response["cid"] for response in data["responses"]]
+            logger.success(f"📦  Pushed Task {ids} to DB")
             return num_items
         except Exception as exc:
             logger.opt(exception=True).error(
