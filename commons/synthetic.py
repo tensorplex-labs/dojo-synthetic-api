@@ -83,9 +83,10 @@ class AugmentationLevel(Enum):
 
 
 class AnswerAugmentation(Enum):
-    REMOVE_ONE = 0
-    REMOVE_TWO = 1
-    ADD_ONE = 2
+    ORIGINAL = 0
+    REMOVE_ONE = 1
+    REMOVE_TWO = 2
+    ADD_ONE = 3
 
 
 class ResponseStrategy(Enum):
@@ -460,11 +461,13 @@ def _build_answer_augment_prompt(
 ) -> str:
     augment = ""
     if augmentation == AnswerAugmentation.REMOVE_ONE:
-        augment = "You must remove one features"
+        augment = "remove one feature from <base_question>"
     if augmentation == AnswerAugmentation.REMOVE_TWO:
-        augment = "You must remove two features"
+        augment = "remove two features from <base_question>"
     if augmentation == AnswerAugmentation.ADD_ONE:
-        augment = "You must implement one small new feature"
+        augment = (
+            "implement a new feature that isnt already contained in <base_question>"
+        )
 
     prompt = f"""
     <system>
@@ -483,11 +486,19 @@ def _build_answer_augment_prompt(
         </response_format>
 
         <role>
-             You are an expert natural language coding agent. Your objective is to change <base_answer> such that {augment} from <base_question>.
+             You are an expert natural language coding agent. Your objective is to modify <base_answer> to {augment}.
+             Your changes to <base_answer> must only modify the HTML elememt canvas.
         </role>
+        <instructions>
+            Always follow these instructions:
+            - You do not have access to the file system. Do not store any data in storage or as a file.
+            - Ensure that your code does not use any external files such as images, videos or audio files.
+            - Your code must not require the use of the user's microphone or camera.
+            - Your code must not use any external libraries, data or APIs.
+        </instructions>
     </system>
     <user>
-        You must modify <base_answer> such that {augment} from <base_question>.
+        You must modify <base_answer> to {augment}. Your changes must only affect the canvas HTML element.
     </user>
     """
     return prompt
@@ -502,11 +513,11 @@ async def _augment_answer(
 ):
     """
     takes in a base answer, base question and augmentation type?
-    applies desired augmentation based on type
+    queries LLM to generate augmented output from
 
     returns model, result, level, qa_id
     """
-
+    id = str(uuid.uuid4())
     answer_format = CodeAnswer.model_json_schema()
     messages = [
         {
@@ -531,10 +542,10 @@ async def _augment_answer(
 
     try:
         result = await client.chat.completions.create(**kwargs)
-        logger.info(f" ☑️ {augmentation} answer generated")
-        return model, result, augmentation, str(uuid.uuid4())
+        logger.info(f" {id} {augmentation} answer generated")
+        return model, result, augmentation, id
     except Exception as e:
-        logger.error(f"failed to generate augmented question: {e}")
+        logger.error(f"{id} failed to generate augmented question: {e}")
 
 
 # use trace to avoid double dipping cost logging on nested observations
@@ -604,19 +615,27 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     if question_prompt is None:
         raise ValueError("generate_question() returned null")
 
+    results: list[
+        tuple[
+            str, CodeAnswer | None, AugmentationLevel | AnswerAugmentation | None, str
+        ]
+    ] = []
     augmented_prompts = []
+    ### Augments Answer ###
     if response_strategy == ResponseStrategy.NO_AUGMENTATION:
         # 1. generate base answer
         model, base_answer, _, qa_id = await _generate_response(
             question_model, question_prompt, selected_topic[0], qa_id=str(uuid.uuid4())
         )
-        # base_response = (model, base_answer, _, qa_id)
-
+        base_response = [(model, base_answer, AnswerAugmentation.ORIGINAL, qa_id)]
+        # results.append((model, base_answer, AnswerAugmentation.ORIGINAL, qa_id))
         if base_answer is None:
             raise ValueError("_generate_response() returned None for CodeAnswer")
 
         # 2. generate augments
         for augmentation in AnswerAugmentation:
+            if augmentation == AnswerAugmentation.ORIGINAL:
+                continue
             tasks.append(
                 _augment_answer(
                     client=client,
@@ -626,7 +645,8 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
                     augmentation=augmentation,
                 )
             )
-
+        results = await asyncio.gather(*tasks)
+        results = base_response + results
     elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
         # 4. augment questions
         # if augmenting, use same model for both question and answer generation
@@ -651,13 +671,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
                     qa_id=qa_id,
                 )
             )
-
-    # 11 oct to-do: add base response into results. will have to refactor AnswerAugmentation
-    results: list[
-        tuple[
-            str, CodeAnswer | None, AugmentationLevel | AnswerAugmentation | None, str
-        ]
-    ] = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
 
     responses = []
     synthetic_ground_truth: dict[str, int] = {}

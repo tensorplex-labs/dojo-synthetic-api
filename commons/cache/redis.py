@@ -140,7 +140,7 @@ class RedisCache:
 
             # collect cids for each answer and log successful upload to DB
             ids: list[str] = [response["cid"] for response in data["responses"]]
-            logger.success(f"📦  Pushed Task {ids} to DB")
+            logger.success(f"Pushed Task {ids} to DB")
             return num_items
         except Exception as exc:
             logger.opt(exception=True).error(
