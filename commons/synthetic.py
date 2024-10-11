@@ -297,6 +297,8 @@ async def augment_question(
     You are an LLM specializing in modifying existing coding questions to create similar yet distinct versions. Ultimately the new edited questions that you generate will be implemented by a programming agent. As such, use your vast knowledge of UX and software engineering principles to make intelligent yet distinguishable modifications.
     </system>
     """
+    # create unique qa_id
+    qa_id = str(uuid.uuid4())
 
     if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"You must remove any 1 requirement from the following question: {question}. Ensure that the requirement you remove will not break the functionality of the remaining requirements."
@@ -308,6 +310,7 @@ async def augment_question(
         else:
             augmentation_prompt = f"Here is a generated coding question: {question}. \n change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question."
     elif augmentation_level == AugmentationLevel.ORIGINAL:
+        # early return the original unaugmented question.
         langfuse_context.update_current_observation(
             metadata={
                 "topic": topic,
@@ -315,8 +318,8 @@ async def augment_question(
                 "augmentation_level": augmentation_level,
             }
         )
-    # create unique qa_id
-    qa_id = str(uuid.uuid4())
+        return question, qa_id
+
     kwargs = {
         "response_model": CodingQuestion,
         "model": model,
