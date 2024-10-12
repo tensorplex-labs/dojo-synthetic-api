@@ -301,9 +301,6 @@ async def augment_question(
     You are an LLM specializing in modifying existing coding questions to create similar yet distinct versions. Ultimately the new edited questions that you generate will be implemented by a programming agent. As such, use your vast knowledge of UX and software engineering principles to make intelligent yet distinguishable modifications.
     </system>
     """
-    # create unique qa_id
-    qa_id = str(uuid.uuid4())
-
     if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"You must remove any 1 requirement from the following question: {question}. Ensure that the requirement you remove will not break the functionality of the remaining requirements."
     elif augmentation_level == AugmentationLevel.ADD_REQUIREMENTS:
@@ -322,7 +319,7 @@ async def augment_question(
                 "augmentation_level": augmentation_level,
             }
         )
-        return question, qa_id
+        return question
 
     kwargs = {
         "response_model": CodingQuestion,
