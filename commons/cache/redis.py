@@ -9,7 +9,7 @@ from loguru import logger
 from redis import asyncio as aioredis
 from redis.asyncio.client import Redis
 
-from commons.config import RedisSettings, get_settings
+from commons.config import RedisSettings, get_settings, parse_cli_args
 
 
 def build_redis_url() -> str:
@@ -130,7 +130,12 @@ class RedisCache:
             logger.debug(f"Writing persistent data into {hist_key}")
             # place into persistent key
             str_data = json.dumps(jsonable_encoder(data)).encode(self._encoding)
-            await self.redis.set(hist_key, str_data)  # pyright: ignore[reportUnknownMemberType]
+            args = parse_cli_args()
+            if args.env_name and args.env_name == "prod":
+                # expire in 4 hours time
+                await self.redis.set(hist_key, str_data, ex=3600 * 4)  # pyright: ignore[reportUnknownMemberType]
+            else:
+                await self.redis.set(hist_key, str_data)  # pyright: ignore[reportUnknownMemberType]
 
             queue_key = self._build_key(self._queue_key)
             logger.debug(f"Writing queue data into {queue_key}")
@@ -140,7 +145,7 @@ class RedisCache:
 
             # collect cids for each answer and log successful upload to DB
             ids: list[str] = [response["cid"] for response in data["responses"]]
-            logger.success(f"📦  Pushed Task {ids} to DB")
+            logger.success(f"Pushed Task {ids} to DB")
             return num_items
         except Exception as exc:
             logger.opt(exception=True).error(

@@ -25,4 +25,4 @@ COPY . .
 
 EXPOSE 5003
 
-CMD ["python", "main.py"]
+CMD ["python", "main.py", "--env_name", "dev"]
