@@ -1,4 +1,5 @@
 import argparse
+import functools
 import os
 import sys
 
@@ -86,6 +87,7 @@ def get_settings() -> Settings:
     return Settings()
 
 
+@functools.lru_cache(maxsize=1)
 def parse_cli_args():
     parser = argparse.ArgumentParser(description="CLI arguments for the application")
     parser.add_argument(
@@ -93,6 +95,12 @@ def parse_cli_args():
     )
     parser.add_argument(
         "--trace", action="store_true", help="Enable TRACE logging level"
+    )
+    parser.add_argument(
+        "--env_name",
+        type=str,
+        choices=["dev", "prod"],
+        help="Specify the environment (dev or prod)",
     )
     args = parser.parse_args()
 
