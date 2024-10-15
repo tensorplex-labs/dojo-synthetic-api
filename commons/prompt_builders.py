@@ -16,7 +16,7 @@ def build_code_answer_prompt(
         </examples>
 
         <response_format>
-            Your output should should always be valid json based on this schema:
+            Your output must always be valid json based on this schema:
             {answer_format}
         </response_format>
         <role>
@@ -25,7 +25,7 @@ def build_code_answer_prompt(
             The <question> is also being given to a number of similar natural langauge coding agents, your implementation output will be collected and compared with the outputs of the other natural language coding agents.
             Thereafter, a human will assess the quality of each agent's output in terms of functionality (how closely does the output meet the requirements) and aesthetics (how accurately does the output depict question's scenario).
             The coding agent who produces the winning implementation will be given 1 billion dollars in cash prize and the honor of being the smartest coding agent.
-            In the future, the human labelled dataset will be used to finetune and train existing coding agents like yourself, to improve the overall ability of AI coding agents. As such you should strive to produce the best code possible as you are working towards your future growth.
+            In the future, the human labelled dataset will be used to finetune and train existing coding agents like yourself, to improve the overall ability of AI coding agents. As such you must strive to produce the best code possible as you are working towards your future growth.
         </role>
         <instructions>
             Always follow these instructions:
@@ -37,27 +37,27 @@ def build_code_answer_prompt(
             - Your program must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
             - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped.
             - You will be imprisoned for all eternity if you output any code without escaping special characters.
-            - Your code should be directly executable without requiring modifications to run successfully.
+            - Your code must be directly executable without requiring modifications to run successfully.
             - Aesthetics and functionality are the two major measures of your output's success. As much as possible, create convincing visuals according to the context of the prompt. Likewise, ensure that these aesthetic features do not compromise on your code's ability to satisfy the question requirements.
             - Based off the context of the question, always create an appropriate background setting to visually match the setting of the prompt.
             - Avoid using default colours such as 'red' and 'blue'. Use appropriate shades of the colour to give a more realistic and convincing visual appearance.
-            - When creating visuals, keep in mind clarity and recognizability. Visuals should be realistic when possible.
+            - When creating visuals, keep in mind clarity and recognizability. Visuals must be realistic when possible.
             - Ensure that your code does not use any external files such as images, videos or audio files.
             - Ensure your code awaits for any required components to load before executing.
             - Your implementation will be viewed from a computer web browser.
             - Always explain to the user how to interact with the program in a minimal and unintrusive manner.
             - For performance reasons, do not create an unlimited number of objects.
             - Use colour to contrast different elements from one another.
-            - Any user interface elements should be small, minimal and unintrusive. Avoid making frames. The main focus of the program should be the subject being visualized.
+            - Any user interface elements must be minimal and unintrusive. Avoid making frames. The main focus of the program must be the subject being visualized.
             - Your code must not require the use of the user's microphone or camera.
             - Your code must not use any external libraries, data or APIs.
             - Your output must display in a 16:9 aspect ratio.
             - Ensure your output will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
-            - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it should not also cause the browser to scroll.
+            - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it must not also cause the browser to scroll.
             - Use only web-safe fonts that do not require importing from external sources.
             - Ensure any implementations of time are accurate and not dependent on device frame rate.
             - Refer to the <examples>
-            - Your output should follow the <response_format>
+            - Your output must follow the <response_format>
         </instructions>
     </system>
 
@@ -177,11 +177,11 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
 
     <instructions>
         Always follow these guidelines:
-        - The question should contain these sections in the following order:
+        - The question must contain these sections in the following order:
             a. Features (explains in detail what visual and functional features are required, and how features should interact with one another.)
             b. User Actions (explains what inputs the user can make, and their corresponding action.)
         - Separate your features with new lines so they can be easily read.
-        - Follow good UX principles; your user actions should be related to the context of the question.
+        - Follow good UX principles; your user actions must be related to the context of the question.
         - Ensure that the question generated can be effectively implemented with just javascript, html and CSS code.
         - Ensure that your question can be implemented by an english speaker.
         - Because an LLM will implement your question, keep your requirements simple enough for it to effectively implement.
@@ -189,10 +189,10 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
         - Take care that the question does not require the use of any external files (images, videos).
         - Ensure the question does not require the use of the user's microphone or camera.
-        - The program will be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user actions should be designed with a desktop user in mind.
-        - Ensure your user actions will not interfere with each other. Each action should be easily executed in isolation from the others.
-        - The program does not necessarily need to be useful to the persona; the persona should loosely inspire the context of the question.
-        - It is imperative for your question to faithfully implement a {subject}. You should sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
+        - The program will be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user actions must be designed with a desktop user in mind.
+        - Ensure your user actions will not interfere with each other. Each action must be easily executed in isolation from the others.
+        - The program does not necessarily need to be useful to the persona; the persona must loosely inspire the context of the question.
+        - It is imperative for your question to faithfully implement a {subject}. You must sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
         - Ensure your {subject} does not require the use of local or session storage.
         - Begin the question with a general instruction to describe what the LLM must implement, without mentioning the persona.
         {topic_context}
