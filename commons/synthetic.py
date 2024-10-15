@@ -99,7 +99,7 @@ async def generate_question(
     global previous_coding_question
     global used_models
     used_models = set()
-    # test comment
+
     # try generating until max_retries, then switch models
     try:
         async for attempt in AsyncRetrying(
