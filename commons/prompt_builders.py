@@ -50,7 +50,7 @@ def build_code_answer_prompt(
             - All user interface elements must be small, minimal and unintrusive. Avoid making frames. The main focus of the program must be the subject from <question>.
             - Your code must not require the use of the user's microphone or camera.
             - Your code must not require any external libraries, data or APIs.
-            - Your program must always strictly follow this security policy: 
+            - Your program must always strictly follow this security policy:
                 <security_policy>
                     <meta http-equiv="Feature-Policy" content=" camera 'none'; microphone 'none'; geolocation 'none'; accelerometer 'none'; gyroscope 'none'; magnetometer 'none'; payment 'none'; usb 'none';">
                 </security_policy>
