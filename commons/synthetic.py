@@ -1,6 +1,7 @@
 import asyncio
 import os
 import random
+import sys
 import uuid
 from enum import Enum
 from typing import Dict, List, Tuple, cast
@@ -10,7 +11,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AuthenticationError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -147,25 +148,29 @@ async def generate_question(
                 previous_coding_question = coding_question
                 logger.info("Base Question Generation Completed")
                 return coding_question, kwargs
-    except RetryError:
-        logger.error(
-            f"Failed to generate question after {MAX_RETRIES} attempts. Switching model."
-        )
-        raise
+    # except RetryError:
+    #     logger.error(
+    #         f"Failed to generate question after {MAX_RETRIES} attempts. Switching model."
+    #     )
+    #     raise
 
-        # used_models.add(model)
-        # remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
-        # # return if no models remaining
-        # if not remaining_models:
-        #     logger.error("No generator models left to try.")
-        #     return None, None
-        # new_model = random.choice(remaining_models)
-        # return await generate_question(
-        #     client=client, model=new_model, _topic=_topic, persona=persona
-        # )
+    # used_models.add(model)
+    # remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
+    # # return if no models remaining
+    # if not remaining_models:
+    #     logger.error("No generator models left to try.")
+    #     return None, None
+    # new_model = random.choice(remaining_models)
+    # return await generate_question(
+    #     client=client, model=new_model, _topic=_topic, persona=persona
+    # )
+
+    # except AuthenticationError as e:
+    #     logger.error(f"openrouter error when generating question: {e}")
+    #     raise
     except Exception as e:
         logger.error(f"Error occurred while generating question: {e}")
-
+        raise
     return None, None
 
 
@@ -256,8 +261,8 @@ async def generate_answer(
         # new_model = random.choice(remaining_models)
         # return await generate_answer(client, new_model, question, topic=topic)
     except Exception as e:
-        logger.error(f"Error occurred while generating {qa_id} answer: {e}")
-
+        logger.error(f"Error while generating {qa_id} answer: {e}")
+        raise
     return model, None
 
 
@@ -357,7 +362,7 @@ async def augment_question(
         return response_model.question, qa_id
     except Exception as e:
         logger.error(f"{qa_id}: failed to augment question: {e}")
-        raise RuntimeError from (e)
+        raise
 
 
 def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
@@ -454,9 +459,9 @@ def _execute_rewoo():
 async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     client = get_llm_api_client()
     question_model = random.choice(GENERATOR_MODELS)
-
-    tasks = []
     answer_models = get_answer_model_ids(response_strategy)
+    results: list[tuple[str, CodeAnswer | None, AugmentationLevel | None, str]]
+    tasks = []
 
     async def _generate_response(
         model: str,
@@ -500,57 +505,60 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         return model, result, level, qa_id
 
+    ##### START OF FUNCTION LOGIC #####
     # 1. get random persona from hugging face
     persona = get_random_persona()
     # logger.info(f"@@@@@ persona: {persona}")
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
     selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)
+    try:
+        # 3. generate a question using the topic
+        question_prompt, _ = await generate_question(
+            client, question_model, selected_topic[0], persona
+        )
 
-    # 3. generate a question using the topic
-    question_prompt, _ = await generate_question(
-        client, question_model, selected_topic[0], persona
-    )
+        if question_prompt is None:
+            raise ValueError("generate_question() returned null")
 
-    if question_prompt is None:
-        raise ValueError("generate_question() returned null")
-
-    augmented_prompts = []
-    if response_strategy == ResponseStrategy.NO_AUGMENTATION:
-        for model in answer_models:
-            tasks.append(
-                _generate_response(
-                    model, question_prompt, selected_topic[0], qa_id="placeholder"
+        augmented_prompts = []
+        if response_strategy == ResponseStrategy.NO_AUGMENTATION:
+            for model in answer_models:
+                tasks.append(
+                    _generate_response(
+                        model, question_prompt, selected_topic[0], qa_id="placeholder"
+                    )
                 )
-            )
-    elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
-        # 4. augment questions
-        # if augmenting, use same model for both question and answer generation
-        answer_models = question_model
+        elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
+            # 4. augment questions
+            # if augmenting, use same model for both question and answer generation
+            answer_models = question_model
 
-        assert type(answer_models) is str
+            assert type(answer_models) is str
 
-        for level in AugmentationLevel:
-            augmented_question, qa_id = await augment_question(
-                client, question_model, question_prompt, level, selected_topic[0]
-            )
-            augmented_prompts.append(
-                {"level": level.name, "question": augmented_question}
-            )
-            # 5. generate answers as code
-            tasks.append(
-                _generate_response(
-                    answer_models,
-                    augmented_question,
-                    topic=selected_topic[0],
-                    level=level,
-                    qa_id=qa_id,
+            for level in AugmentationLevel:
+                augmented_question, qa_id = await augment_question(
+                    client, question_model, question_prompt, level, selected_topic[0]
                 )
-            )
+                augmented_prompts.append(
+                    {"level": level.name, "question": augmented_question}
+                )
+                # 5. generate answers as code
+                tasks.append(
+                    _generate_response(
+                        answer_models,
+                        augmented_question,
+                        topic=selected_topic[0],
+                        level=level,
+                        qa_id=qa_id,
+                    )
+                )
 
-    results: list[
-        tuple[str, CodeAnswer | None, AugmentationLevel | None, str]
-    ] = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
+
+    except AuthenticationError as e:
+        logger.error(f"Shutting down synthetic-API: {e}")
+        sys.exit(1)
 
     responses = []
     synthetic_ground_truth: dict[str, int] = {}
