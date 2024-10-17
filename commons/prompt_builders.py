@@ -48,6 +48,7 @@ def build_code_answer_prompt(
             - Never create an unlimited number of objects to prevent memory performance issues.
             - Use colour to contrast different elements from one another.
             - All user interface elements must be small, minimal and unintrusive. Avoid making frames. The main focus of the program must be the subject from <question>.
+            - Never use eval() in your output. You will be sent to a soviet era gulag if your output contains eval()
             - Your code must not require the use of the user's microphone or camera.
             - Your code must not require any external libraries, data or APIs.
             - Your program must always strictly follow this security policy:
