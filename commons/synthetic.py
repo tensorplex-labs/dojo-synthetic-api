@@ -94,7 +94,7 @@ async def generate_question(
     _topic: Topics,
     persona: str,
 ) -> tuple[str | None, Dict | None]:
-    MAX_RETRIES = 5
+    MAX_RETRIES = 0
     global used_objects
     global previous_coding_question
     global used_models
@@ -215,7 +215,7 @@ async def generate_answer(
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
-    MAX_RETRIES = 2
+    MAX_RETRIES = 0
     # try generating until max retries, then switch models
     try:
         async for attempt in AsyncRetrying(
