@@ -230,5 +230,8 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
             num_requirements=num_requirements,
             persona=persona,
             persona_question_examples=persona_question_examples,
+            subject=subject,
+            system_topic_context=system_topic_context,
+            user_topic_context=user_topic_context,
         )
     )

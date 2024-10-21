@@ -1,20 +1,20 @@
 import asyncio
 import os
 import random
+import sys
 import uuid
 from enum import Enum
-from typing import Dict, List, Tuple, cast
+from typing import List, Tuple, cast
 
 import instructor
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AuthenticationError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
-    RetryError,
     stop_after_attempt,
 )
 
@@ -27,7 +27,6 @@ from commons.prompt_builders import (
     build_code_generation_question_prompt,
 )
 from commons.types import Topics
-from commons.utils.logging import log_retry_info
 
 load_dotenv()
 
@@ -87,89 +86,60 @@ class ResponseStrategy(Enum):
     NO_AUGMENTATION = 1
 
 
-@observe(as_type="generation", capture_input=False, capture_output=False)
+@observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_question(
     client: instructor.AsyncInstructor,
     model: str,
     _topic: Topics,
     persona: str,
-) -> tuple[str | None, Dict | None]:
-    MAX_RETRIES = 0
-    global used_objects
-    global previous_coding_question
+):
     global used_models
     used_models = set()
-
-    # try generating until max_retries, then switch models
     try:
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
-        ):
-            with attempt:
-                kwargs = {
-                    "response_model": CodingQuestion,
-                    "model": model,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": build_code_generation_question_prompt(
-                                random.choices([2, 3], weights=[0.5, 0.5])[0],
-                                topic=_topic,
-                                persona=persona,
-                            ),
-                        }
-                    ],
-                    "temperature": random.uniform(0.5, 0.75),
-                    "max_tokens": 8192,
-                    "top_p": random.uniform(0.9, 1.0),
-                    "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
+        kwargs = {
+            "response_model": None,
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": build_code_generation_question_prompt(
+                        random.choices([2, 3], weights=[0.5, 0.5])[0],
+                        topic=_topic,
+                        persona=persona,
+                    ),
                 }
+            ],
+            "temperature": random.uniform(0.5, 0.75),
+            "max_tokens": 8192,
+            "max_retries": AsyncRetrying(stop=stop_after_attempt(1), reraise=True),
+            "top_p": random.uniform(0.9, 1.0),
+            "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
+        }
 
-                response_model = await client.chat.completions.create(**kwargs)
-                coding_question = response_model.question
-                coding_question = additional_notes_for_question_prompt(coding_question)
+        response_model = await client.chat.completions.create(**kwargs)
+        coding_question = response_model.choices[0].message.content
+        coding_question = additional_notes_for_question_prompt(coding_question)
 
-                kwargs_clone = kwargs.copy()
-                kwargs_clone["response_model"] = kwargs[
-                    "response_model"
-                ].model_json_schema()
-                langfuse_context.update_current_observation(
-                    input=kwargs_clone.pop("messages"),
-                    model=model,
-                    output=response_model.model_dump(),
-                    # usage=log_llm_usage(response_model.usage),
-                    metadata={
-                        "topic": _topic,
-                        "used_models": used_models,
-                        **kwargs_clone,
-                    },
-                )
-                previous_coding_question = coding_question
-                logger.info("Base Question Generation Completed")
-                return coding_question, kwargs
-    except RetryError:
-        logger.error(
-            f"Failed to generate question after {MAX_RETRIES} attempts. Switching model."
+        kwargs_clone = kwargs.copy()
+        langfuse_context.update_current_observation(
+            input=kwargs_clone.pop("messages"),
+            model=model,
+            output=response_model.model_dump(),
+            # usage=log_llm_usage(response_model.usage),
+            metadata={
+                "topic": _topic,
+                "used_models": used_models,
+                **kwargs_clone,
+            },
         )
-        raise
-
-        # used_models.add(model)
-        # remaining_models = [m for m in GENERATOR_MODELS if m not in used_models]
-        # # return if no models remaining
-        # if not remaining_models:
-        #     logger.error("No generator models left to try.")
-        #     return None, None
-        # new_model = random.choice(remaining_models)
-        # return await generate_question(
-        #     client=client, model=new_model, _topic=_topic, persona=persona
-        # )
+        logger.info("Base Question Generation Completed")
+        return coding_question
     except Exception as e:
         logger.error(f"Error occurred while generating question: {e}")
+        raise
 
-    return None, None
 
-
-@observe(as_type="generation", capture_input=False, capture_output=False)
+@observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_answer(
     client: LlmClient,
     model: str,
@@ -178,11 +148,8 @@ async def generate_answer(
     qa_id: str,
     err: str | None = None,
     code: str | None = None,
-) -> Tuple[str, CodeAnswer | None]:
+) -> Tuple[str, CodeAnswer]:
     """Generates a coding question answer for a given coding question."""
-    # import commons.config as config
-
-    # logger.info(f"{qa_id} Generating code answer with model: {model}")
     if bool(err) != bool(code):
         raise ValueError("Both error and code must be provided or neither")
 
@@ -191,7 +158,6 @@ async def generate_answer(
     # this is a hack because CodeAnswer.model_json_schema cannot be imported by prompt_builders without a ciruclar import error.add()
     # need to move where these types are declared during refactor.
     _answer_format = CodeAnswer.model_json_schema()
-    # logger.warning(f"@@@ codeAnswer schema: {_answer_format}")
     messages = [
         {
             "role": "system",
@@ -208,6 +174,7 @@ async def generate_answer(
         "response_model": CodeAnswer,
         "model": model,
         "messages": messages,
+        "max_retries": AsyncRetrying(stop=stop_after_attempt(2), reraise=True),
         "temperature": 0.0,
         "max_tokens": 8192,
         "top_p": random.uniform(0.9, 1.0),
@@ -215,50 +182,29 @@ async def generate_answer(
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
-    MAX_RETRIES = 0
-    # try generating until max retries, then switch models
     try:
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(MAX_RETRIES), before_sleep=log_retry_info
-        ):
-            with attempt:
-                response_model = await client.chat.completions.create(**kwargs)
+        response_model = await client.chat.completions.create(**kwargs)
 
-                kwargs_clone = kwargs.copy()
-                kwargs_clone["response_model"] = kwargs[
-                    "response_model"
-                ].model_json_schema()
-                langfuse_context.update_current_observation(
-                    input=kwargs_clone.pop("messages"),
-                    model=model,
-                    output=response_model.model_dump(),
-                    # usage=log_llm_usage(response_model.usage),
-                    metadata={
-                        "question": question,
-                        "err": err,
-                        "code": code,
-                        "topic": topic,
-                        **kwargs_clone,
-                    },
-                )
-                # logger.warning(f"@@@@@ generate_answer(): {response_model} \n")
-                logger.info(f"{qa_id} Answer Generation Completed ")
-                return model, response_model
-    except RetryError:
-        logger.error(f"{qa_id} Failed after {MAX_RETRIES} attempts. Switching model.")
-        raise
-        # used_models.add(model)
-        # remaining_models = [m for m in config.ANSWER_MODELS if m not in used_models]
-        # # return if no models remaining
-        # if not remaining_models:
-        #     logger.error("No answer models left to try.")
-        #     return model, None
-        # new_model = random.choice(remaining_models)
-        # return await generate_answer(client, new_model, question, topic=topic)
+        kwargs_clone = kwargs.copy()
+        kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
+        langfuse_context.update_current_observation(
+            input=kwargs_clone.pop("messages"),
+            model=model,
+            output=response_model.model_dump(),
+            # usage=log_llm_usage(response_model.usage),
+            metadata={
+                "question": question,
+                "err": err,
+                "code": code,
+                "topic": topic,
+                **kwargs_clone,
+            },
+        )
+        logger.info(f"{qa_id} Answer Generation Completed ")
+        return model, response_model
     except Exception as e:
-        logger.error(f"Error occurred while generating {qa_id} answer: {e}")
-
-    return model, None
+        logger.error(f"Error while generating {qa_id} answer: {e}")
+        raise
 
 
 def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]:
@@ -281,7 +227,7 @@ def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]
         return random.choice(ANSWER_MODELS)
 
 
-@observe(as_type="generation", capture_input=False, capture_output=False)
+@observe(as_type="generation", capture_input=True, capture_output=True)
 async def augment_question(
     client: LlmClient,
     model: str,
@@ -294,7 +240,7 @@ async def augment_question(
     augmentation_prompt = ""
     preamble = """
     <system>
-    You are an LLM specializing in modifying existing coding questions to create similar yet distinct versions. Ultimately the new edited questions that you generate will be implemented by a programming agent. As such, use your vast knowledge of UX and software engineering principles to make intelligent yet distinguishable modifications.
+    You are an LLM specializing in modifying existing coding questions to create similar yet distinct versions. Ultimately the questions that you generate will be implemented by a programming agent. As such, use your vast knowledge of UX and software engineering principles to make intelligent yet distinguishable modifications. Your response must only contain the modified question. Do not greet or converse with the user.
     </system>
     """
     # create unique qa_id
@@ -308,7 +254,7 @@ async def augment_question(
         if topic == Topics.SCIENCE:
             augmentation_prompt = f"Generate a new coding question similar to the original, but with a similar science experiment that is different from the original. Here is the original coding question: {question}"
         else:
-            augmentation_prompt = f" Change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question. Here is the original coding question: {question}."
+            augmentation_prompt = f"Change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question. Here is the original coding question: {question}."
     elif augmentation_level == AugmentationLevel.ORIGINAL:
         # early return the original unaugmented question.
         langfuse_context.update_current_observation(
@@ -321,7 +267,7 @@ async def augment_question(
         return question, qa_id
 
     kwargs = {
-        "response_model": CodingQuestion,
+        "response_model": None,
         "model": model,
         "messages": [
             {
@@ -329,6 +275,7 @@ async def augment_question(
                 "content": preamble + "\n <user>" + augmentation_prompt + "</user>",
             }
         ],
+        "max_retries": AsyncRetrying(stop=stop_after_attempt(1), reraise=True),
         "temperature": 0.0,
         "max_tokens": 8192,
         "top_p": 0.9,
@@ -338,9 +285,7 @@ async def augment_question(
         kwargs["seed"] = random.randint(0, int(1e9))  # needed for OpenAI
     try:
         response_model = await client.chat.completions.create(**kwargs)
-
         kwargs_clone = kwargs.copy()
-        kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
         langfuse_context.update_current_observation(
             input=kwargs_clone.pop("messages"),
             model=model,
@@ -354,10 +299,10 @@ async def augment_question(
             },
         )
         logger.info(f"{qa_id} {augmentation_level} Completed")
-        return response_model.question, qa_id
+        return response_model.choices[0].message.content, qa_id
     except Exception as e:
         logger.error(f"{qa_id}: failed to augment question: {e}")
-        raise RuntimeError from (e)
+        raise
 
 
 def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
@@ -425,28 +370,28 @@ def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
     return CodeAnswer(files=new_files)
 
 
-def _execute_rewoo():
-    # iteration_state = await debug_initial_code(
-    #     initial_html_code=html_file.content,
-    # )
+# def _execute_rewoo():
+#     # iteration_state = await debug_initial_code(
+#     #     initial_html_code=html_file.content,
+#     # )
 
-    # num_errors_total = sum(
-    #     1 if iteration.error else 0 for iteration in iteration_state.iterations
-    # )
-    # is_final_iter_fixed = (
-    #     True
-    #     if iteration_state.latest_iteration
-    #     and not iteration_state.latest_iteration.error
-    #     else False
-    # )
+#     # num_errors_total = sum(
+#     #     1 if iteration.error else 0 for iteration in iteration_state.iterations
+#     # )
+#     # is_final_iter_fixed = (
+#     #     True
+#     #     if iteration_state.latest_iteration
+#     #     and not iteration_state.latest_iteration.error
+#     #     else False
+#     # )
 
-    # logger.info(
-    #     f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
-    # )
+#     # logger.info(
+#     #     f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
+#     # )
 
-    # final html file
-    # final_html = iteration_state.latest_iteration.code
-    return
+#     # final html file
+#     # final_html = iteration_state.latest_iteration.code
+#     return
 
 
 # use trace to avoid double dipping cost logging on nested observations
@@ -454,9 +399,9 @@ def _execute_rewoo():
 async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     client = get_llm_api_client()
     question_model = random.choice(GENERATOR_MODELS)
-
-    tasks = []
     answer_models = get_answer_model_ids(response_strategy)
+    results: list[tuple[str, CodeAnswer | None, AugmentationLevel | None, str]]
+    tasks = []
 
     async def _generate_response(
         model: str,
@@ -500,58 +445,65 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         return model, result, level, qa_id
 
+    ##### START OF FUNCTION LOGIC #####
     # 1. get random persona from hugging face
     persona = get_random_persona()
     # logger.info(f"@@@@@ persona: {persona}")
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
     selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)
+    try:
+        # 3. generate a question using the topic
+        question_prompt = await generate_question(
+            client, question_model, selected_topic[0], persona
+        )
 
-    # 3. generate a question using the topic
-    question_prompt, _ = await generate_question(
-        client, question_model, selected_topic[0], persona
-    )
+        if question_prompt is None:
+            raise ValueError("generate_question() returned null")
 
-    if question_prompt is None:
-        raise ValueError("generate_question() returned null")
-
-    augmented_prompts = []
-    if response_strategy == ResponseStrategy.NO_AUGMENTATION:
-        for model in answer_models:
-            tasks.append(
-                _generate_response(
-                    model, question_prompt, selected_topic[0], qa_id="placeholder"
+        augmented_prompts = []
+        if response_strategy == ResponseStrategy.NO_AUGMENTATION:
+            for model in answer_models:
+                tasks.append(
+                    _generate_response(
+                        model,
+                        question_prompt,
+                        selected_topic[0],
+                        qa_id="placeholder",
+                    )
                 )
-            )
-    elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
-        # 4. augment questions
-        # if augmenting, use same model for both question and answer generation
-        answer_models = question_model
+        elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
+            # 4. augment questions
+            # if augmenting, use same model for both question and answer generation
+            answer_models = question_model
 
-        assert type(answer_models) is str
+            assert type(answer_models) is str
 
-        for level in AugmentationLevel:
-            augmented_question, qa_id = await augment_question(
-                client, question_model, question_prompt, level, selected_topic[0]
-            )
-            augmented_prompts.append(
-                {"level": level.name, "question": augmented_question}
-            )
-            # 5. generate answers as code
-            tasks.append(
-                _generate_response(
-                    answer_models,
-                    augmented_question,
-                    topic=selected_topic[0],
-                    level=level,
-                    qa_id=qa_id,
+            for level in AugmentationLevel:
+                augmented_question, qa_id = await augment_question(
+                    client, question_model, question_prompt, level, selected_topic[0]
                 )
-            )
+                augmented_prompts.append(
+                    {"level": level.name, "question": augmented_question}
+                )
+                # 5. generate answers as code
+                tasks.append(
+                    _generate_response(
+                        answer_models,
+                        augmented_question,
+                        topic=selected_topic[0],
+                        level=level,
+                        qa_id=qa_id,
+                    )
+                )
 
-    results: list[
-        tuple[str, CodeAnswer | None, AugmentationLevel | None, str]
-    ] = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
 
+    except AuthenticationError as e:
+        logger.error(f"Shutting down synthetic-API: {e}")
+        sys.exit(1)
+    except Exception as e:
+        raise e
     responses = []
     synthetic_ground_truth: dict[str, int] = {}
     for model, result, level, qa_id in results:
