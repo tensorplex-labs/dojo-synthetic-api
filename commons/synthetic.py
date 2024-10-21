@@ -240,7 +240,7 @@ async def augment_question(
     augmentation_prompt = ""
     preamble = """
     <system>
-    You are an LLM specializing in modifying existing coding questions to create similar yet distinct versions. Ultimately the questions that you generate will be implemented by a programming agent. As such, use your vast knowledge of UX and software engineering principles to make intelligent yet distinguishable modifications. Your response must only contain the modified question. Do not greet or converse with the user. 
+    You are an LLM specializing in modifying existing coding questions to create similar yet distinct versions. Ultimately the questions that you generate will be implemented by a programming agent. As such, use your vast knowledge of UX and software engineering principles to make intelligent yet distinguishable modifications. Your response must only contain the modified question. Do not greet or converse with the user.
     </system>
     """
     # create unique qa_id
