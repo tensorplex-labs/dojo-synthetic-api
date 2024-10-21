@@ -190,23 +190,56 @@ def get_answer_examples(topic: Topics) -> str:
 def _get_game_answer_examples() -> str:
     return """
         <example_input_1>
+            Implement a fun, streamlined web game called 'Turbulent Skies' where players navigate an airplane through various weather conditions and obstacles.
+
+            Features:
+            - Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
+            - Display an airplane sprite that the player can move up and down.
+            - Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
+            - Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement. Create corresponding visual changes for the weather events.
+            - Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
+            - Add floating luggage items that appear randomly on the screen and move from right to left.
+            - Display a score counter that increases when luggage items are collected.
+            - Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
+            - Implement a 'game over' condition when the turbulence meter is full, or if the fuel gauge is empty, showing the final score and a 'Play Again' button.
+
+            User Actions:
+            1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
+            2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
+        </example_input_1>
+        <example_output_1>
+            {
+            "files": [
+                    {
+                        "filename": "index.js",
+                        "content": "const canvas=document.getElementById("gameCanvas");const ctx=canvas.getContext("2d");const turbulenceMeter=document.getElementById("turbulenceFill");const fuelGauge=document.getElementById("fuelFill");const scoreElement=document.getElementById("score");const gameOverScreen=document.getElementById("gameOver");const finalScoreElement=document.getElementById("finalScore");const playAgainButton=document.getElementById("playAgain");const smoothAirCooldownElement=document.getElementById("smoothAirCooldown");let canvasWidth=1600;let canvasHeight=900;let scale=1;function resizeCanvas(){const e=document.getElementById("gameContainer"),t=e.clientWidth,n=e.clientHeight;(scale=Math.min(t/canvasWidth,n/canvasHeight)),(canvas.width=canvasWidth*scale),(canvas.height=canvasHeight*scale),ctx.scale(scale,scale);}window.addEventListener("resize",resizeCanvas),resizeCanvas();const airplane={x:100,y:canvasHeight/2,width:100,height:50,speed:5,};const clouds=[];const luggageItems=[];const fuelCanisters=[];let turbulence=0;let fuel=100;let score=0;let gameOver=false;let smoothAirActive=false;let lastTime=0;let smoothAirTimer=0;const SMOOTH_AIR_DURATION=30000;const SMOOTH_AIR_COOLDOWN=30000;const weatherConditions=["clear","stormy","turbulent"];let currentWeather="clear";function createCloud(){return{x:canvasWidth,y:Math.random()*canvasHeight,width:100*Math.random()+50,height:50*Math.random()+25,speed:2*Math.random()+1,};}function createLuggage(){return{x:canvasWidth,y:Math.random()*canvasHeight,width:40,height:40,speed:3*Math.random()+2,};}function createFuel(){return{x:canvasWidth,y:Math.random()*canvasHeight,width:40,height:40,speed:3*Math.random()+2,};}function drawFuelCanisters(){ctx.fillStyle="#32CD32";fuelCanisters.forEach((e)=>{ctx.beginPath();ctx.arc(e.x,e.y,e.size,0,2*Math.PI);ctx.fill();});}function updateFuelCanisters(deltaTime){fuelCanisters.forEach((e)=>{e.x-=e.speed*deltaTime*60;if(e.x+e.size<0)e.x=canvasWidth;});if(Math.random()<0.002*deltaTime*60){fuelCanisters.push({x:canvasWidth,y:Math.random()*(canvasHeight-20),size:15,speed:3*Math.random()+2,});}}function drawAirplane(){ctx.fillStyle="#4A4A4A";ctx.beginPath();ctx.moveTo(airplane.x,airplane.y);ctx.lineTo(airplane.x+airplane.width,airplane.y+airplane.height/2);ctx.lineTo(airplane.x,airplane.y+airplane.height);ctx.closePath();ctx.fill();ctx.fillStyle="#C0C0C0";for(let i=0;i<3;i++){ctx.fillRect(airplane.x+5+20*i,airplane.y+15,15,10);}ctx.fillStyle="#4A4A4A";ctx.beginPath();ctx.moveTo(airplane.x+30,airplane.y+airplane.height-10);ctx.lineTo(airplane.x+20,airplane.y+airplane.height+20);ctx.lineTo(airplane.x+50,airplane.y+airplane.height-15);ctx.closePath();ctx.fill();}function drawCloud(cloud){ctx.fillStyle="rgba(255,255,255,0.8)";ctx.beginPath();ctx.arc(cloud.x,cloud.y,cloud.width/2,0,2*Math.PI);ctx.arc(cloud.x+cloud.width/4,cloud.y-cloud.height/4,cloud.width/3,0,2*Math.PI);ctx.arc(cloud.x+cloud.width/2,cloud.y,cloud.width/3,0,2*Math.PI);ctx.closePath();ctx.fill();}function drawLuggage(luggage){ctx.fillStyle="#8B4513";ctx.fillRect(luggage.x,luggage.y,luggage.width,luggage.height);ctx.fillStyle="#DAA520";ctx.fillRect(luggage.x+5,luggage.y+5,luggage.width-10,luggage.height-10);}function drawWeatherEffects(){if("stormy"===currentWeather){(ctx.fillStyle="rgba(0,0,0,0.3)"),ctx.fillRect(0,0,canvasWidth,canvasHeight);for(let e=0;e<50;e++){(ctx.strokeStyle="#FFFFFF"),ctx.beginPath();const t=Math.random()*canvasWidth,n=Math.random()*canvasHeight;ctx.moveTo(t,n),ctx.lineTo(t+10,n+10),ctx.stroke();}}else"turbulent"===currentWeather&&((ctx.fillStyle="rgba(255,165,0,0.2)"),ctx.fillRect(0,0,canvasWidth,canvasHeight));}function updateAirplane(deltaTime){if(keys.ArrowUp&&airplane.y>0){airplane.y-=airplane.speed*deltaTime*60;}if(keys.ArrowDown&&airplane.y<canvasHeight-airplane.height){airplane.y+=airplane.speed*deltaTime*60;}}function updateFuel(deltaTime){fuel-=0.05*deltaTime*60;if(fuel<=0){gameOver=true;showGameOver();}}function checkCollisions(){luggageItems.forEach((e,t)=>{e.x-=e.speed;if(e.x+e.width<0){luggageItems.splice(t,1);}if(airplane.x<e.x+e.width&&airplane.x+airplane.width>e.x&&airplane.y<e.y+e.height&&airplane.y+airplane.height>e.y){luggageItems.splice(t,1);score+=500;}});fuelCanisters.forEach((e)=>{if(airplane.x<e.x+e.size&&airplane.x+airplane.width>e.x-e.size&&airplane.y<e.y+e.size&&airplane.y+airplane.height>e.y-e.size){fuel=Math.min(fuel+20,100);e.x=canvasWidth;}});}function updateClouds(deltaTime){clouds.forEach((e)=>{e.x-=e.speed*deltaTime*60;if(e.x+e.width<0){e.x=canvasWidth;e.y=Math.random()*canvasHeight;}});}function updateTurbulence(deltaTime){if(currentWeather==="turbulent"&&!smoothAirActive){turbulence+=0.15*deltaTime*60;}else if(currentWeather==="stormy"&&!smoothAirActive){turbulence+=0.08*deltaTime*60;}else{turbulence=Math.max(0,turbulence-0.1*deltaTime*60);}if(turbulence>=100){gameOver=true;showGameOver();}}function updateWeather(deltaTime){if(Math.random()<0.003*deltaTime*60){currentWeather=weatherConditions[Math.floor(Math.random()*weatherConditions.length)];}}function updateSmoothAir(deltaTime){if(smoothAirActive){smoothAirTimer-=deltaTime*1000;if(smoothAirTimer<=0){smoothAirActive=false;smoothAirTimer=SMOOTH_AIR_COOLDOWN;}smoothAirCooldownElement.textContent=`Smooth Air Active for: ${Math.ceil(smoothAirTimer/1000)}s`;}else if(smoothAirTimer>0){smoothAirTimer-=deltaTime*1000;if(smoothAirTimer<=0){smoothAirCooldownElement.textContent="Smooth Air: Ready";}else{smoothAirCooldownElement.textContent=`Smooth Air Cooldown: ${Math.ceil(smoothAirTimer/1000)}s`;}}}function updateGame(deltaTime){updateAirplane(deltaTime);updateClouds(deltaTime);updateFuelCanisters(deltaTime);checkCollisions();updateTurbulence(deltaTime);updateFuel(deltaTime);updateWeather(deltaTime);updateSmoothAir(deltaTime);if(Math.random()<0.02*deltaTime*60){luggageItems.push(createLuggage());}if(Math.random()<0.01*deltaTime*60){fuelCanisters.push(createFuel());}}function drawGame(){ctx.clearRect(0,0,canvasWidth,canvasHeight);ctx.fillStyle="#87CEEB";ctx.fillRect(0,0,canvasWidth,canvasHeight);drawWeatherEffects();clouds.forEach(drawCloud);luggageItems.forEach(drawLuggage);drawFuelCanisters();drawAirplane();turbulenceMeter.style.width=`${turbulence}%`;fuelGauge.style.width=`${fuel}%`;scoreElement.textContent=`Score: ${Math.floor(score)}`;}function gameLoop(currentTime){if(lastTime===0){lastTime=currentTime;}const deltaTime=(currentTime-lastTime)/1000;lastTime=currentTime;if(!gameOver){updateGame(deltaTime);drawGame();}requestAnimationFrame(gameLoop);}function startGame(){airplane.y=canvasHeight/2;clouds.length=0;luggageItems.length=0;turbulence=0;fuel=100;score=0;gameOver=false;currentWeather="clear";smoothAirActive=false;lastTime=0;smoothAirTimer=0;for(let e=0;e<5;e++)clouds.push(createCloud());gameOverScreen.style.display="none";requestAnimationFrame(gameLoop);}function showGameOver(){finalScoreElement.textContent=Math.floor(score);gameOverScreen.style.display="block";}const keys={};playAgainButton.addEventListener("click",startGame);document.addEventListener("keydown",(e)=>{keys[e.code]=true;if(["ArrowUp","ArrowDown","Space"].includes(e.code)){e.preventDefault();}if(e.key===" "&&!smoothAirActive&&smoothAirTimer===0){smoothAirActive=true;smoothAirTimer=SMOOTH_AIR_DURATION;}});document.addEventListener("keyup",(e)=>{keys[e.code]=false;});startGame();",
+                        "language": "javascript"
+                    },
+                    {
+                        "filename": "index.html",
+                        "content": "<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta content="width=device-width, initial-scale=1.0" name="viewport" /><title>Turbulent Skies</title><style>body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; } #gameContainer { position: relative; width: 100%; height: 0; padding-bottom: 56.25%; background-color: #7dc9e7; } #gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; } #turbulenceMeter { position: absolute; top: 10px; left: 10px; width: 200px; height: 20px; background-color: rgba(255, 255, 255, 0.5); border: 2px solid #333; } #turbulenceFill { width: 0%; height: 100%; background-color: #ff4500; } #score { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); } #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 20px; border-radius: 10px; text-align: center; display: none; } #playAgain { margin-top: 20px; padding: 10px 20px; font-size: 18px; cursor: pointer; } #smoothAirCooldown { position: absolute; bottom: 10px; left: 10px; color: white; font-size: 18px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); } #fuelGauge { position: absolute; top: 40px; left: 10px; width: 200px; height: 20px; background-color: rgba(255, 255, 255, 0.5); border: 2px solid #333; } #fuelFill { width: 100%; height: 100%; background-color: #32cd32; transition: width 0.3s; }</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="turbulenceMeter"><div id="turbulenceFill"></div></div><div id="fuelGauge"><div id="fuelFill"></div></div><div id="score">Score: 0</div><div id="smoothAirCooldown">Smooth Air: Ready</div><div id="gameOver"><h2>Game Over</h2><p>Your Score: <span id="finalScore"></span></p><button id="playAgain">Play Again</button></div></div><script src="index.js"></script></body></html>",
+                        "language": "html"
+                    }
+                ]
+            }
+        </example_output_1>
+        <example_input_2>
             Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
 
             Features
-            • Create a stable 2D city for the players and NPC to move through.
-            • Multiple animated pedestrian figures moving smoothly around the city
-            • One pedestrian figure representing the pickpocket, visually distinct
-            • One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled.
-            • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
-            • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
-            • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
+            - Create a stable 2D city for the players and NPC to move through.
+            - Multiple animated pedestrian figures moving smoothly around the city
+            - One pedestrian figure representing the pickpocket, visually distinct
+            - One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled.
+            - Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
+            - Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
+            - Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
 
             User Actions:
-            • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
-
-        </example_input_1>
-        <example_output_1>
-        {
+            - use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
+        </example_input_2>
+        <example_output_2>
+            {
             "files": [
                     {
                         "filename": "index.js",
@@ -216,41 +249,6 @@ def _get_game_answer_examples() -> str:
                     {
                         "filename": "index.html",
                         "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Police Officer Catch the Pickpocket</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:Arial,sans-serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;background-color:#8B8B8B}#scoreTimer{position:absolute;top:10px;left:10px;color:white;font-size:18px;background-color:rgba(0,0,0,0.5);padding:5px 10px;border-radius:5px}#gameOverScreen{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background-color:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;text-align:center;display:none}#restartButton{margin-top:10px;padding:10px 20px;font-size:16px;cursor:pointer}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="scoreTimer">Score: 0 | Time: 120s</div><div id="gameOverScreen"><h2>Game Over</h2><p>Final Score: <span id="finalScore"></span></p><button id="restartButton">Restart</button></div></div></body></html>",
-                        "language": "html"
-                    }
-                ]
-            }
-        </example_output_1>
-        <example_input_2>
-            Implement a fun, streamlined web game called 'Turbulent Skies' where players navigate an airplane through various weather conditions and obstacles.
-
-            Features:
-            • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
-            • Display an airplane sprite that the player can move up and down.
-            • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
-            • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement. Create corresponding visual changes for the weather events.
-            • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
-            • Add floating luggage items that appear randomly on the screen and move from right to left.
-            • Display a score counter that increases when luggage items are collected.
-            • Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
-            • Implement a 'game over' condition when the turbulence meter is full, or if the fuel gauge is empty, showing the final score and a 'Play Again' button.
-
-            User Actions:
-            1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
-            2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
-
-        </example_input_2>
-        <example_output_2>
-            {
-            "files": [
-                    {
-                        "filename": "index.js",
-                        "content": "const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d"); const turbulenceMeter = document.getElementById("turbulenceFill"); const fuelGauge = document.getElementById("fuelFill"); const scoreElement = document.getElementById("score"); const gameOverScreen = document.getElementById("gameOver"); const finalScoreElement = document.getElementById("finalScore"); const playAgainButton = document.getElementById("playAgain"); const smoothAirCooldownElement = document.getElementById("smoothAirCooldown"); let canvasWidth = 1600; let canvasHeight = 900; let scale = 1; function resizeCanvas() { const e = document.getElementById("gameContainer"), t = e.clientWidth, n = e.clientHeight; (scale = Math.min(t / canvasWidth, n / canvasHeight)), (canvas.width = canvasWidth * scale), (canvas.height = canvasHeight * scale), ctx.scale(scale, scale); } window.addEventListener("resize", resizeCanvas), resizeCanvas(); const airplane = { x: 100, y: canvasHeight / 2, width: 100, height: 50, speed: 5, }; const clouds = []; const luggageItems = []; const fuelCanisters = []; let turbulence = 0; let fuel = 100; let score = 0; let gameOver = false; let smoothAirActive = false; let lastTime = 0; let smoothAirTimer = 0; const SMOOTH_AIR_DURATION = 30000; const SMOOTH_AIR_COOLDOWN = 30000; const weatherConditions = ["clear", "stormy", "turbulent"]; let currentWeather = "clear"; function createCloud() { return { x: canvasWidth, y: Math.random() * canvasHeight, width: 100 * Math.random() + 50, height: 50 * Math.random() + 25, speed: 2 * Math.random() + 1, }; } function createLuggage() { return { x: canvasWidth, y: Math.random() * canvasHeight, width: 40, height: 40, speed: 3 * Math.random() + 2, }; } function createFuel() { return { x: canvasWidth, y: Math.random() * canvasHeight, width: 40, height: 40, speed: 3 * Math.random() + 2, }; } function drawFuelCanisters() { ctx.fillStyle = "#32CD32"; fuelCanisters.forEach((e) => { ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, 2 * Math.PI); ctx.fill(); }); } function updateFuelCanisters(deltaTime) { fuelCanisters.forEach((e) => { e.x -= e.speed * deltaTime * 60; if (e.x + e.size < 0) e.x = canvasWidth; }); if (Math.random() < 0.002 * deltaTime * 60) { fuelCanisters.push({ x: canvasWidth, y: Math.random() * (canvasHeight - 20), size: 15, speed: 3 * Math.random() + 2, }); } } function drawAirplane() { ctx.fillStyle = "#4A4A4A"; ctx.beginPath(); ctx.moveTo(airplane.x, airplane.y); ctx.lineTo( airplane.x + airplane.width, airplane.y + airplane.height / 2 ); ctx.lineTo(airplane.x, airplane.y + airplane.height); ctx.closePath(); ctx.fill(); ctx.fillStyle = "#C0C0C0"; for (let i = 0; i < 3; i++) { ctx.fillRect(airplane.x + 5 + 20 * i, airplane.y + 15, 15, 10); } ctx.fillStyle = "#4A4A4A"; ctx.beginPath(); ctx.moveTo(airplane.x + 30, airplane.y + airplane.height - 10); ctx.lineTo(airplane.x + 20, airplane.y + airplane.height + 20); ctx.lineTo(airplane.x + 50, airplane.y + airplane.height - 15); ctx.closePath(); ctx.fill(); } function drawCloud(cloud) { ctx.fillStyle = "rgba(255, 255, 255, 0.8)"; ctx.beginPath(); ctx.arc(cloud.x, cloud.y, cloud.width / 2, 0, 2 * Math.PI); ctx.arc( cloud.x + cloud.width / 4, cloud.y - cloud.height / 4, cloud.width / 3, 0, 2 * Math.PI ); ctx.arc( cloud.x + cloud.width / 2, cloud.y, cloud.width / 3, 0, 2 * Math.PI ); ctx.closePath(); ctx.fill(); } function drawLuggage(luggage) { ctx.fillStyle = "#8B4513"; ctx.fillRect(luggage.x, luggage.y, luggage.width, luggage.height); ctx.fillStyle = "#DAA520"; ctx.fillRect( luggage.x + 5, luggage.y + 5, luggage.width - 10, luggage.height - 10 ); } function drawWeatherEffects() { if ("stormy" === currentWeather) { (ctx.fillStyle = "rgba(0, 0, 0, 0.3)"), ctx.fillRect(0, 0, canvasWidth, canvasHeight); for (let e = 0; e < 50; e++) { (ctx.strokeStyle = "#FFFFFF"), ctx.beginPath(); const t = Math.random() * canvasWidth, n = Math.random() * canvasHeight; ctx.moveTo(t, n), ctx.lineTo(t + 10, n + 10), ctx.stroke(); } } else "turbulent" === currentWeather && ((ctx.fillStyle = "rgba(255, 165, 0, 0.2)"), ctx.fillRect(0, 0, canvasWidth, canvasHeight)); } function updateAirplane(deltaTime) { if (keys.ArrowUp && airplane.y > 0) { airplane.y -= airplane.speed * deltaTime * 60; } if (keys.ArrowDown && airplane.y < canvasHeight - airplane.height) { airplane.y += airplane.speed * deltaTime * 60; } } function updateFuel(deltaTime) { fuel -= 0.05 * deltaTime * 60; if (fuel <= 0) { gameOver = true; showGameOver(); } } function checkCollisions() { luggageItems.forEach((e, t) => { e.x -= e.speed; if (e.x + e.width < 0) { luggageItems.splice(t, 1); } if ( airplane.x < e.x + e.width && airplane.x + airplane.width > e.x && airplane.y < e.y + e.height && airplane.y + airplane.height > e.y ) { luggageItems.splice(t, 1); score += 500; } }); fuelCanisters.forEach((e) => { if ( airplane.x < e.x + e.size && airplane.x + airplane.width > e.x - e.size && airplane.y < e.y + e.size && airplane.y + airplane.height > e.y - e.size ) { fuel = Math.min(fuel + 20, 100); e.x = canvasWidth; } }); } function updateClouds(deltaTime) { clouds.forEach((e) => { e.x -= e.speed * deltaTime * 60; if (e.x + e.width < 0) { e.x = canvasWidth; e.y = Math.random() * canvasHeight; } }); } function updateTurbulence(deltaTime) { if (currentWeather === "turbulent" && !smoothAirActive) { turbulence += 0.15 * deltaTime * 60; } else if (currentWeather === "stormy" && !smoothAirActive) { turbulence += 0.08 * deltaTime * 60; } else { turbulence = Math.max(0, turbulence - 0.1 * deltaTime * 60); } if (turbulence >= 100) { gameOver = true; showGameOver(); } } function updateWeather(deltaTime) { if (Math.random() < 0.003 * deltaTime * 60) { currentWeather = weatherConditions[ Math.floor(Math.random() * weatherConditions.length) ]; } } function updateSmoothAir(deltaTime) { if (smoothAirActive) { smoothAirTimer -= deltaTime * 1000; if (smoothAirTimer <= 0) { smoothAirActive = false; smoothAirTimer = SMOOTH_AIR_COOLDOWN; } smoothAirCooldownElement.textContent = `Smooth Air Active for: ${Math.ceil( smoothAirTimer / 1000 )}s`; } else if (smoothAirTimer > 0) { smoothAirTimer -= deltaTime * 1000; if (smoothAirTimer <= 0) { smoothAirCooldownElement.textContent = "Smooth Air: Ready"; } else { smoothAirCooldownElement.textContent = `Smooth Air Cooldown: ${Math.ceil( smoothAirTimer / 1000 )}s`; } } } function updateGame(deltaTime) { updateAirplane(deltaTime); updateClouds(deltaTime); updateFuelCanisters(deltaTime); checkCollisions(); updateTurbulence(deltaTime); updateFuel(deltaTime); updateWeather(deltaTime); updateSmoothAir(deltaTime); if (Math.random() < 0.02 * deltaTime * 60) { luggageItems.push(createLuggage()); } if (Math.random() < 0.01 * deltaTime * 60) { fuelCanisters.push(createFuel()); } } function drawGame() { ctx.clearRect(0, 0, canvasWidth, canvasHeight); ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvasWidth, canvasHeight); drawWeatherEffects(); clouds.forEach(drawCloud); luggageItems.forEach(drawLuggage); drawFuelCanisters(); drawAirplane(); turbulenceMeter.style.width = `${turbulence}%`; fuelGauge.style.width = `${fuel}%`; scoreElement.textContent = `Score: ${Math.floor(score)}`; } function gameLoop(currentTime) { if (lastTime === 0) { lastTime = currentTime; } const deltaTime = (currentTime - lastTime) / 1000; lastTime = currentTime; if (!gameOver) { updateGame(deltaTime); drawGame(); } requestAnimationFrame(gameLoop); } function startGame() { airplane.y = canvasHeight / 2; clouds.length = 0; luggageItems.length = 0; turbulence = 0; fuel = 100; score = 0; gameOver = false; currentWeather = "clear"; smoothAirActive = false; lastTime = 0; smoothAirTimer = 0; for (let e = 0; e < 5; e++) clouds.push(createCloud()); gameOverScreen.style.display = "none"; requestAnimationFrame(gameLoop); } function showGameOver() { finalScoreElement.textContent = Math.floor(score); gameOverScreen.style.display = "block"; } const keys = {}; playAgainButton.addEventListener("click", startGame); document.addEventListener("keydown", (e) => { keys[e.code] = true; if (["ArrowUp", "ArrowDown", "Space"].includes(e.code)) { e.preventDefault(); } if (e.key === " " && !smoothAirActive && smoothAirTimer === 0) { smoothAirActive = true; smoothAirTimer = SMOOTH_AIR_DURATION; } }); document.addEventListener("keyup", (e) => { keys[e.code] = false; }); startGame();",
-                        "language": "javascript"
-                    },
-                    {
-                        "filename": "index.html",
-                        "content": "<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta content="width=device-width, initial-scale=1.0" name="viewport" /><title>Turbulent Skies</title><style>body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; } #gameContainer { position: relative; width: 100%; height: 0; padding-bottom: 56.25%; background-color: #7dc9e7; } #gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; } #turbulenceMeter { position: absolute; top: 10px; left: 10px; width: 200px; height: 20px; background-color: rgba(255, 255, 255, 0.5); border: 2px solid #333; } #turbulenceFill { width: 0%; height: 100%; background-color: #ff4500; } #score { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); } #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 20px; border-radius: 10px; text-align: center; display: none; } #playAgain { margin-top: 20px; padding: 10px 20px; font-size: 18px; cursor: pointer; } #smoothAirCooldown { position: absolute; bottom: 10px; left: 10px; color: white; font-size: 18px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); } #fuelGauge { position: absolute; top: 40px; left: 10px; width: 200px; height: 20px; background-color: rgba(255, 255, 255, 0.5); border: 2px solid #333; } #fuelFill { width: 100%; height: 100%; background-color: #32cd32; transition: width 0.3s; }</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="turbulenceMeter"><div id="turbulenceFill"></div></div><div id="fuelGauge"><div id="fuelFill"></div></div><div id="score">Score: 0</div><div id="smoothAirCooldown">Smooth Air: Ready</div><div id="gameOver"><h2>Game Over</h2><p>Your Score: <span id="finalScore"></span></p><button id="playAgain">Play Again</button></div></div><script src="index.js"></script></body></html>",
                         "language": "html"
                     }
                 ]
@@ -269,15 +267,15 @@ def _get_game_question_examples() -> str:
     #     Implement a fun, streamlined web game called 'Rhythm Master' that challenges players to match beats and create their own hip-hop tracks.
 
     #     Features:
-    #     •  Create a game board as 4x4 grid of colorful buttons. The game board should resemble a DJ's mixing panel.
-    #     •  Use neon colors (e.g., hot pink, electric blue, lime green, and bright orange) for the buttons.
-    #     •  Display a score counter at the top of the screen
-    #     •  Show a 'Play' button to start the game and a 'Reset' button to restart
-    #     •  Implement a timer that counts down from 60 seconds. When the timer ends, display a "Game Over" screen displaying the final score.
-    #     •  Generate a random sequence of button highlights for the player to follow.
-    #     •  The game should increase in difficulty as the player's score increases by speeding up the sequence and adding more buttons to remember.
-    #     •  Provide distinct visual feedback for correct and incorrect button presses.
-    #     •  Add visual effects like confetti when the player successfully completes a sequence
+    #     -  Create a game board as 4x4 grid of colorful buttons. The game board should resemble a DJ's mixing panel.
+    #     -  Use neon colors (e.g., hot pink, electric blue, lime green, and bright orange) for the buttons.
+    #     -  Display a score counter at the top of the screen
+    #     -  Show a 'Play' button to start the game and a 'Reset' button to restart
+    #     -  Implement a timer that counts down from 60 seconds. When the timer ends, display a "Game Over" screen displaying the final score.
+    #     -  Generate a random sequence of button highlights for the player to follow.
+    #     -  The game should increase in difficulty as the player's score increases by speeding up the sequence and adding more buttons to remember.
+    #     -  Provide distinct visual feedback for correct and incorrect button presses.
+    #     -  Add visual effects like confetti when the player successfully completes a sequence
 
     #     User Actions:
     #     1. Click the 'Play' button to start the game and begin the countdown timer
@@ -293,38 +291,38 @@ def _get_game_question_examples() -> str:
             Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
 
             Features
-            • Create a stable 2D city for the players and NPC to move through.
-            • Multiple animated pedestrian figures moving smoothly around the city
-            • One pedestrian figure representing the pickpocket, visually distinct
-            • One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled.
-            • Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
-            • Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
-            • Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
+            - Create a stable 2D city for the players and NPC to move through.
+            - Multiple animated pedestrian figures moving smoothly around the city
+            - One pedestrian figure representing the pickpocket, visually distinct
+            - One police officer figure that can be smoothly controlled by the user using WASD keys. Ensure that the default keystroke behaviour is disabled.
+            - Create a detection radius around the police officer. When the pickpocket enters this radius, highlight both the officer and pickpocket.
+            - Add a score counter that increases when the police officer successfully catches the pickpocket (i.e. when they occupy the same space). After a catch, reset the pickpocket's position randomly on the screen.
+            - Add a timer that counts down from 120 seconds. When the timer hits 0 seconds, display a "Game Over" screen that shows the final score, and allows the user to restart the game.
 
             User Actions:
-            • use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
+            - use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
         </example_output_1>
 
         <example_input_2>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 2 user actions for the following persona: A middle-aged son who is a flight attendant, bonded with air travel stories.
         </example_input_2>
         <example_output_2>
-            Implement a fun, streamlined web game called 'Turbulent Skies' where players navigate an airplane through various weather conditions and obstacles.
+            Implement a fun, streamlined web game called "Turbulent Skies" where players navigate an airplane through various weather conditions and obstacles.
 
             Features:
-            • Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
-            • Display an airplane sprite that the player can move up and down.
-            • Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
-            • Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement. Create corresponding visual changes for the weather events.
-            • Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
-            • Add floating luggage items that appear randomly on the screen and move from right to left.
-            • Display a score counter that increases when luggage items are collected.
-            • Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
-            • Implement a 'game over' condition when the turbulence meter is full, or if the fuel gauge is empty, showing the final score and a 'Play Again' button.
+            - Create a scrolling background that simulates flying through the sky, with clouds moving from right to left.
+            - Display an airplane sprite that the player can move up and down.
+            - Allow the user to control the airplane with the arrow keys. Ensure that the movement is smooth and that the default key behaviour is disabled.
+            - Generate random weather events (thunderstorms, clear skies, turbulence) that affect the airplane's movement. Create corresponding visual changes for the weather events.
+            - Implement a 'turbulence meter' at the top of the screen that fills up as the plane encounters turbulence.
+            - Add floating luggage items that appear randomly on the screen and move from right to left.
+            - Display a score counter that increases when luggage items are collected.
+            - Add a fuel gauge that depletes over time, requiring the player to collect fuel canisters to keep the plane flying.
+            - Implement a 'game over' condition when the turbulence meter is full, or if the fuel gauge is empty, showing the final score and a "Play Again" button.
 
             User Actions:
             1. Use the up and down arrow keys to move the airplane vertically, avoiding turbulence and collecting luggage.
-            2. Press the spacebar to activate 'Smooth Air' mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
+            2. Press the spacebar to activate "Smooth Air" mode, which temporarily reduces the effect of turbulence (can be used once every 30 seconds).
         </example_output_2>
     """
 
@@ -332,20 +330,20 @@ def _get_game_question_examples() -> str:
 def _get_science_question_examples() -> str:
     return """
     <example_input_1>
-            Generate a self-contained coding problem that requires the programmer to implement a streamlined science simulation with persona inspired visuals and content, with 2 user actions for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
+        Generate a self-contained coding problem that requires the programmer to implement a streamlined science simulation with persona inspired visuals and content, with 2 user actions for the following persona: "A skeptical internet user who challenges researchers and their theories, demanding evidence for every claim".
     </example_input_1>
 
     <example_output_1>
         Create an interactive simulation of the Monty Hall problem to challenge skeptical users and demonstrate probability concepts.
 
         Features:
-        • Create three closed doors displayed prominently on the screen.
-        • Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch.
-        • A scoreboard showing the number of wins and losses
-        • A reset button to start a new game
-        • Visual indicators for door selection and reveal (eg. a prize displayed behind the winning door, and a goat for the non-winning doors.)
-        • A background of a corridor with relevant decorations.
-        • Create a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.at
+        - Create three closed doors displayed prominently on the screen.
+        - Implement the Monty Hall problem logic: Place a prize behind one random door, allow the user to select a door, then reveal a non-winning door before giving the option to switch.
+        - A scoreboard showing the number of wins and losses
+        - A reset button to start a new game
+        - Visual indicators for door selection and reveal (eg. a prize displayed behind the winning door, and a goat for the non-winning doors.)
+        - A background of a corridor with relevant decorations.
+        - Create a 'Run Simulation' button that automatically plays the game 1000 times, updating the scoreboard in real-time to show the win percentages for both 'staying' and 'switching' strategies, providing empirical evidence for skeptical users.at
 
         User Actions:
         1. Click on a door to reveal what is behind it, then decide wheter to switch or stay.
@@ -358,19 +356,19 @@ def _get_science_question_examples() -> str:
         Implement an interactive 2D physics simulation of a simplified snooker table that demonstrates the principles of elastic collisions and momentum transfer. The simulation should have a historical aesthetic inspired by early 20th century snooker parlors.
 
         Features:
-        • Create a 2D top-down view of a simplified rectangular snooker table with rounded corners.
-        • Display 3 colored balls on the table: one white cue ball and two colored object balls.
-        • The table should have a green baize texture and wooden rails with a vintage appearance.
-        • Implement basic 2D physics for ball movement, including friction and collision detection.
-        • When balls collide, they should behave according to the principles of elastic collision, transferring momentum realistically.
-        • Add visual effects such as ball spin (represented by a rotating texture or pattern on the balls) and slight motion blur for moving balls.
-        • Display a simple score counter in an antique-style web-safe font.
-        • When a colored ball is pocketed (enters one of the table's corner pockets), increment the score counter. The simulation should continue running until manually reset by the user.
-        • Remember to style all elements to fit the early 20th century snooker parlor aesthetic, using appropriate colors and textures to evoke a sense of the game's rich history.
+        - Create a 2D top-down view of a simplified rectangular snooker table with rounded corners.
+        - Display 3 colored balls on the table: one white cue ball and two colored object balls.
+        - The table should have a green baize texture and wooden rails with a vintage appearance.
+        - Implement basic 2D physics for ball movement, including friction and collision detection.
+        - When balls collide, they should behave according to the principles of elastic collision, transferring momentum realistically.
+        - Add visual effects such as ball spin (represented by a rotating texture or pattern on the balls) and slight motion blur for moving balls.
+        - Display a simple score counter in an antique-style web-safe font.
+        - When a colored ball is pocketed (enters one of the table's corner pockets), increment the score counter. The simulation should continue running until manually reset by the user.
+        - Remember to style all elements to fit the early 20th century snooker parlor aesthetic, using appropriate colors and textures to evoke a sense of the game's rich history.
 
        User Actions:
         1. Click and drag on the white cue ball to set its initial velocity vector. The direction and length of the drag should determine the direction and speed of the cue ball when released. A faint line should appear during the drag to indicate the projected path.
-        2. Press the 'R' key to reset the table, randomly positioning the colored balls while keeping the white cue ball in its starting position. This action should also reset the score counter to zero.
+        2. Press the "R" key to reset the table, randomly positioning the colored balls while keeping the white cue ball in its starting position. This action should also reset the score counter to zero.
     </example_output_2>
     """
 
@@ -385,10 +383,10 @@ def _get_animation_question_examples() -> str:
             "Create an interactive piano visualization using HTML, CSS, and JavaScript.
 
             Features:
-            • User playable piano that should have 88 keys (52 white keys and 36 black keys). The user can play the piano by clicking on the piano keys.
-            • When the user hovers over a key, it should visually highlight to indicate it can be played.
-            • Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
-            • Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
+            - User playable piano that should have 88 keys (52 white keys and 36 black keys). The user can play the piano by clicking on the piano keys.
+            - When the user hovers over a key, it should visually highlight to indicate it can be played.
+            - Clicking on a key should produce a pressing animation and play a corresponding piano note sound.
+            - Implement a slider that adjusts the piano's volume, affecting the loudness of the notes played when keys are clicked.
 
             User Actions:
             1. Click on a piano key to play that note.
@@ -401,13 +399,13 @@ def _get_animation_question_examples() -> str:
             Create an interactive visualization of a vaccine molecular structure.
 
             Features:
-            • Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
-            • Each atom should be represented by a sphere, with connecting lines between atoms.
-            • Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
-            • Implement a smooth rotation animation of the molecule
-            • Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
-            • Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
-            • Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
+            - Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
+            - Each atom should be represented by a sphere, with connecting lines between atoms.
+            - Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
+            - Implement a smooth rotation animation of the molecule
+            - Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
+            - Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
+            - Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
 
             User actions:
             1. Hover over an atom to view more information about the atom.
@@ -423,13 +421,13 @@ def _get_animation_answer_examples() -> str:
         Create an interactive visualization of a vaccine molecular structure.
 
         Features:
-        • Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
-        • Each atom should be represented by a sphere, with connecting lines between atoms.
-        • Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
-        • Implement a smooth rotation animation of the molecule
-        • Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
-        • Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
-        • Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
+        - Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
+        - Each atom should be represented by a sphere, with connecting lines between atoms.
+        - Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
+        - Implement a smooth rotation animation of the molecule
+        - Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
+        - Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
+        - Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
 
         User actions:
         1. Hover over an atom to view more information about the atom.
@@ -456,14 +454,14 @@ def _get_animation_answer_examples() -> str:
         Create an interactive visualization of a secure intelligence communication network. The visualization should feature the following visual elements:
 
         Features:
-        • Implement a network of at least 5 interconnected nodes, with the central node being larger and brighter to represent the main intelligence asset.
-        • Create an animation effect where the connecting lines pulse periodically, simulating active secure channels.
-        • Glowing nodes representing intelligence assets, with a larger central node for the main asset
-        • Pulsing lines connecting the nodes, representing secure communication channels
-        • Occasional bursts of light traveling along the lines to simulate data transfer
-        • Use a dark background representing a covert operations environment
-        • Add a user interaction where clicking on any node causes a burst of light to travel from that node to all connected nodes, representing a data broadcast.
-        • Implement a feature where hovering over a node displays a small pop-up with fictional agent codenames and their current status (e.g., 'Agent Raven: Active', 'Agent Falcon: Standby').
+        - Implement a network of at least 5 interconnected nodes, with the central node being larger and brighter to represent the main intelligence asset.
+        - Create an animation effect where the connecting lines pulse periodically, simulating active secure channels.
+        - Glowing nodes representing intelligence assets, with a larger central node for the main asset
+        - Pulsing lines connecting the nodes, representing secure communication channels
+        - Occasional bursts of light traveling along the lines to simulate data transfer
+        - Use a dark background representing a covert operations environment
+        - Add a user interaction where clicking on any node causes a burst of light to travel from that node to all connected nodes, representing a data broadcast.
+        - Implement a feature where hovering over a node displays a small pop-up with fictional agent codenames and their current status (e.g., 'Agent Raven: Active', 'Agent Falcon: Standby').
 
         User Actions:
         1. Click on any node to trigger a data broadcast
@@ -490,7 +488,7 @@ def _get_animation_answer_examples() -> str:
 
 def _get_science_answer_examples() -> str:
     return """
-    </example_input_1>
+    <example_input_1>
         Create an interactive golf ball trajectory simulator that models the physics of a golf ball's flight, incorporating factors like wind speed and direction.
 
         Features:
@@ -503,29 +501,26 @@ def _get_science_answer_examples() -> str:
         - A trajectory path line that shows the ball's flight
         - A landing spot indicator
         - A scoreboard displaying current shot distance and best distance
+        - When the user has set their desired parameters, they should be able to initiate the shot with a 'Swing' button. The ball should then follow a realistic trajectory based on the input parameters and wind conditions, with the path visually traced on the screen. After the ball lands, update the scoreboard with the shot distance and best distance if applicable.
 
         User Actions:
         1. Adjust Shot Power: Allow the user to set the initial velocity of the golf ball by clicking and dragging a power meter or using a slider. The power should be visually represented, perhaps by the backswing of the golfer figure.
-
         2. Set Shot Angle: Enable the user to change the launch angle of the shot by clicking and dragging the golfer figure or using arrow keys. The angle should be displayed numerically and visually represented by the golfer's stance.
-
         3. Control Wind Conditions: Implement a way for users to adjust wind speed and direction, such as with sliders or by clicking and dragging a wind indicator. The wind arrow should update in real-time to reflect these changes.
-
-        When the user has set their desired parameters, they should be able to initiate the shot with a 'Swing' button. The ball should then follow a realistic trajectory based on the input parameters and wind conditions, with the path visually traced on the screen. After the ball lands, update the scoreboard with the shot distance and best distance if applicable.
     </example_input_1>
     <example_output_1>
         {
         "files": [
-            {
-                "filename": "index.js",
-                "content": "const canvas=document.getElementById("canvas");const ctx=canvas.getContext("2d");const container=document.getElementById("canvas-container");let scale;const baseWidth=1600;const baseHeight=900;function resizeCanvas(){const containerWidth=container.clientWidth;const containerHeight=container.clientHeight;const containerRatio=containerWidth/containerHeight;const gameRatio=16/9;if(containerRatio>gameRatio){canvas.height=containerHeight;canvas.width=containerHeight*gameRatio;}else{canvas.width=containerWidth;canvas.height=containerWidth/gameRatio;}scale=canvas.width/baseWidth;}resizeCanvas();window.addEventListener("resize",resizeCanvas);const powerSlider=document.getElementById("powerSlider");const angleSlider=document.getElementById("angleSlider");const windSpeedSlider=document.getElementById("windSpeedSlider");const windDirectionSlider=document.getElementById("windDirectionSlider");const swingButton=document.getElementById("swingButton");const currentDistanceSpan=document.getElementById("currentDistance");const bestDistanceSpan=document.getElementById("bestDistance");const windIndicatorDiv=document.getElementById("windIndicator");let bestDistance=0;let ballInFlight=false;let ballPosition={x:100,y:baseHeight-80};let ballVelocity={x:0,y:0};let time=0;const flagPosition=450*3+100;function drawCourse(){ctx.fillStyle="#87CEEB";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#228B22";ctx.fillRect(0,canvas.height-80*scale,canvas.width,80*scale);ctx.fillStyle="#8B4513";ctx.fillRect(80*scale,canvas.height-85*scale,40*scale,5*scale);ctx.fillStyle="white";ctx.font=`${14*scale}px Arial`;for(let i=100;i<=500;i+=100){let x=i*3*scale;ctx.fillText(`${i}m`,x,canvas.height-90*scale);ctx.fillRect(x,canvas.height-80*scale,2*scale,10*scale);}drawFlag();}function drawFlag(){ctx.strokeStyle="#000000";ctx.lineWidth=2*scale;ctx.beginPath();ctx.moveTo(flagPosition*scale,canvas.height-80*scale);ctx.lineTo(flagPosition*scale,canvas.height-160*scale);ctx.stroke();ctx.fillStyle="#FF0000";ctx.beginPath();ctx.moveTo(flagPosition*scale,canvas.height-160*scale);ctx.lineTo((flagPosition+30)*scale,canvas.height-145*scale);ctx.lineTo(flagPosition*scale,canvas.height-130*scale);ctx.closePath();ctx.fill();ctx.fillStyle="#000000";ctx.beginPath();ctx.arc(flagPosition*scale,canvas.height-80*scale,5*scale,0,Math.PI*2);ctx.fill();}function drawGolfer(){ctx.fillStyle="black";ctx.beginPath();ctx.arc(100*scale,canvas.height-100*scale,10*scale,0,Math.PI*2);ctx.fill();let angle=(angleSlider.value*Math.PI)/180;ctx.beginPath();ctx.moveTo(100*scale,canvas.height-100*scale);ctx.lineTo(100*scale+Math.cos(angle)*30*scale,canvas.height-100*scale-Math.sin(angle)*30*scale);ctx.lineWidth=3*scale;ctx.stroke();}function drawBall(){ctx.fillStyle="white";ctx.beginPath();ctx.arc(ballPosition.x*scale,ballPosition.y*scale,5*scale,0,Math.PI*2);ctx.fill();}function drawWindIndicator(){let windSpeed=windSpeedSlider.value;let windDirection=(windDirectionSlider.value*Math.PI)/180;const windCanvas=document.createElement("canvas");windCanvas.width=40;windCanvas.height=40;const windCtx=windCanvas.getContext("2d");windCtx.save();windCtx.translate(20,20);windCtx.rotate(windDirection);windCtx.fillStyle="black";windCtx.beginPath();windCtx.moveTo(0,-15);windCtx.lineTo(5,-10);windCtx.lineTo(2,-10);windCtx.lineTo(2,15);windCtx.lineTo(-2,15);windCtx.lineTo(-2,-10);windCtx.lineTo(-5,-10);windCtx.closePath();windCtx.fill();windCtx.restore();windCtx.fillStyle="black";windCtx.font="10px Arial";windCtx.textAlign="center";windCtx.textBaseline="middle";windCtx.fillText(`${windSpeed}`,20,35);windIndicatorDiv.innerHTML="";windIndicatorDiv.appendChild(windCanvas);}function updateBallPosition(){if(!ballInFlight)return;let g=9.81;let dt=0.1;let windSpeed=windSpeedSlider.value;let windDirection=(windDirectionSlider.value*Math.PI)/180;let windScaleFactor=0.05;let windForce={x:windSpeed*Math.cos(windDirection)*windScaleFactor,y:windSpeed*Math.sin(windDirection)*windScaleFactor,};ballVelocity.x+=windForce.x*dt;ballVelocity.y+=windForce.y*dt;ballVelocity.y-=g*dt;ballPosition.x+=ballVelocity.x*dt;ballPosition.y-=ballVelocity.y*dt;if(ballPosition.y>=baseHeight-80){ballInFlight=false;let distance=Math.round((ballPosition.x-100)/3);currentDistanceSpan.textContent=distance;if(distance>bestDistance){bestDistance=distance;bestDistanceSpan.textContent=bestDistance;}}time+=dt;}function drawTrajectory(){if(!ballInFlight)return;ctx.strokeStyle="rgba(255, 0, 0, 0.3)";ctx.lineWidth=2*scale;ctx.beginPath();ctx.moveTo(100*scale,canvas.height-80*scale);ctx.lineTo(ballPosition.x*scale,ballPosition.y*scale);ctx.stroke();}function swing(){let power=powerSlider.value*0.5;let angle=(angleSlider.value*Math.PI)/180;ballPosition={x:100,y:baseHeight-80};ballVelocity={x:power*Math.cos(angle),y:power*Math.sin(angle),};time=0;ballInFlight=true;}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);drawCourse();drawWindIndicator();drawGolfer();updateBallPosition();drawTrajectory();drawBall();requestAnimationFrame(animate);}swingButton.addEventListener("click",swing);animate();window.addEventListener("resize",()=>{resizeCanvas();ballPosition={x:100,y:baseHeight-80};});",
-                "language": "javascript"
-            },
-            {
-                "filename": "index.html",
-                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta content="width=device-width, initial-scale=1.0" name="viewport" /><title>Golf Ball Trajectory Simulator</title><style>body,html{margin:0;padding:0;overflow:hidden;font-family:Arial,sans-serif;width:100%;height:100%}#canvas-container{width:100%;height:100%;display:flex;justify-content:center;align-items:center;background-color:#f0f0f0}#canvas{max-width:100%;max-height:100%}#controls{position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.7);padding:5px;border-radius:3px;display:flex;flex-direction:column;gap:5px;font-size:12px}#controls input[type="range"]{width:80px;margin:0}#controls label{display:flex;justify-content:space-between;align-items:center}#swingButton{margin-top:5px;padding:2px 5px;font-size:12px}#scoreboard{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.7);padding:5px;border-radius:3px;font-size:12px}#windIndicator{width:40px;height:40px;align-self:center}#scoreboard p{margin:2px 0}</style></head><body><div id="canvas-container"><canvas id="canvas"></canvas></div><div id="controls"><label>Power:<input id="powerSlider" max="100" min="0" type="range" value="50"/></label><label>Angle:<input id="angleSlider" max="90" min="0" type="range" value="45"/></label><label>Wind Speed:<input id="windSpeedSlider" max="20" min="0" type="range" value="0"/></label><label>Wind Dir:<input id="windDirectionSlider" max="360" min="0" type="range" value="0"/></label><div id="windIndicator"></div><button id="swingButton">Swing</button></div><div id="scoreboard"><p>Current: <span id="currentDistance">0</span> m</p><p>Best: <span id="bestDistance">0</span> m</p></div><script src="index.js"></script></body></html>",
-                "language": "html"
-            }
+                {
+                    "filename": "index.js",
+                    "content": "const canvas=document.getElementById("canvas");const ctx=canvas.getContext("2d");const container=document.getElementById("canvas-container");let scale;const baseWidth=1600;const baseHeight=900;function resizeCanvas(){const containerWidth=container.clientWidth;const containerHeight=container.clientHeight;const containerRatio=containerWidth/containerHeight;const gameRatio=16/9;if(containerRatio>gameRatio){canvas.height=containerHeight;canvas.width=containerHeight*gameRatio;}else{canvas.width=containerWidth;canvas.height=containerWidth/gameRatio;}scale=canvas.width/baseWidth;}resizeCanvas();window.addEventListener("resize",resizeCanvas);const powerSlider=document.getElementById("powerSlider");const angleSlider=document.getElementById("angleSlider");const windSpeedSlider=document.getElementById("windSpeedSlider");const windDirectionSlider=document.getElementById("windDirectionSlider");const swingButton=document.getElementById("swingButton");const currentDistanceSpan=document.getElementById("currentDistance");const bestDistanceSpan=document.getElementById("bestDistance");const windIndicatorDiv=document.getElementById("windIndicator");let bestDistance=0;let ballInFlight=false;let ballPosition={x:100,y:baseHeight-80};let ballVelocity={x:0,y:0};let time=0;const flagPosition=450*3+100;function drawCourse(){ctx.fillStyle="#87CEEB";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#228B22";ctx.fillRect(0,canvas.height-80*scale,canvas.width,80*scale);ctx.fillStyle="#8B4513";ctx.fillRect(80*scale,canvas.height-85*scale,40*scale,5*scale);ctx.fillStyle="white";ctx.font=`${14*scale}px Arial`;for(let i=100;i<=500;i+=100){let x=i*3*scale;ctx.fillText(`${i}m`,x,canvas.height-90*scale);ctx.fillRect(x,canvas.height-80*scale,2*scale,10*scale);}drawFlag();}function drawFlag(){ctx.strokeStyle="#000000";ctx.lineWidth=2*scale;ctx.beginPath();ctx.moveTo(flagPosition*scale,canvas.height-80*scale);ctx.lineTo(flagPosition*scale,canvas.height-160*scale);ctx.stroke();ctx.fillStyle="#FF0000";ctx.beginPath();ctx.moveTo(flagPosition*scale,canvas.height-160*scale);ctx.lineTo((flagPosition+30)*scale,canvas.height-145*scale);ctx.lineTo(flagPosition*scale,canvas.height-130*scale);ctx.closePath();ctx.fill();ctx.fillStyle="#000000";ctx.beginPath();ctx.arc(flagPosition*scale,canvas.height-80*scale,5*scale,0,Math.PI*2);ctx.fill();}function drawGolfer(){ctx.fillStyle="black";ctx.beginPath();ctx.arc(100*scale,canvas.height-100*scale,10*scale,0,Math.PI*2);ctx.fill();let angle=(angleSlider.value*Math.PI)/180;ctx.beginPath();ctx.moveTo(100*scale,canvas.height-100*scale);ctx.lineTo(100*scale+Math.cos(angle)*30*scale,canvas.height-100*scale-Math.sin(angle)*30*scale);ctx.lineWidth=3*scale;ctx.stroke();}function drawBall(){ctx.fillStyle="white";ctx.beginPath();ctx.arc(ballPosition.x*scale,ballPosition.y*scale,5*scale,0,Math.PI*2);ctx.fill();}function drawWindIndicator(){let windSpeed=windSpeedSlider.value;let windDirection=(windDirectionSlider.value*Math.PI)/180;const windCanvas=document.createElement("canvas");windCanvas.width=40;windCanvas.height=40;const windCtx=windCanvas.getContext("2d");windCtx.save();windCtx.translate(20,20);windCtx.rotate(windDirection);windCtx.fillStyle="black";windCtx.beginPath();windCtx.moveTo(0,-15);windCtx.lineTo(5,-10);windCtx.lineTo(2,-10);windCtx.lineTo(2,15);windCtx.lineTo(-2,15);windCtx.lineTo(-2,-10);windCtx.lineTo(-5,-10);windCtx.closePath();windCtx.fill();windCtx.restore();windCtx.fillStyle="black";windCtx.font="10px Arial";windCtx.textAlign="center";windCtx.textBaseline="middle";windCtx.fillText(`${windSpeed}`,20,35);windIndicatorDiv.innerHTML="";windIndicatorDiv.appendChild(windCanvas);}function updateBallPosition(){if(!ballInFlight)return;let g=9.81;let dt=0.1;let windSpeed=windSpeedSlider.value;let windDirection=(windDirectionSlider.value*Math.PI)/180;let windScaleFactor=0.05;let windForce={x:windSpeed*Math.cos(windDirection)*windScaleFactor,y:windSpeed*Math.sin(windDirection)*windScaleFactor,};ballVelocity.x+=windForce.x*dt;ballVelocity.y+=windForce.y*dt;ballVelocity.y-=g*dt;ballPosition.x+=ballVelocity.x*dt;ballPosition.y-=ballVelocity.y*dt;if(ballPosition.y>=baseHeight-80){ballInFlight=false;let distance=Math.round((ballPosition.x-100)/3);currentDistanceSpan.textContent=distance;if(distance>bestDistance){bestDistance=distance;bestDistanceSpan.textContent=bestDistance;}}time+=dt;}function drawTrajectory(){if(!ballInFlight)return;ctx.strokeStyle="rgba(255, 0, 0, 0.3)";ctx.lineWidth=2*scale;ctx.beginPath();ctx.moveTo(100*scale,canvas.height-80*scale);ctx.lineTo(ballPosition.x*scale,ballPosition.y*scale);ctx.stroke();}function swing(){let power=powerSlider.value*0.5;let angle=(angleSlider.value*Math.PI)/180;ballPosition={x:100,y:baseHeight-80};ballVelocity={x:power*Math.cos(angle),y:power*Math.sin(angle),};time=0;ballInFlight=true;}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);drawCourse();drawWindIndicator();drawGolfer();updateBallPosition();drawTrajectory();drawBall();requestAnimationFrame(animate);}swingButton.addEventListener("click",swing);animate();window.addEventListener("resize",()=>{resizeCanvas();ballPosition={x:100,y:baseHeight-80};});",
+                    "language": "javascript"
+                },
+                {
+                    "filename": "index.html",
+                    "content": "<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta content="width=device-width, initial-scale=1.0" name="viewport" /><title>Golf Ball Trajectory Simulator</title><style>body,html{margin:0;padding:0;overflow:hidden;font-family:Arial,sans-serif;width:100%;height:100%}#canvas-container{width:100%;height:100%;display:flex;justify-content:center;align-items:center;background-color:#f0f0f0}#canvas{max-width:100%;max-height:100%}#controls{position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.7);padding:5px;border-radius:3px;display:flex;flex-direction:column;gap:5px;font-size:12px}#controls input[type="range"]{width:80px;margin:0}#controls label{display:flex;justify-content:space-between;align-items:center}#swingButton{margin-top:5px;padding:2px 5px;font-size:12px}#scoreboard{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.7);padding:5px;border-radius:3px;font-size:12px}#windIndicator{width:40px;height:40px;align-self:center}#scoreboard p{margin:2px 0}</style></head><body><div id="canvas-container"><canvas id="canvas"></canvas></div><div id="controls"><label>Power:<input id="powerSlider" max="100" min="0" type="range" value="50"/></label><label>Angle:<input id="angleSlider" max="90" min="0" type="range" value="45"/></label><label>Wind Speed:<input id="windSpeedSlider" max="20" min="0" type="range" value="0"/></label><label>Wind Dir:<input id="windDirectionSlider" max="360" min="0" type="range" value="0"/></label><div id="windIndicator"></div><button id="swingButton">Swing</button></div><div id="scoreboard"><p>Current: <span id="currentDistance">0</span> m</p><p>Best: <span id="bestDistance">0</span> m</p></div><script src="index.js"></script></body></html>",
+                    "language": "html"
+                }
             ]
         }
     </example_output_1>
@@ -533,34 +528,34 @@ def _get_science_answer_examples() -> str:
         Implement an interactive 2D physics simulation of a simplified snooker table that demonstrates the principles of elastic collisions and momentum transfer. The simulation should have a historical aesthetic inspired by early 20th century snooker parlors.
 
         Features:
-        • Create a 2D top-down view of a simplified rectangular snooker table with rounded corners.
-        • Display 3 colored balls on the table: one white cue ball and two colored object balls.
-        • The table should have a green baize texture and wooden rails with a vintage appearance.
-        • Implement basic 2D physics for ball movement, including friction and collision detection.
-        • When balls collide, they should behave according to the principles of elastic collision, transferring momentum realistically.
-        • Add visual effects such as ball spin (represented by a rotating texture or pattern on the balls) and slight motion blur for moving balls.
-        • Display a simple score counter in an antique-style web-safe font.
-        • When a colored ball is pocketed (enters one of the table's corner pockets), increment the score counter. The simulation should continue running until manually reset by the user.
-        • Remember to style all elements to fit the early 20th century snooker parlor aesthetic, using appropriate colors and textures to evoke a sense of the game's rich history.
+        - Create a 2D top-down view of a simplified rectangular snooker table with rounded corners.
+        - Display 3 colored balls on the table: one white cue ball and two colored object balls.
+        - The table should have a green baize texture and wooden rails with a vintage appearance.
+        - Implement basic 2D physics for ball movement, including friction and collision detection.
+        - When balls collide, they should behave according to the principles of elastic collision, transferring momentum realistically.
+        - Add visual effects such as ball spin (represented by a rotating texture or pattern on the balls) and slight motion blur for moving balls.
+        - Display a simple score counter in an antique-style web-safe font.
+        - When a colored ball is pocketed (enters one of the table's corner pockets), increment the score counter. The simulation should continue running until manually reset by the user.
+        - Remember to style all elements to fit the early 20th century snooker parlor aesthetic, using appropriate colors and textures to evoke a sense of the game's rich history.
 
        User Actions:
         1. Click and drag on the white cue ball to set its initial velocity vector. The direction and length of the drag should determine the direction and speed of the cue ball when released. A faint line should appear during the drag to indicate the projected path.
-        2. Press the 'R' key to reset the table, randomly positioning the colored balls while keeping the white cue ball in its starting position. This action should also reset the score counter to zero.
-    <example_input_2>
+        2. Press the "R" key to reset the table, randomly positioning the colored balls while keeping the white cue ball in its starting position. This action should also reset the score counter to zero.
+    </example_input_2>
     <example_output_2>
-            {
+        {
         "files": [
-            {
-                "filename": "index.js",
-                "content": "const gameContainer=document.getElementById("gameContainer");const canvas=document.getElementById("snookerCanvas");const ctx=canvas.getContext("2d");const scoreCounter=document.getElementById("scoreCounter");let TABLE_WIDTH,TABLE_HEIGHT,BALL_RADIUS,POCKET_RADIUS;const FRICTION=0.99;const COLLISION_DAMPING=0.9;let balls=[];let score=0;let isDragging=false;let dragStart={x:0,y:0};let dragEnd={x:0,y:0};function resizeCanvas(){canvas.width=gameContainer.clientWidth;canvas.height=gameContainer.clientHeight;TABLE_WIDTH=canvas.width;TABLE_HEIGHT=canvas.height;BALL_RADIUS=Math.min(TABLE_WIDTH,TABLE_HEIGHT)*0.025;POCKET_RADIUS=BALL_RADIUS*1.5;initializeBalls()}class Ball{constructor(x,y,color){this.x=x;this.y=y;this.vx=0;this.vy=0;this.color=color;this.rotation=0}draw(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.rotation);ctx.beginPath();ctx.arc(0,0,BALL_RADIUS,0,Math.PI*2);ctx.fillStyle=this.color;ctx.fill();ctx.strokeStyle="black";ctx.lineWidth=BALL_RADIUS*0.1;ctx.stroke();ctx.beginPath();ctx.moveTo(0,-BALL_RADIUS);ctx.lineTo(0,BALL_RADIUS);ctx.strokeStyle="rgba(0,0,0,0.3)";ctx.lineWidth=BALL_RADIUS*0.1;ctx.stroke();ctx.restore()}update(){this.x+=this.vx;this.y+=this.vy;this.vx*=FRICTION;this.vy*=FRICTION;this.rotation+=Math.sqrt(this.vx*this.vx+this.vy*this.vy)*0.05;if(this.x-BALL_RADIUS<0||this.x+BALL_RADIUS>TABLE_WIDTH){this.vx*=-1}if(this.y-BALL_RADIUS<0||this.y+BALL_RADIUS>TABLE_HEIGHT){this.vy*=-1}}}function initializeBalls(){balls=[new Ball(TABLE_WIDTH/4,TABLE_HEIGHT/2,"white"),new Ball((TABLE_WIDTH*3)/4,TABLE_HEIGHT/2-TABLE_HEIGHT/12,"red"),new Ball((TABLE_WIDTH*3)/4,TABLE_HEIGHT/2+TABLE_HEIGHT/12,"black")]}function drawTable(){ctx.fillStyle="#0a5c0a";ctx.fillRect(0,0,TABLE_WIDTH,TABLE_HEIGHT);ctx.strokeStyle="#43290a";ctx.lineWidth=TABLE_WIDTH*0.02;ctx.strokeRect(0,0,TABLE_WIDTH,TABLE_HEIGHT);const pockets=[{x:0,y:0},{x:TABLE_WIDTH,y:0},{x:0,y:TABLE_HEIGHT},{x:TABLE_WIDTH,y:TABLE_HEIGHT},{x:TABLE_WIDTH/2,y:0},{x:TABLE_WIDTH/2,y:TABLE_HEIGHT}];pockets.forEach((pocket)=>{ctx.beginPath();ctx.arc(pocket.x,pocket.y,POCKET_RADIUS,0,Math.PI*2);ctx.fillStyle="black";ctx.fill()})}function drawProjectionLine(){if(isDragging){ctx.beginPath();ctx.moveTo(dragStart.x,dragStart.y);ctx.lineTo(dragEnd.x,dragEnd.y);ctx.strokeStyle="rgba(255,255,255,0.5)";ctx.lineWidth=BALL_RADIUS*0.2;ctx.stroke()}}function checkCollisions(){for(let i=0;i<balls.length;i++){for(let j=i+1;j<balls.length;j++){const dx=balls[j].x-balls[i].x;const dy=balls[j].y-balls[i].y;const distance=Math.sqrt(dx*dx+dy*dy);if(distance<BALL_RADIUS*2){const angle=Math.atan2(dy,dx);const sin=Math.sin(angle);const cos=Math.cos(angle);const vx1=balls[i].vx*cos+balls[i].vy*sin;const vy1=balls[i].vy*cos-balls[i].vx*sin;const vx2=balls[j].vx*cos+balls[j].vy*sin;const vy2=balls[j].vy*cos-balls[j].vx*sin;const finalVx1=vx2;const finalVx2=vx1;balls[i].vx=(finalVx1*cos-vy1*sin)*COLLISION_DAMPING;balls[i].vy=(vy1*cos+finalVx1*sin)*COLLISION_DAMPING;balls[j].vx=(finalVx2*cos-vy2*sin)*COLLISION_DAMPING;balls[j].vy=(vy2*cos+finalVx2*sin)*COLLISION_DAMPING;const overlap=2*BALL_RADIUS-distance;balls[i].x-=(overlap/2)*cos;balls[i].y-=(overlap/2)*sin;balls[j].x+=(overlap/2)*cos;balls[j].y+=(overlap/2)*sin}}}}function checkPockets(){const pockets=[{x:0,y:0},{x:TABLE_WIDTH,y:0},{x:0,y:TABLE_HEIGHT},{x:TABLE_WIDTH,y:TABLE_HEIGHT},{x:TABLE_WIDTH/2,y:0},{x:TABLE_WIDTH/2,y:TABLE_HEIGHT}];for(let i=balls.length-1;i>=0;i--){for(const pocket of pockets){const dx=balls[i].x-pocket.x;const dy=balls[i].y-pocket.y;const distance=Math.sqrt(dx*dx+dy*dy);if(distance<POCKET_RADIUS){if(balls[i].color!=="white"){score++;scoreCounter.textContent=`Score:${score}`;balls.splice(i,1)}else{balls[i].x=TABLE_WIDTH/4;balls[i].y=TABLE_HEIGHT/2;balls[i].vx=0;balls[i].vy=0}break}}}}function gameLoop(){ctx.clearRect(0,0,TABLE_WIDTH,TABLE_HEIGHT);drawTable();drawProjectionLine();balls.forEach((ball)=>{ball.update();ball.draw()});checkCollisions();checkPockets();requestAnimationFrame(gameLoop)}function resetGame(){initializeBalls();score=0;scoreCounter.textContent=`Score:${score}`}canvas.addEventListener("mousedown",(e)=>{const rect=canvas.getBoundingClientRect();const mouseX=(e.clientX-rect.left)*(canvas.width/rect.width);const mouseY=(e.clientY-rect.top)*(canvas.height/rect.height);if(Math.abs(mouseX-balls[0].x)<BALL_RADIUS&&Math.abs(mouseY-balls[0].y)<BALL_RADIUS){isDragging=true;dragStart={x:mouseX,y:mouseY}}});canvas.addEventListener("mousemove",(e)=>{if(isDragging){const rect=canvas.getBoundingClientRect();dragEnd={x:(e.clientX-rect.left)*(canvas.width/rect.width),y:(e.clientY-rect.top)*(canvas.height/rect.height)}}});canvas.addEventListener("mouseup",()=>{if(isDragging){const dx=dragStart.x-dragEnd.x;const dy=dragStart.y-dragEnd.y;const speed=Math.sqrt(dx*dx+dy*dy)*0.1;balls[0].vx=dx*speed*0.01;balls[0].vy=dy*speed*0.01;isDragging=false}});document.addEventListener("keydown",(e)=>{if(e.key.toLowerCase()==="r"){resetGame()}});window.addEventListener("resize",resizeCanvas);resizeCanvas();gameLoop();",
-                "language": "javascript"
-            },
-            {
-                "filename": "index.html",
-                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Snooker Through the Ages</title><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#2c1c0f;font-family:Georgia,serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%;background-color:#1a0f07;border:10px solid #43290a;box-sizing:border-box}#banner{position:absolute;top:2%;left:50%;transform:translateX(-50%);font-size:3vw;color:#d4af37;text-shadow:2px 2px 4px rgba(0,0,0,0.5);white-space:nowrap}#scoreCounter{position:absolute;bottom:2%;left:50%;transform:translateX(-50%);font-size:2vw;color:#d4af37}#snookerCanvas{position:absolute;top:0;left:0;width:100%;height:100%}</style></head><body><div id="gameContainer"><div id="banner">Snooker Through the Ages</div><canvas id="snookerCanvas"></canvas><div id="scoreCounter">Score: 0</div></div><script src="index.js"></script></body></html>",
-                "language": "html"
-            }
+                {
+                    "filename": "index.js",
+                    "content": "const gameContainer=document.getElementById("gameContainer");const canvas=document.getElementById("snookerCanvas");const ctx=canvas.getContext("2d");const scoreCounter=document.getElementById("scoreCounter");let TABLE_WIDTH,TABLE_HEIGHT,BALL_RADIUS,POCKET_RADIUS;const FRICTION=0.99;const COLLISION_DAMPING=0.9;let balls=[];let score=0;let isDragging=false;let dragStart={x:0,y:0};let dragEnd={x:0,y:0};function resizeCanvas(){canvas.width=gameContainer.clientWidth;canvas.height=gameContainer.clientHeight;TABLE_WIDTH=canvas.width;TABLE_HEIGHT=canvas.height;BALL_RADIUS=Math.min(TABLE_WIDTH,TABLE_HEIGHT)*0.025;POCKET_RADIUS=BALL_RADIUS*1.5;initializeBalls()}class Ball{constructor(x,y,color){this.x=x;this.y=y;this.vx=0;this.vy=0;this.color=color;this.rotation=0}draw(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.rotation);ctx.beginPath();ctx.arc(0,0,BALL_RADIUS,0,Math.PI*2);ctx.fillStyle=this.color;ctx.fill();ctx.strokeStyle="black";ctx.lineWidth=BALL_RADIUS*0.1;ctx.stroke();ctx.beginPath();ctx.moveTo(0,-BALL_RADIUS);ctx.lineTo(0,BALL_RADIUS);ctx.strokeStyle="rgba(0,0,0,0.3)";ctx.lineWidth=BALL_RADIUS*0.1;ctx.stroke();ctx.restore()}update(){this.x+=this.vx;this.y+=this.vy;this.vx*=FRICTION;this.vy*=FRICTION;this.rotation+=Math.sqrt(this.vx*this.vx+this.vy*this.vy)*0.05;if(this.x-BALL_RADIUS<0||this.x+BALL_RADIUS>TABLE_WIDTH){this.vx*=-1}if(this.y-BALL_RADIUS<0||this.y+BALL_RADIUS>TABLE_HEIGHT){this.vy*=-1}}}function initializeBalls(){balls=[new Ball(TABLE_WIDTH/4,TABLE_HEIGHT/2,"white"),new Ball((TABLE_WIDTH*3)/4,TABLE_HEIGHT/2-TABLE_HEIGHT/12,"red"),new Ball((TABLE_WIDTH*3)/4,TABLE_HEIGHT/2+TABLE_HEIGHT/12,"black")]}function drawTable(){ctx.fillStyle="#0a5c0a";ctx.fillRect(0,0,TABLE_WIDTH,TABLE_HEIGHT);ctx.strokeStyle="#43290a";ctx.lineWidth=TABLE_WIDTH*0.02;ctx.strokeRect(0,0,TABLE_WIDTH,TABLE_HEIGHT);const pockets=[{x:0,y:0},{x:TABLE_WIDTH,y:0},{x:0,y:TABLE_HEIGHT},{x:TABLE_WIDTH,y:TABLE_HEIGHT},{x:TABLE_WIDTH/2,y:0},{x:TABLE_WIDTH/2,y:TABLE_HEIGHT}];pockets.forEach((pocket)=>{ctx.beginPath();ctx.arc(pocket.x,pocket.y,POCKET_RADIUS,0,Math.PI*2);ctx.fillStyle="black";ctx.fill()})}function drawProjectionLine(){if(isDragging){ctx.beginPath();ctx.moveTo(dragStart.x,dragStart.y);ctx.lineTo(dragEnd.x,dragEnd.y);ctx.strokeStyle="rgba(255,255,255,0.5)";ctx.lineWidth=BALL_RADIUS*0.2;ctx.stroke()}}function checkCollisions(){for(let i=0;i<balls.length;i++){for(let j=i+1;j<balls.length;j++){const dx=balls[j].x-balls[i].x;const dy=balls[j].y-balls[i].y;const distance=Math.sqrt(dx*dx+dy*dy);if(distance<BALL_RADIUS*2){const angle=Math.atan2(dy,dx);const sin=Math.sin(angle);const cos=Math.cos(angle);const vx1=balls[i].vx*cos+balls[i].vy*sin;const vy1=balls[i].vy*cos-balls[i].vx*sin;const vx2=balls[j].vx*cos+balls[j].vy*sin;const vy2=balls[j].vy*cos-balls[j].vx*sin;const finalVx1=vx2;const finalVx2=vx1;balls[i].vx=(finalVx1*cos-vy1*sin)*COLLISION_DAMPING;balls[i].vy=(vy1*cos+finalVx1*sin)*COLLISION_DAMPING;balls[j].vx=(finalVx2*cos-vy2*sin)*COLLISION_DAMPING;balls[j].vy=(vy2*cos+finalVx2*sin)*COLLISION_DAMPING;const overlap=2*BALL_RADIUS-distance;balls[i].x-=(overlap/2)*cos;balls[i].y-=(overlap/2)*sin;balls[j].x+=(overlap/2)*cos;balls[j].y+=(overlap/2)*sin}}}}function checkPockets(){const pockets=[{x:0,y:0},{x:TABLE_WIDTH,y:0},{x:0,y:TABLE_HEIGHT},{x:TABLE_WIDTH,y:TABLE_HEIGHT},{x:TABLE_WIDTH/2,y:0},{x:TABLE_WIDTH/2,y:TABLE_HEIGHT}];for(let i=balls.length-1;i>=0;i--){for(const pocket of pockets){const dx=balls[i].x-pocket.x;const dy=balls[i].y-pocket.y;const distance=Math.sqrt(dx*dx+dy*dy);if(distance<POCKET_RADIUS){if(balls[i].color!=="white"){score++;scoreCounter.textContent=`Score:${score}`;balls.splice(i,1)}else{balls[i].x=TABLE_WIDTH/4;balls[i].y=TABLE_HEIGHT/2;balls[i].vx=0;balls[i].vy=0}break}}}}function gameLoop(){ctx.clearRect(0,0,TABLE_WIDTH,TABLE_HEIGHT);drawTable();drawProjectionLine();balls.forEach((ball)=>{ball.update();ball.draw()});checkCollisions();checkPockets();requestAnimationFrame(gameLoop)}function resetGame(){initializeBalls();score=0;scoreCounter.textContent=`Score:${score}`}canvas.addEventListener("mousedown",(e)=>{const rect=canvas.getBoundingClientRect();const mouseX=(e.clientX-rect.left)*(canvas.width/rect.width);const mouseY=(e.clientY-rect.top)*(canvas.height/rect.height);if(Math.abs(mouseX-balls[0].x)<BALL_RADIUS&&Math.abs(mouseY-balls[0].y)<BALL_RADIUS){isDragging=true;dragStart={x:mouseX,y:mouseY}}});canvas.addEventListener("mousemove",(e)=>{if(isDragging){const rect=canvas.getBoundingClientRect();dragEnd={x:(e.clientX-rect.left)*(canvas.width/rect.width),y:(e.clientY-rect.top)*(canvas.height/rect.height)}}});canvas.addEventListener("mouseup",()=>{if(isDragging){const dx=dragStart.x-dragEnd.x;const dy=dragStart.y-dragEnd.y;const speed=Math.sqrt(dx*dx+dy*dy)*0.1;balls[0].vx=dx*speed*0.01;balls[0].vy=dy*speed*0.01;isDragging=false}});document.addEventListener("keydown",(e)=>{if(e.key.toLowerCase()==="r"){resetGame()}});window.addEventListener("resize",resizeCanvas);resizeCanvas();gameLoop();",
+                    "language": "javascript"
+                },
+                {
+                    "filename": "index.html",
+                    "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Snooker Through the Ages</title><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#2c1c0f;font-family:Georgia,serif}#gameContainer{position:relative;width:100%;height:0;padding-bottom:56.25%;background-color:#1a0f07;border:10px solid #43290a;box-sizing:border-box}#banner{position:absolute;top:2%;left:50%;transform:translateX(-50%);font-size:3vw;color:#d4af37;text-shadow:2px 2px 4px rgba(0,0,0,0.5);white-space:nowrap}#scoreCounter{position:absolute;bottom:2%;left:50%;transform:translateX(-50%);font-size:2vw;color:#d4af37}#snookerCanvas{position:absolute;top:0;left:0;width:100%;height:100%}</style></head><body><div id="gameContainer"><div id="banner">Snooker Through the Ages</div><canvas id="snookerCanvas"></canvas><div id="scoreCounter">Score: 0</div></div><script src="index.js"></script></body></html>",
+                    "language": "html"
+                }
             ]
         }
-    <example_output_2>
+    </example_output_2>
     """
