@@ -1,4 +1,5 @@
 import argparse
+import functools
 import os
 import sys
 
@@ -86,6 +87,7 @@ def get_settings() -> Settings:
     return Settings()
 
 
+@functools.lru_cache(maxsize=1)
 def parse_cli_args():
     parser = argparse.ArgumentParser(description="CLI arguments for the application")
     parser.add_argument(
@@ -94,25 +96,25 @@ def parse_cli_args():
     parser.add_argument(
         "--trace", action="store_true", help="Enable TRACE logging level"
     )
+    parser.add_argument(
+        "--env_name",
+        type=str,
+        choices=["dev", "prod"],
+        help="Specify the environment (dev or prod)",
+    )
     args = parser.parse_args()
 
     if args.trace:
         logger.remove()
-        logger.add(
-            sys.stderr, level="TRACE", backtrace=False, diagnose=False, colorize=True
-        )
+        logger.add(sys.stderr, level="TRACE", backtrace=False, diagnose=False)
         logger.trace("Enabled TRACE logging")
     elif args.debug:
         logger.remove()
-        logger.add(
-            sys.stderr, level="DEBUG", backtrace=False, diagnose=False, colorize=True
-        )
+        logger.add(sys.stderr, level="DEBUG", backtrace=False, diagnose=False)
         logger.debug("Enabled DEBUG logging")
     else:
         logger.remove()
-        logger.add(
-            sys.stderr, level="INFO", backtrace=False, diagnose=False, colorize=True
-        )
+        logger.add(sys.stderr, level="INFO", backtrace=False, diagnose=False)
         logger.add("Enabled INFO logging")
 
     return args

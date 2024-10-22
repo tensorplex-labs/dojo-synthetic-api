@@ -2,7 +2,7 @@ import asyncio
 import functools
 import json
 
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 from commons.cache import RedisCache
@@ -31,7 +31,7 @@ class SyntheticGenResponse(BaseModel):
 
 
 @synthetic_gen_router.get("/synthetic-gen")
-async def generate_synthetic_data(background_tasks: BackgroundTasks):
+async def generate_synthetic_data():
     try:
         num_elems = await cache.get_queue_length()
         if num_elems == 0:
@@ -50,8 +50,6 @@ async def generate_synthetic_data(background_tasks: BackgroundTasks):
             result = json.loads(qa_pair)
         except json.JSONDecodeError:
             result = {}
-
-        background_tasks.add_task(worker.run)
 
         return SyntheticGenResponse(success=True, body=result, error=None)
     except Exception as e:
