@@ -89,8 +89,8 @@ class AnswerAugmentation(Enum):
 
 
 class ResponseStrategy(Enum):
-    AUGMENTATION_DETERIORIATE = 0
-    NO_AUGMENTATION = 1
+    CHANGE_QUESTIONS = 0
+    CHANGE_ANSWERS = 1
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
@@ -549,7 +549,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         augmented_prompts = []
         ### Augments Answer ###
-        if response_strategy == ResponseStrategy.NO_AUGMENTATION:
+        if response_strategy == ResponseStrategy.CHANGE_ANSWERS:
             # 1. generate base answer
             model, base_answer, _, qa_id = await _generate_response(
                 query_model,
@@ -579,7 +579,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
             # combine original response + augmented responses.
             results = base_response + results
         ### Question Augmentation ###
-        elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
+        elif response_strategy == ResponseStrategy.CHANGE_QUESTIONS:
             for level in AugmentationLevel:
                 # generate question augments
                 augmented_question, qa_id = await augment_question(

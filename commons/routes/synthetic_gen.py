@@ -19,7 +19,7 @@ cache = RedisCache()
 worker = Worker(
     do_work=functools.partial(
         build_prompt_responses_pair,
-        response_strategy=ResponseStrategy.NO_AUGMENTATION,
+        response_strategy=ResponseStrategy.CHANGE_ANSWERS,
     )
 )
 
