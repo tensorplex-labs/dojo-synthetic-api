@@ -74,7 +74,7 @@ class ErrorAnswer(BaseModel):
     )
 
 
-class AugmentationLevel(Enum):
+class QuestionAugmentation(Enum):
     ORIGINAL = 0
     REMOVE_REQUIREMENTS = 1
     ADD_REQUIREMENTS = 2
@@ -219,7 +219,7 @@ async def augment_question(
     client: LlmClient,
     model: str,
     question: str,
-    augmentation_level: AugmentationLevel,
+    augmentation_level: QuestionAugmentation,
     topic: Topics,
 ) -> tuple[str, str]:
     """Augment the question with the given model and augmentation level."""
@@ -233,16 +233,16 @@ async def augment_question(
     # create unique qa_id
     qa_id = str(uuid.uuid4())
 
-    if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
+    if augmentation_level == QuestionAugmentation.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"You must remove any 1 requirement from an input coding question. Ensure that the requirement you remove will not break the functionality of the remaining requirements. Here is the coding question for you to alter: {question}"
-    elif augmentation_level == AugmentationLevel.ADD_REQUIREMENTS:
+    elif augmentation_level == QuestionAugmentation.ADD_REQUIREMENTS:
         augmentation_prompt = f"Add a new requirement to the question. Ensure your new requirements are distinct from the existing. Ensure that your new requirement does not break the functionality of the remaining requirements. Here is the generated coding question: {question}"
-    elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
+    elif augmentation_level == QuestionAugmentation.CHANGE_ANIMATION_OBJECT:
         if topic == Topics.SCIENCE:
             augmentation_prompt = f"Generate a new coding question similar to the original, but with a similar science experiment that is different from the original. Here is the original coding question: {question}"
         else:
             augmentation_prompt = f"Change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question. Here is the original coding question: {question}."
-    elif augmentation_level == AugmentationLevel.ORIGINAL:
+    elif augmentation_level == QuestionAugmentation.ORIGINAL:
         # early return the original unaugmented question.
         langfuse_context.update_current_observation(
             metadata={
@@ -483,7 +483,10 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     # results: list[tuple[str, CodeAnswer | None, AugmentationLevel | None, str]]
     results: list[
         tuple[
-            str, CodeAnswer | None, AugmentationLevel | AnswerAugmentation | None, str
+            str,
+            CodeAnswer | None,
+            QuestionAugmentation | AnswerAugmentation | None,
+            str,
         ]
     ] = []
     tasks = []
@@ -493,7 +496,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         question: str,
         topic: Topics,
         qa_id: str,
-        level: AugmentationLevel | None = None,
+        level: QuestionAugmentation | None = None,
         # answer_augment: AnswerAugmentation | None = None,
     ):
         model, result = await generate_answer(
@@ -580,7 +583,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
             results = base_response + results
         ### Question Augmentation ###
         elif response_strategy == ResponseStrategy.CHANGE_QUESTIONS:
-            for level in AugmentationLevel:
+            for level in QuestionAugmentation:
                 # generate question augments
                 augmented_question, qa_id = await augment_question(
                     client, query_model, question_prompt, level, selected_topic[0]
