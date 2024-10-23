@@ -18,7 +18,7 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.config import ANSWER_MODELS, GENERATOR_MODELS
+from commons.config import GENERATOR_MODELS
 from commons.dataset.personas import get_random_persona
 from commons.llm import get_llm_api_client
 from commons.prompt_builders import (
@@ -74,16 +74,23 @@ class ErrorAnswer(BaseModel):
     )
 
 
-class AugmentationLevel(Enum):
+class QuestionAugmentation(Enum):
     ORIGINAL = 0
     REMOVE_REQUIREMENTS = 1
     ADD_REQUIREMENTS = 2
     CHANGE_ANIMATION_OBJECT = 3
 
 
+class AnswerAugmentation(Enum):
+    ORIGINAL = 0
+    REMOVE_ONE = 1
+    REMOVE_TWO = 2
+    ADD_ONE = 3
+
+
 class ResponseStrategy(Enum):
-    AUGMENTATION_DETERIORIATE = 0
-    NO_AUGMENTATION = 1
+    CHANGE_QUESTIONS = 0
+    CHANGE_ANSWERS = 1
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
@@ -207,32 +214,12 @@ async def generate_answer(
         raise
 
 
-def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]:
-    # NOTE @dev LLMs here were selected to be able to compare against the EvalPLus leaderboard
-    if response_strategy == ResponseStrategy.NO_AUGMENTATION:
-        num_answer_models = int(os.getenv("NUM_ANSWER_MODELS", 4))
-        selected_models = random.sample(
-            ANSWER_MODELS, min(num_answer_models, len(ANSWER_MODELS))
-        )
-
-        # check if enough answer models are specified
-        if len(ANSWER_MODELS) < num_answer_models:
-            logger.warning(
-                f"Number of answer models is less than the specified number of models: {num_answer_models}"
-            )
-            raise RuntimeError("Error generating prompt-response pair")
-        return selected_models
-
-    elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
-        return random.choice(ANSWER_MODELS)
-
-
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def augment_question(
     client: LlmClient,
     model: str,
     question: str,
-    augmentation_level: AugmentationLevel,
+    augmentation_level: QuestionAugmentation,
     topic: Topics,
 ) -> tuple[str, str]:
     """Augment the question with the given model and augmentation level."""
@@ -246,16 +233,16 @@ async def augment_question(
     # create unique qa_id
     qa_id = str(uuid.uuid4())
 
-    if augmentation_level == AugmentationLevel.REMOVE_REQUIREMENTS:
+    if augmentation_level == QuestionAugmentation.REMOVE_REQUIREMENTS:
         augmentation_prompt = f"You must remove any 1 requirement from an input coding question. Ensure that the requirement you remove will not break the functionality of the remaining requirements. Here is the coding question for you to alter: {question}"
-    elif augmentation_level == AugmentationLevel.ADD_REQUIREMENTS:
+    elif augmentation_level == QuestionAugmentation.ADD_REQUIREMENTS:
         augmentation_prompt = f"Add a new requirement to the question. Ensure your new requirements are distinct from the existing. Ensure that your new requirement does not break the functionality of the remaining requirements. Here is the generated coding question: {question}"
-    elif augmentation_level == AugmentationLevel.CHANGE_ANIMATION_OBJECT:
+    elif augmentation_level == QuestionAugmentation.CHANGE_ANIMATION_OBJECT:
         if topic == Topics.SCIENCE:
             augmentation_prompt = f"Generate a new coding question similar to the original, but with a similar science experiment that is different from the original. Here is the original coding question: {question}"
         else:
             augmentation_prompt = f"Change the subject of the question to a different related subject such that rest of the question does not need to be modified. The new subject should be distinct from the original one, yet share enough characteristics such that the requirements still make sense. ie. If the original subject is a house with a requirements of windows, the new subject should be something that could feasibly also have windows. The new subject should be as similar to the original as possible, whilst still being distinguishable. As much as possible, please retain the requirements of the question. Here is the original coding question: {question}."
-    elif augmentation_level == AugmentationLevel.ORIGINAL:
+    elif augmentation_level == QuestionAugmentation.ORIGINAL:
         # early return the original unaugmented question.
         langfuse_context.update_current_observation(
             metadata={
@@ -394,13 +381,114 @@ def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
 #     return
 
 
+def _build_answer_augment_prompt(
+    base_answer: CodeAnswer,
+    base_question: str,
+    augmentation: AnswerAugmentation,
+    answer_format,
+) -> str:
+    augment = ""
+    if augmentation == AnswerAugmentation.REMOVE_ONE:
+        augment = "remove one feature from <base_question>"
+    if augmentation == AnswerAugmentation.REMOVE_TWO:
+        augment = "remove two features from <base_question>"
+    if augmentation == AnswerAugmentation.ADD_ONE:
+        augment = (
+            "implement a new feature that isnt already contained in <base_question>"
+        )
+
+    prompt = f"""
+    <system>
+        Here is the base HTML file with in-line Javascript code you must make adjustments to:
+        <base_answer>
+            {base_answer}
+        </base_answer>
+        Here are the specifications that were used to create the <base_answer>:
+        <question>
+            {base_question}
+        </question>
+
+        <response_format>
+        your response must always be valid json based on this schema:
+        {answer_format}
+        </response_format>
+
+        <role>
+             You are an expert natural language coding agent. Your objective is to modify <base_answer> to {augment}.
+        </role>
+        <instructions>
+            Always follow these instructions:
+            - You do not have access to the file system. Do not store any data in storage or as a file.
+            - Ensure that your code does not use any external files such as images, videos or audio files.
+            - Your code must not require the use of the user's microphone or camera.
+            - Your code must not use any external libraries, data or APIs.
+        </instructions>
+    </system>
+    <user>
+        You must modify <base_answer> to {augment}.
+    </user>
+    """
+    return prompt
+
+
+async def _augment_answer(
+    client: LlmClient,
+    model: str,
+    answer: CodeAnswer,
+    question: str,
+    augmentation: AnswerAugmentation,
+):
+    """
+    takes in a base answer, base question and augmentation type?
+    queries LLM to generate augmented output from
+
+    returns model, result, level, qa_id
+    """
+    id = str(uuid.uuid4())
+    answer_format = CodeAnswer.model_json_schema()
+    messages = [
+        {
+            "role": "system",
+            "content": _build_answer_augment_prompt(
+                answer, question, augmentation, answer_format
+            ),
+        },
+    ]
+
+    kwargs = {
+        "response_model": CodeAnswer,
+        "model": model,
+        "messages": messages,
+        "temperature": 0.0,
+        "max_tokens": 8192,
+        "top_p": random.uniform(0.9, 1.0),
+    }
+
+    if model.startswith("openai"):
+        kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
+
+    try:
+        result = await client.chat.completions.create(**kwargs)
+        logger.info(f" {id} {augmentation} answer generated")
+        return model, result, augmentation, id
+    except Exception as e:
+        logger.error(f"{id} failed to generate augmented question: {e}")
+
+
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
 async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     client = get_llm_api_client()
-    question_model = random.choice(GENERATOR_MODELS)
-    answer_models = get_answer_model_ids(response_strategy)
-    results: list[tuple[str, CodeAnswer | None, AugmentationLevel | None, str]]
+    query_model = random.choice(GENERATOR_MODELS)
+    # results: list[tuple[str, CodeAnswer | None, AugmentationLevel | None, str]]
+    results: list[
+        tuple[
+            str,
+            CodeAnswer | None,
+            QuestionAugmentation | AnswerAugmentation | None,
+            str,
+        ]
+    ] = []
     tasks = []
 
     async def _generate_response(
@@ -408,7 +496,8 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         question: str,
         topic: Topics,
         qa_id: str,
-        level: AugmentationLevel | None = None,
+        level: QuestionAugmentation | None = None,
+        # answer_augment: AnswerAugmentation | None = None,
     ):
         model, result = await generate_answer(
             client, model, question, topic=topic, qa_id=qa_id
@@ -455,55 +544,70 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     try:
         # 3. generate a question using the topic
         question_prompt = await generate_question(
-            client, question_model, selected_topic[0], persona
+            client, query_model, selected_topic[0], persona
         )
 
         if question_prompt is None:
             raise ValueError("generate_question() returned null")
 
         augmented_prompts = []
-        if response_strategy == ResponseStrategy.NO_AUGMENTATION:
-            for model in answer_models:
+        ### Augments Answer ###
+        if response_strategy == ResponseStrategy.CHANGE_ANSWERS:
+            # 1. generate base answer
+            model, base_answer, _, qa_id = await _generate_response(
+                query_model,
+                question_prompt,
+                selected_topic[0],
+                qa_id=str(uuid.uuid4()),
+            )
+            base_response = [(model, base_answer, AnswerAugmentation.ORIGINAL, qa_id)]
+
+            if base_answer is None:
+                raise ValueError("_generate_response() returned None for CodeAnswer")
+            # 2. generate answer augments
+            for augmentation in AnswerAugmentation:
+                # skip augmentation for original prompt
+                if augmentation == AnswerAugmentation.ORIGINAL:
+                    continue
                 tasks.append(
-                    _generate_response(
-                        model,
-                        question_prompt,
-                        selected_topic[0],
-                        qa_id="placeholder",
+                    _augment_answer(
+                        client=client,
+                        model=model,
+                        answer=base_answer,
+                        question=question_prompt,
+                        augmentation=augmentation,
                     )
                 )
-        elif response_strategy == ResponseStrategy.AUGMENTATION_DETERIORIATE:
-            # 4. augment questions
-            # if augmenting, use same model for both question and answer generation
-            answer_models = question_model
-
-            assert type(answer_models) is str
-
-            for level in AugmentationLevel:
+            results = await asyncio.gather(*tasks)
+            # combine original response + augmented responses.
+            results = base_response + results
+        ### Question Augmentation ###
+        elif response_strategy == ResponseStrategy.CHANGE_QUESTIONS:
+            for level in QuestionAugmentation:
+                # generate question augments
                 augmented_question, qa_id = await augment_question(
-                    client, question_model, question_prompt, level, selected_topic[0]
+                    client, query_model, question_prompt, level, selected_topic[0]
                 )
                 augmented_prompts.append(
                     {"level": level.name, "question": augmented_question}
                 )
-                # 5. generate answers as code
+                # generate answers to augmented questions
                 tasks.append(
                     _generate_response(
-                        answer_models,
+                        query_model,
                         augmented_question,
                         topic=selected_topic[0],
                         level=level,
                         qa_id=qa_id,
                     )
                 )
-
-        results = await asyncio.gather(*tasks)
-
+            results = await asyncio.gather(*tasks)
     except AuthenticationError as e:
         logger.error(f"Shutting down synthetic-API: {e}")
         sys.exit(1)
     except Exception as e:
         raise e
+    # parse QA pairs, format and return response.
     responses = []
     synthetic_ground_truth: dict[str, int] = {}
     for model, result, level, qa_id in results:
