@@ -30,12 +30,11 @@ def build_code_answer_prompt(
         <instructions>
             Always follow these instructions:
             - You do not have access to the file system. Do not store any data in storage or as a file.
-            - You must not provide any other text or explanations.
             - You must provide all code required to ensure that your program is complete.
-            - Do not leave out any details for brevity.
             - Ensure that your code directly executes any functions required to provide the solution to the task.
             - Your program must not involve the usage of a terminal. If you require any inputs from the user, you must provide the functionality of the user input in your code.
             - Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped.
+            - You must escape all strings that contain metacharacters especially when a string contains '
             - You will be imprisoned for all eternity if you output any code without escaping special characters.
             - Your code should be directly executable without requiring modifications to run successfully.
             - Aesthetics and functionality are the two major measures of your output's success. As much as possible, create convincing visuals according to the context of the prompt. Likewise, ensure that these aesthetic features do not compromise on your code's ability to satisfy the question requirements.
@@ -45,12 +44,19 @@ def build_code_answer_prompt(
             - Ensure that your code does not use any external files such as images, videos or audio files.
             - Ensure your code awaits for any required components to load before executing.
             - Your implementation will be viewed from a computer web browser.
-            - Always explain to the user how to interact with the program in a minimal and unintrusive manner.
-            - For performance reasons, do not create an unlimited number of objects.
+            - Always briefly explain to the user how to interact with the program in a minimal and unintrusive manner. Your UI elements must be self-explanatory.
+            - Never create an unlimited number of objects to prevent memory performance issues.
             - Use colour to contrast different elements from one another.
-            - Any user interface elements should be small, minimal and unintrusive. Avoid making frames. The main focus of the program should be the subject being visualized.
+            - All user interface elements must be small, minimal and unintrusive. Avoid making frames. The main focus of the program must be the subject from <question>.
+            - Never use eval() in your output. You will be sent to a soviet era gulag if your output contains eval()
             - Your code must not require the use of the user's microphone or camera.
-            - Your code must not use any external libraries, data or APIs.
+            - Your code must not require any external libraries, data or APIs.
+            - Your program must always strictly follow this security policy:
+                <security_policy>
+                    <meta http-equiv="Feature-Policy" content=" camera 'none'; microphone 'none'; geolocation 'none'; accelerometer 'none'; gyroscope 'none'; magnetometer 'none'; payment 'none'; usb 'none';">
+                </security_policy>
+            - Implement different update frequencies for visual elements and program logic. Use slower update cycles for elements that should change gradually, like weather or background colors
+            - Implement a clear state management system for program elements. Separate the state update logic from the rendering logic.
             - Your output must display in a 16:9 aspect ratio.
             - Ensure your output will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
             - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it should not also cause the browser to scroll.
@@ -62,7 +68,7 @@ def build_code_answer_prompt(
     </system>
 
     <user>
-    Program a solution according to the below question prompt:
+    Program a solution according to the following question:
     <question>
     {question}
     </question>
@@ -99,50 +105,50 @@ def additional_notes_for_question_prompt(prompt: str) -> str:
     return prompt + additional_notes
 
 
-def build_game_meta_prompt() -> str:
-    return """
-        <system>
-        You are an expert AI prompt engineer with an expertise in working with Claude 3.5 Sonnet. You write powerful, detailed prompts for LLMs to follow as instructions.
-        You use your skill to help people write prompts that closely align with their goals.
+# def build_game_meta_prompt() -> str:
+#     return """
+#         <system>
+#         You are an expert AI prompt engineer with an expertise in working with Claude 3.5 Sonnet. You write powerful, detailed prompts for LLMs to follow as instructions.
+#         You use your skill to help people write prompts that closely align with their goals.
 
-        Use the example below for your reference:
-            <example_system_prompt_1>
-            When a user requests a Snake game using HTML, JS, and CSS, follow these guidelines:
+#         Use the example below for your reference:
+#             <example_system_prompt_1>
+#             When a user requests a Snake game using HTML, JS, and CSS, follow these guidelines:
 
-            Create a fully functional Snake game with the following features:
+#             Create a fully functional Snake game with the following features:
 
-            -Smooth snake movement and growth
-            -Food generation and consumption
-            -Scoring system
-            -Increasing difficulty as the snake grows longer
-            -Game over screen when the snake collides with itself or the walls, displaying the final score with an animation
-            -Standard keyboard controls (arrow keys)
-            -Use only HTML, JavaScript, and CSS without any external dependencies, libraries, or frameworks.
-            -Generate all graphics within the code using HTML5 Canvas, avoiding reliance on external image files.
-            -Ensure the game runs in an HTML iframe without requiring any additional setup.
-            -Provide complete, runnable code without placeholders or omissions.
-            -Proactively address common bugs and pitfalls in Snake game implementations.
-            -As the game will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
-            -Ensure that any keystrokes used do not trigger the default browser behaviour. If the user uses arrow keys to play, it should not also trigger scrolling of the browser.
-            -Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
+#             -Smooth snake movement and growth
+#             -Food generation and consumption
+#             -Scoring system
+#             -Increasing difficulty as the snake grows longer
+#             -Game over screen when the snake collides with itself or the walls, displaying the final score with an animation
+#             -Standard keyboard controls (arrow keys)
+#             -Use only HTML, JavaScript, and CSS without any external dependencies, libraries, or frameworks.
+#             -Generate all graphics within the code using HTML5 Canvas, avoiding reliance on external image files.
+#             -Ensure the game runs in an HTML iframe without requiring any additional setup.
+#             -Provide complete, runnable code without placeholders or omissions.
+#             -Proactively address common bugs and pitfalls in Snake game implementations.
+#             -As the game will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
+#             -Ensure that any keystrokes used do not trigger the default browser behaviour. If the user uses arrow keys to play, it should not also trigger scrolling of the browser.
+#             -Ensure all output code is properly formatted with consistent quotation marks and special characters are correctly escaped to prevent syntax errors.
 
-            Include additional cool features that enhance the game experience, such as:
-            -Different types of food with varying effects (e.g., speed boost, score multiplier)
-            -Obstacles or walls that appear as the game progresses
-            -Visual effects for eating food or game over scenarios
+#             Include additional cool features that enhance the game experience, such as:
+#             -Different types of food with varying effects (e.g., speed boost, score multiplier)
+#             -Obstacles or walls that appear as the game progresses
+#             -Visual effects for eating food or game over scenarios
 
-            Prioritize code completeness, robustness, and readiness for immediate execution.
-            Structure the response as follows:
-            a. Brief introduction explaining the game and its features
-            b. HTML code (including inline CSS if applicable)
-            c. JavaScript code
-            d. Any additional CSS in a separate <style> tag or file
-            e. Instructions for running the game
+#             Prioritize code completeness, robustness, and readiness for immediate execution.
+#             Structure the response as follows:
+#             a. Brief introduction explaining the game and its features
+#             b. HTML code (including inline CSS if applicable)
+#             c. JavaScript code
+#             d. Any additional CSS in a separate <style> tag or file
+#             e. Instructions for running the game
 
-            Remember to focus on delivering a complete, functional, and engaging Snake game implementation using web technologies that can be easily copied and pasted into an HTML file to run immediately in a web browser.
-            </example_system_prompt_1>
-     </system>
-    """
+#             Remember to focus on delivering a complete, functional, and engaging Snake game implementation using web technologies that can be easily copied and pasted into an HTML file to run immediately in a web browser.
+#             </example_system_prompt_1>
+#      </system>
+#     """
 
 
 def build_code_generation_question_prompt(
@@ -157,12 +163,18 @@ def build_code_generation_question_prompt(
 
 
 def build_question_with_persona(persona: str, num_requirements: int, topic: Topics):
-    topic_context = ""
+    system_topic_context = ""
+    user_topic_context = ""
     if topic == Topics.GAMES:
         subject = "fun, streamlined, hyper-casual web game"
-        topic_context = "- Your question must not contain any audio features."
+        system_topic_context = "- Your question must not contain any audio features."
+        user_topic_context = (
+            f"The {subject} must have gameplay and content inspired by the persona."
+        )
     elif topic == Topics.SCIENCE:
-        subject = "streamlined, science simulation"
+        subject = "streamlined science simulation"
+        system_topic_context = "- Your question must not contain any audio features."
+        user_topic_context = f"The {subject} must demonstrate a scientific concept that is related to the persona."
     else:
         subject = "interactive visualization"
     persona_question_examples = f"""
@@ -192,10 +204,10 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         - The program will be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user actions should be designed with a desktop user in mind.
         - Ensure your user actions will not interfere with each other. Each action should be easily executed in isolation from the others.
         - The program does not necessarily need to be useful to the persona; the persona should loosely inspire the context of the question.
-        - It is imperative for your question to faithfully implement a {subject}. You should sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
+        - It is imperative for your question to faithfully implement a {subject}. You must sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
         - Ensure your {subject} does not require the use of local or session storage.
         - Begin the question with a general instruction to describe what the LLM must implement, without mentioning the persona.
-        {topic_context}
+        {system_topic_context}
     </instructions>
     <reference_examples>
         Here are some example outputs for your reference:
@@ -203,8 +215,9 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
     </reference_examples>
 
     <user>
-        Here are the instructions from your user:
-        Generate a self-contained coding problem that requires the programmer to implement a {subject}, with {num_requirements} user actions for the following persona: {persona}.
+        Generate a self-contained coding problem that requires the programmer to implement a {subject} with {num_requirements} user actions for the following persona: {persona}.
+
+        {user_topic_context}
 
         Adhere to the guidelines given to you.
     </user>
@@ -217,5 +230,8 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
             num_requirements=num_requirements,
             persona=persona,
             persona_question_examples=persona_question_examples,
+            subject=subject,
+            system_topic_context=system_topic_context,
+            user_topic_context=user_topic_context,
         )
     )
