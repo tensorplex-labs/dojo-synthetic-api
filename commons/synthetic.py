@@ -120,7 +120,7 @@ async def generate_question(
             "max_tokens": 8192,
             "max_retries": AsyncRetrying(stop=stop_after_attempt(1), reraise=True),
             "top_p": random.uniform(0.9, 1.0),
-            "seed": random.randint(0, cast(int, 1e9)),  # needed for OpenAI
+            "seed": random.randint(0, int(1e9)),  # needed for OpenAI
         }
 
         response_model = await client.chat.completions.create(**kwargs)
