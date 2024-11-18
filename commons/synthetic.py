@@ -18,7 +18,7 @@ from tenacity import (
     stop_after_attempt,
 )
 
-from commons.config import GENERATOR_MODELS
+from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.dataset.personas import get_random_persona
 from commons.llm import get_llm_api_client
 from commons.prompt_builders import (
@@ -203,7 +203,6 @@ async def generate_answer(
                 "question": question,
                 "err": err,
                 "code": code,
-                "topic": topic,
                 **kwargs_clone,
             },
         )
@@ -246,7 +245,6 @@ async def augment_question(
         # early return the original unaugmented question.
         langfuse_context.update_current_observation(
             metadata={
-                "topic": topic,
                 "question": question,
                 "augmentation_level": augmentation_level,
             }
@@ -279,7 +277,6 @@ async def augment_question(
             output=response_model.model_dump(),
             # usage=log_llm_usage(response_model.usage),
             metadata={
-                "topic": topic,
                 "question": question,
                 "augmentation_level": augmentation_level,
                 **kwargs_clone,
@@ -431,6 +428,7 @@ def _build_answer_augment_prompt(
     return prompt
 
 
+@observe(as_type="generation", capture_input=True, capture_output=True)
 async def _augment_answer(
     client: LlmClient,
     model: str,
@@ -469,6 +467,18 @@ async def _augment_answer(
 
     try:
         result = await client.chat.completions.create(**kwargs)
+        kwargs_clone = kwargs.copy()
+        langfuse_context.update_current_observation(
+            input=kwargs_clone.pop("messages"),
+            model=model,
+            output=result.model_dump(),
+            # usage=log_llm_usage(response_model.usage),
+            metadata={
+                "question": question,
+                "augmentation_level": augmentation,
+                **kwargs_clone,
+            },
+        )
         logger.info(f" {id} {augmentation} answer generated")
         return model, result, augmentation, id
     except Exception as e:
@@ -479,8 +489,6 @@ async def _augment_answer(
 @observe(as_type="trace")
 async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     client = get_llm_api_client()
-    query_model = random.choice(GENERATOR_MODELS)
-    # results: list[tuple[str, CodeAnswer | None, AugmentationLevel | None, str]]
     results: list[
         tuple[
             str,
@@ -489,7 +497,10 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
             str,
         ]
     ] = []
+    question_model = random.choice(GENERATOR_MODELS)
+    answer_models = random.choice(ANSWER_MODELS)
     tasks = []
+    augment_type = response_strategy.name
 
     async def _generate_response(
         model: str,
@@ -537,14 +548,13 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     ##### START OF FUNCTION LOGIC #####
     # 1. get random persona from hugging face
     persona = get_random_persona()
-    # logger.info(f"@@@@@ persona: {persona}")
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
     selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)
     try:
         # 3. generate a question using the topic
         question_prompt = await generate_question(
-            client, query_model, selected_topic[0], persona
+            client, question_model, selected_topic[0], persona
         )
 
         if question_prompt is None:
@@ -553,9 +563,9 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         augmented_prompts = []
         ### Augments Answer ###
         if response_strategy == ResponseStrategy.CHANGE_ANSWERS:
-            # 1. generate base answer
+            # generate base answer
             model, base_answer, _, qa_id = await _generate_response(
-                query_model,
+                answer_models,
                 question_prompt,
                 selected_topic[0],
                 qa_id=str(uuid.uuid4()),
@@ -564,7 +574,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
             if base_answer is None:
                 raise ValueError("_generate_response() returned None for CodeAnswer")
-            # 2. generate answer augments
+            # generate answer augments
             for augmentation in AnswerAugmentation:
                 # skip augmentation for original prompt
                 if augmentation == AnswerAugmentation.ORIGINAL:
@@ -581,20 +591,21 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
             results = await asyncio.gather(*tasks)
             # combine original response + augmented responses.
             results = base_response + results
+
         ### Question Augmentation ###
         elif response_strategy == ResponseStrategy.CHANGE_QUESTIONS:
+            # generate 3 augmented questions from base question
             for level in QuestionAugmentation:
-                # generate question augments
                 augmented_question, qa_id = await augment_question(
-                    client, query_model, question_prompt, level, selected_topic[0]
+                    client, question_model, question_prompt, level, selected_topic[0]
                 )
                 augmented_prompts.append(
                     {"level": level.name, "question": augmented_question}
                 )
-                # generate answers to augmented questions
+                # generate answers for all questions
                 tasks.append(
                     _generate_response(
-                        query_model,
+                        answer_models,
                         augmented_question,
                         topic=selected_topic[0],
                         level=level,
@@ -637,9 +648,11 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
     return {
         "prompt": question_prompt,
+        "question_model": question_model,
         "responses": responses,
         "ground_truth": synthetic_ground_truth,
         "augmented_prompts": augmented_prompts,
         "topic": selected_topic[0].name,
         "persona": persona,
+        "augment_type": augment_type,
     }
