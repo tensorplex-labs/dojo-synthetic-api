@@ -9,6 +9,7 @@ from typing import List, Tuple, cast
 import instructor
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from langfuse.client import ModelUsage
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
 from openai import AsyncOpenAI, AuthenticationError
@@ -35,12 +36,18 @@ load_dotenv()
 LlmClient = AsyncOpenAI | instructor.AsyncInstructor
 
 
-def log_llm_usage(completion):
-    return {
+def _get_llm_usage(completion):
+    usage: ModelUsage = {
+        "unit": "TOKENS",
         "input": completion.usage.prompt_tokens,
         "output": completion.usage.completion_tokens,
-        "unit": "TOKENS",
+        "total_cost": None,
+        "total": None,
+        "input_cost": None,
+        "output_cost": None,
     }
+
+    return usage
 
 
 class CodingQuestion(BaseModel):
@@ -132,7 +139,7 @@ async def generate_question(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(response_model),
             metadata={
                 "topic": _topic,
                 "used_models": used_models,
@@ -190,7 +197,10 @@ async def generate_answer(
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
     try:
-        response_model = await client.chat.completions.create(**kwargs)
+        (
+            response_model,
+            completion,
+        ) = await client.chat.completions.create_with_completion(**kwargs)
 
         kwargs_clone = kwargs.copy()
         kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
@@ -198,7 +208,7 @@ async def generate_answer(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(completion),
             metadata={
                 "question": question,
                 "err": err,
@@ -275,7 +285,7 @@ async def augment_question(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(response_model),
             metadata={
                 "question": question,
                 "augmentation_level": augmentation_level,
@@ -438,9 +448,9 @@ async def _augment_answer(
 ):
     """
     takes in a base answer, base question and augmentation type?
-    queries LLM to generate augmented output from
+        queries LLM to generate augmented output from
 
-    returns model, result, level, qa_id
+        returns model, result, level, qa_id
     """
     id = str(uuid.uuid4())
     answer_format = CodeAnswer.model_json_schema()
@@ -466,23 +476,56 @@ async def _augment_answer(
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
     try:
-        result = await client.chat.completions.create(**kwargs)
+        result, completion = await client.chat.completions.create_with_completion(
+            **kwargs
+        )
         kwargs_clone = kwargs.copy()
         langfuse_context.update_current_observation(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=result.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(completion),
             metadata={
                 "question": question,
                 "augmentation_level": augmentation,
                 **kwargs_clone,
             },
         )
+
+        # merge generated JS code into HTML file
+        result = _merge_JS_and_HTML(result)
+
         logger.info(f" {id} {augmentation} answer generated")
         return model, result, augmentation, id
     except Exception as e:
         logger.error(f"{id} failed to generate augmented question: {e}")
+
+
+# merges output index.js into index.html
+def _merge_JS_and_HTML(result):
+    ans_with_index_html = build_single_index_html(result)
+    html_file = next(
+        (file for file in ans_with_index_html.files if file.filename == "index.html"),
+        None,
+    )
+    if html_file:
+        pass
+    else:
+        raise ValueError("No index.html file found in the answer")
+
+    #  rewoo implementation unfinished
+    # _execute_rewoo()
+
+    # replace whole CodeAnswer with a single final_html file
+    result.files = [file for file in result.files if file.filename == "index.html"]
+
+    # replace old html with updated html with inlined JS and CSS.
+    if result.files:
+        # result.files[0].content = final_html
+        result.files[0].content = html_file.content
+    else:
+        raise ValueError("No index.html file found in the result")
+    return result
 
 
 # use trace to avoid double dipping cost logging on nested observations
@@ -508,7 +551,6 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         topic: Topics,
         qa_id: str,
         level: QuestionAugmentation | None = None,
-        # answer_augment: AnswerAugmentation | None = None,
     ):
         model, result = await generate_answer(
             client, model, question, topic=topic, qa_id=qa_id
@@ -516,32 +558,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         if result is None:
             raise ValueError("generate_answer() returned none")
         # TODO remove after testing ensure single index.html file just for now
-        ans_with_index_html = build_single_index_html(result)
-        html_file = next(
-            (
-                file
-                for file in ans_with_index_html.files
-                if file.filename == "index.html"
-            ),
-            None,
-        )
-        if html_file:
-            pass
-        else:
-            raise ValueError("No index.html file found in the answer")
-
-        #  rewoo implementation unfinished
-        # _execute_rewoo()
-
-        # replace whole CodeAnswer with a single final_html file
-        result.files = [file for file in result.files if file.filename == "index.html"]
-
-        # replace old html with updated html with inlined JS and CSS.
-        if result.files:
-            # result.files[0].content = final_html
-            result.files[0].content = html_file.content
-        else:
-            raise ValueError("No index.html file found in the result")
+        result = _merge_JS_and_HTML(result)
 
         return model, result, level, qa_id
 
@@ -646,6 +663,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
             logger.debug(f"{model=},{qa_id=}, {level=}")
             synthetic_ground_truth[qa_id] = level.value
 
+    # this is the return payload from the task creation API route
     return {
         "prompt": question_prompt,
         "question_model": question_model,
