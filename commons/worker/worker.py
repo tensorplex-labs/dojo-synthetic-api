@@ -7,7 +7,7 @@ from commons.cache import RedisCache
 from commons.config import get_settings
 
 
-class Worker:
+class WorkerManager:
     """This class exists because each QA pair takes a long time to generate, so
     upon startup of the app, we want to ensure that we have a buffer of QA pairs
     ready to be consumed by callers of the API endpoint.
@@ -23,7 +23,7 @@ class Worker:
     6. repeat steps 1-5
     """
 
-    _instance: "Worker | None" = None
+    _instance: "WorkerManager | None" = None
     # we want to ensure that the number of workers is in sync with number of uvicorn workers
     _num_workers = get_settings().uvicorn.num_workers
     _buffer_size = get_settings().generation.buffer_size
@@ -31,7 +31,7 @@ class Worker:
     _do_work: Callable[..., Awaitable[Any]]
     _running_workers: list = []
 
-    def __new__(cls, do_work: Callable) -> "Worker":
+    def __new__(cls, do_work: Callable) -> "WorkerManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__init__(do_work)

@@ -9,17 +9,15 @@ from commons.cache import RedisCache
 
 # from commons.prompt_builders import Language
 from commons.synthetic import (
-    ResponseStrategy,
     build_prompt_responses_pair,
 )
-from commons.worker import Worker
+from commons.worker import WorkerManager
 
 synthetic_gen_router = APIRouter(prefix="/api")
 cache = RedisCache()
-worker = Worker(
+worker = WorkerManager(
     do_work=functools.partial(
         build_prompt_responses_pair,
-        response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE,
     )
 )
 
