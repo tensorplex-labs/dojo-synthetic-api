@@ -95,7 +95,7 @@ class AnswerAugmentation(Enum):
     ADD_ONE = 3
 
 
-class ResponseStrategy(Enum):
+class AugmentStrategy(Enum):
     CHANGE_QUESTIONS = 0
     CHANGE_ANSWERS = 1
 
@@ -530,7 +530,10 @@ def _merge_JS_and_HTML(result):
 
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
-async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
+async def build_prompt_responses_pair():
+    augment_strategy = random.choice(
+        [AugmentStrategy.CHANGE_QUESTIONS, AugmentStrategy.CHANGE_ANSWERS]
+    )
     client = get_llm_api_client()
     results: list[
         tuple[
@@ -543,7 +546,6 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
     question_model = random.choice(GENERATOR_MODELS)
     answer_models = random.choice(ANSWER_MODELS)
     tasks = []
-    augment_type = response_strategy.name
 
     async def _generate_response(
         model: str,
@@ -579,7 +581,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         augmented_prompts = []
         ### Augments Answer ###
-        if response_strategy == ResponseStrategy.CHANGE_ANSWERS:
+        if augment_strategy == AugmentStrategy.CHANGE_ANSWERS:
             # generate base answer
             model, base_answer, _, qa_id = await _generate_response(
                 answer_models,
@@ -610,7 +612,7 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
             results = base_response + results
 
         ### Question Augmentation ###
-        elif response_strategy == ResponseStrategy.CHANGE_QUESTIONS:
+        elif augment_strategy == AugmentStrategy.CHANGE_QUESTIONS:
             # generate 3 augmented questions from base question
             for level in QuestionAugmentation:
                 augmented_question, qa_id = await augment_question(
@@ -672,5 +674,5 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         "augmented_prompts": augmented_prompts,
         "topic": selected_topic[0].name,
         "persona": persona,
-        "augment_type": augment_type,
+        "augment_type": augment_strategy.name,
     }

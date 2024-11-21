@@ -9,7 +9,6 @@ from commons.cache import RedisCache
 
 # from commons.prompt_builders import Language
 from commons.synthetic import (
-    ResponseStrategy,
     build_prompt_responses_pair,
 )
 from commons.worker import Worker
@@ -19,7 +18,6 @@ cache = RedisCache()
 worker = Worker(
     do_work=functools.partial(
         build_prompt_responses_pair,
-        response_strategy=ResponseStrategy.CHANGE_ANSWERS,
     )
 )
 
