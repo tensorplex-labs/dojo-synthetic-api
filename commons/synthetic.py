@@ -531,9 +531,10 @@ def _merge_JS_and_HTML(result):
 # use trace to avoid double dipping cost logging on nested observations
 @observe(as_type="trace")
 async def build_prompt_responses_pair():
-    augment_strategy = random.choice(
-        [AugmentStrategy.CHANGE_QUESTIONS, AugmentStrategy.CHANGE_ANSWERS]
-    )
+    augment_strategy = random.choices(
+        population=[AugmentStrategy.CHANGE_QUESTIONS, AugmentStrategy.CHANGE_ANSWERS],
+        weights=[0.5, 0.5],
+    )[0]
     client = get_llm_api_client()
     results: list[
         tuple[
