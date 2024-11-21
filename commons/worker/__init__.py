@@ -1,1 +1,1 @@
-from .worker import Worker as Worker
+from .worker import WorkerManager as WorkerManager
