@@ -73,13 +73,13 @@ def build_code_answer_prompt(
 ) -> str:
     CODE_ANS_PROMPT = """
     <system>
-        Here are some example outputs to refer to:
         <examples>
+            Here are some example outputs to refer to:
             {few_shot_examples_section}
         </examples>
-        
-        Your output should should always be valid json based on this schema:
+
         <response_format>
+            Your output should should always be valid json based on this schema:
             {answer_format}
         </response_format>
         <role>
