@@ -122,7 +122,7 @@ def build_code_answer_prompt(
                 </security_policy>
             - Implement different update frequencies for visual elements and program logic. Use slower update cycles for elements that should change gradually, like weather or background colors
             - Implement a clear state management system for program elements. Separate the state update logic from the rendering logic.
-            - Your output must display in a 16:9 aspect ratio.
+            - Your output must display in an iframe of size 1100 x 1100 pixels.
             - Ensure your output will run in a self-contained HTML iframe, ensure that the code does not use any local or session storage.
             - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it should not also cause the browser to scroll.
             - Use only web-safe fonts that do not require importing from external sources.
