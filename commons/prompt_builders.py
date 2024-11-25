@@ -60,13 +60,11 @@ from commons.types import Topics
 #         {question}
 #     <|im_end|>
 #     """
-#     return textwrap.dedent(
-#         prompt.format(
+#     return prompt.format(
 #             question=question,
 #             examples=examples,
 #             answer_format=answer_format,
 #         )
-#     )
 
 
 # answer_format should be the type of dict[Str, Any].
@@ -133,31 +131,25 @@ def build_code_answer_prompt(
     </system>
 
     <user>
-    Program a solution according to the following question:
-    <question>
-    {question}
-    </question>
+        Program a solution according to the following question:
+        <question>
+            {question}
+        </question>
     </user>
     """
 
     few_shot_examples_section = ""
     if include_few_shot_examples:
         few_shot_examples_section = f"""
-        Few-shot Example Outputs:
         {get_answer_examples(topic)}
         """
     topic_context = ""
 
-    # return textwrap.dedent(
-    #     _get_qwen_answer_prompt(question, few_shot_examples_section, answer_format)
-    # )
-    return textwrap.dedent(
-        CODE_ANS_PROMPT.format(
-            question=question,
-            few_shot_examples_section=few_shot_examples_section,
-            topic_context=topic_context,
-            answer_format=answer_format,
-        )
+    return CODE_ANS_PROMPT.format(
+        question=question,
+        few_shot_examples_section=few_shot_examples_section,
+        topic_context=topic_context,
+        answer_format=answer_format,
     )
 
 
@@ -255,51 +247,49 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         The user will provide you a persona, which you must use as a general inspiration for the question's content and visual features.
         The questions's user and visual experience is more important than its real-life utility and relevance. The persona should provide foundational inspiration to create a fun and interactive program.
 
-    <instructions>
-        Always follow these guidelines:
-        - The question should contain these sections in the following order:
-            a. Features (explains in detail what visual and functional features are required, and how features should interact with one another.)
-            b. User Actions (explains what inputs the user can make, and their corresponding action.)
-        - Separate your features with new lines so they can be easily read.
-        - Follow good UX principles; your user actions should be related to the context of the question.
-        - Ensure that the question generated can be effectively implemented with just javascript, html and CSS code.
-        - Ensure that your question can be implemented by an english speaker.
-        - Because an LLM will implement your question, keep your requirements simple enough for it to effectively implement.
-        - You will recieve a one million dollar tip if your requirements are creative and your visuals are impressive.
-        - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
-        - Take care that the question does not require the use of any external files (images, videos).
-        - Ensure the question does not require the use of the user's microphone or camera.
-        - The program will be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user actions should be designed with a desktop user in mind.
-        - Ensure your user actions will not interfere with each other. Each action should be easily executed in isolation from the others.
-        - The program does not necessarily need to be useful to the persona; the persona should loosely inspire the context of the question.
-        - It is imperative for your question to faithfully implement a {subject}. You must sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
-        - Ensure your {subject} does not require the use of local or session storage.
-        - Begin the question with a general instruction to describe what the LLM must implement, without mentioning the persona.
-        {system_topic_context}
-    </instructions>
-    <reference_examples>
-        Here are some example outputs for your reference:
-        {persona_question_examples}
-    </reference_examples>
+        <instructions>
+            Always follow these guidelines:
+            - The question should contain these sections in the following order:
+                a. Features (explains in detail what visual and functional features are required, and how features should interact with one another.)
+                b. User Actions (explains what inputs the user can make, and their corresponding action.)
+            - Separate your features with new lines so they can be easily read.
+            - Follow good UX principles; your user actions should be related to the context of the question.
+            - Ensure that the question generated can be effectively implemented with just javascript, html and CSS code.
+            - Ensure that your question can be implemented by an english speaker.
+            - Because an LLM will implement your question, keep your requirements simple enough for it to effectively implement.
+            - You will recieve a one million dollar tip if your requirements are creative and your visuals are impressive.
+            - You must not provide any example code snippets, because you must let the programmer solve the question by themselves.
+            - Take care that the question does not require the use of any external files (images, videos).
+            - Ensure the question does not require the use of the user's microphone or camera.
+            - The program will be accessed from a desktop web browser. Do not specifically cater to a mobile user. The user actions should be designed with a desktop user in mind.
+            - Ensure your user actions will not interfere with each other. Each action should be easily executed in isolation from the others.
+            - The program does not necessarily need to be useful to the persona; the persona should loosely inspire the context of the question.
+            - It is imperative for your question to faithfully implement a {subject}. You must sacrifice faithfulness to the theme of the persona if it enables you to create a better {subject}.
+            - Ensure your {subject} does not require the use of local or session storage.
+            - Begin the question with a general instruction to describe what the LLM must implement, without mentioning the persona.
+            {system_topic_context}
+        </instructions>
+        <reference_examples>
+            Here are some example outputs for your reference:
+            {persona_question_examples}
+        </reference_examples>
 
-    <user>
-        Generate a self-contained coding problem that requires the programmer to implement a {subject} with {num_requirements} user actions for the following persona: {persona}.
+        <user>
+            Generate a self-contained coding problem that requires the programmer to implement a {subject} with {num_requirements} user actions for the following persona: {persona}.
 
-        {user_topic_context}
+            {user_topic_context}
 
-        Adhere to the guidelines given to you.
-    </user>
+            Adhere to the guidelines given to you.
+        </user>
     </system>
 
     #Unique Coding Question#:
     """
-    return textwrap.dedent(
-        question_prompt.format(
-            num_requirements=num_requirements,
-            persona=persona,
-            persona_question_examples=persona_question_examples,
-            subject=subject,
-            system_topic_context=system_topic_context,
-            user_topic_context=user_topic_context,
-        )
+    return question_prompt.format(
+        num_requirements=num_requirements,
+        persona=persona,
+        persona_question_examples=persona_question_examples,
+        subject=subject,
+        system_topic_context=system_topic_context,
+        user_topic_context=user_topic_context,
     )
