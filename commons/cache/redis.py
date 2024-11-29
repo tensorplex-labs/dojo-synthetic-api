@@ -137,7 +137,7 @@ class RedisCache:
             first_cid = data["responses"][0]["cid"]
             augment_type_key = self._build_key(self._augment_type_key, first_cid)
             logger.debug(f"Writing augment_type into {augment_type_key}")
-            await self.redis.set(augment_type_key, json_string)
+            await self.redis.set(augment_type_key, json_string, ex=3600 * 24)
 
             logger.debug(f"Writing persistent data into {hist_key}")
             # place into persistent key
