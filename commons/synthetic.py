@@ -493,7 +493,7 @@ async def _augment_answer(
         )
 
         # merge generated JS code into HTML file
-        result = _merge_JS_and_HTML(result)
+        result = _merge_js_and_html(result)
 
         logger.info(f" {id} {augmentation} answer generated")
         return model, result, augmentation, id
@@ -502,7 +502,7 @@ async def _augment_answer(
 
 
 # merges output index.js into index.html
-def _merge_JS_and_HTML(result):
+def _merge_js_and_html(result):
     ans_with_index_html = build_single_index_html(result)
     html_file = next(
         (file for file in ans_with_index_html.files if file.filename == "index.html"),
@@ -561,7 +561,7 @@ async def build_prompt_responses_pair():
         if result is None:
             raise ValueError("generate_answer() returned none")
         # TODO remove after testing ensure single index.html file just for now
-        result = _merge_JS_and_HTML(result)
+        result = _merge_js_and_html(result)
 
         return model, result, level, qa_id
 
@@ -570,11 +570,11 @@ async def build_prompt_responses_pair():
     persona = get_random_persona()
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
-    selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)
+    selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)[0]
     try:
         # 3. generate a question using the topic
         question_prompt = await generate_question(
-            client, question_model, selected_topic[0], persona
+            client, question_model, selected_topic, persona
         )
 
         if question_prompt is None:
@@ -587,7 +587,7 @@ async def build_prompt_responses_pair():
             model, base_answer, _, qa_id = await _generate_response(
                 answer_models,
                 question_prompt,
-                selected_topic[0],
+                selected_topic,
                 qa_id=str(uuid.uuid4()),
             )
             base_response = [(model, base_answer, AnswerAugmentation.ORIGINAL, qa_id)]
@@ -617,7 +617,7 @@ async def build_prompt_responses_pair():
             # generate 3 augmented questions from base question
             for level in QuestionAugmentation:
                 augmented_question, qa_id = await augment_question(
-                    client, question_model, question_prompt, level, selected_topic[0]
+                    client, question_model, question_prompt, level, selected_topic
                 )
                 augmented_prompts.append(
                     {"level": level.name, "question": augmented_question}
@@ -627,7 +627,7 @@ async def build_prompt_responses_pair():
                     _generate_response(
                         answer_models,
                         augmented_question,
-                        topic=selected_topic[0],
+                        topic=selected_topic,
                         level=level,
                         qa_id=qa_id,
                     )
@@ -673,7 +673,7 @@ async def build_prompt_responses_pair():
         "responses": responses,
         "ground_truth": synthetic_ground_truth,
         "augmented_prompts": augmented_prompts,
-        "topic": selected_topic[0].name,
+        "topic": selected_topic.name,
         "persona": persona,
         "augment_type": augment_strategy.name,
     }
