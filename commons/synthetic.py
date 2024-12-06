@@ -217,6 +217,8 @@ async def generate_answer(
             },
         )
         logger.info(f"{qa_id} Answer Generation Completed ")
+        # # fix syntax errors
+        # response_model = await _fix_syntax_errors(client, model, response_model, qa_id)
         return model, response_model
     except Exception as e:
         logger.error(f"Error while generating {qa_id} answer: {e}")
@@ -439,6 +441,62 @@ def _build_answer_augment_prompt(
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
+async def _fix_syntax_errors(
+    client: LlmClient, model: str, answer: CodeAnswer, id: str
+) -> CodeAnswer:
+    """
+    takes in a code answer and attempts to fix any syntax errors.
+    """  # logger.info(f"@@@ syn base code: {answer}")
+    syntax_error_prompt = f"""
+    <system>
+        Here is some code that you must fix:
+        <base_code>
+            {answer}
+        </base_code>
+        <role>
+            You are an expert coding agent. You must fix any errors in the <base_code>. If there are no errors, return the <base_code> unchanged.
+        </role>
+    </system>
+    """
+    messages = [
+        {
+            "role": "system",
+            "content": syntax_error_prompt,
+        },
+    ]
+
+    kwargs = {
+        "response_model": CodeAnswer,
+        "model": model,
+        "messages": messages,
+        "temperature": 0.0,
+        "max_tokens": 8192,
+        "top_p": 0.1,
+    }
+
+    # logger.info(f"@@@ syn base code: {answer}")
+    logger.info(f"{id} fixing syntax errors")
+    try:
+        result, completion = await client.chat.completions.create_with_completion(
+            **kwargs
+        )
+        kwargs_clone = kwargs.copy()
+        langfuse_context.update_current_observation(
+            input=kwargs_clone.pop("messages"),
+            model=model,
+            output=result.model_dump(),
+            usage=_get_llm_usage(completion),
+            metadata={
+                **kwargs_clone,
+            },
+        )
+
+        return result
+    except Exception as e:
+        logger.error(f"{id} failed to fix syntax errors: {e}")
+
+
+@observe(as_type="generation", capture_input=True, capture_output=True)
 async def _augment_answer(
     client: LlmClient,
     model: str,
@@ -491,6 +549,9 @@ async def _augment_answer(
                 **kwargs_clone,
             },
         )
+
+        # fix syntax errors
+        # result = await _fix_syntax_errors(client, model, result, id)
 
         # merge generated JS code into HTML file
         result = _merge_js_and_html(result)
@@ -561,7 +622,9 @@ async def build_prompt_responses_pair():
         if result is None:
             raise ValueError("generate_answer() returned none")
         # TODO remove after testing ensure single index.html file just for now
-        result = _merge_js_and_html(result)
+        # # fix syntax errors
+        # result = await _fix_syntax_errors(client, model, result, qa_id)
+        # result = _merge_js_and_html(result)
 
         return model, result, level, qa_id
 
@@ -644,7 +707,8 @@ async def build_prompt_responses_pair():
     for model, result, level, qa_id in results:
         if not result:
             raise RuntimeError("Error generating prompt-response pair")
-
+        # merge generated JS code into HTML file
+        result = _merge_js_and_html(result)
         formatted_files = [
             {
                 "filename": file.filename,
