@@ -1,5 +1,13 @@
+"""
+linter.py:
+  - enables use of ESLint library to lint input javascript code
+  - will lint according to the rules specified in eslint.config.mjs
+  - used in synthetic.py to trigger LLM queries to fix syntax errors when detected.
+"""
+
 import subprocess
 
+from loguru import logger
 from pydantic import BaseModel, Field
 
 
@@ -24,7 +32,10 @@ def setup_linting():
         return False
 
 
-def lint_code(code: str) -> LintResult:
+def lint_code(code: str, id: str) -> LintResult:
+    """
+    calls ESLint on the input code and returns the result as a LintResult object.
+    """
     try:
         # Check if eslint is installed
         npm_check = subprocess.run(
@@ -55,7 +66,7 @@ def lint_code(code: str) -> LintResult:
             input=code,
         )
     except Exception as e:
-        print(f"Subprocess error: {str(e)}")
+        logger.error(f"Error linting answer {id}: {e}")
         return LintResult(
             return_code=0,
             output="",
@@ -65,183 +76,16 @@ def lint_code(code: str) -> LintResult:
 
 
 def main():
+    """
+    main function used to for isolated testing of linter.py
+    """
     print(setup_linting())
 
     bad_code = """
-        const GAME_DURATION = 120;  // 2 minutes
-        const MAX_WORKERS = 8;
-        const WORK_ZONES = ['collaborative', 'quiet', 'brainstorming'];
-
-        class GameWorker {
-            constructor(id) {
-                this.id = id;
-                this.motivation = 50 + Math.random() * 50;
-                this.energy = 100;
-                this.mood = this.getMoodState();
-                this.workStyle = WORK_ZONES[Math.floor(Math.random() * WORK_ZONES.length)];
-                this.element = this.createWorkerElement();
-            }
-
-            createWorkerElement() {
-                const worker = document.createElement('div');
-                worker.className = 'worker';
-                worker.innerHTML = `
-                    <div class="worker-mood" style="background-color: ${this.getMoodColor()}"></div>
-                    <div class="worker-energy" style="width: ${this.energy}%"></div>
-                    <div class="worker-motivation" style="width: ${this.motivation}%"></div>
-                `;
-                worker.addEventListener('click', () => this.boostMotivation());
-                return worker;
-            }
-
-            getMoodState() {
-                if (this.motivation > 75) return 'happy';
-                if (this.motivation > 25) return 'neutral';
-                return 'stressed';
-            }
-
-            getMoodColor() {
-                const moodColors = {
-                    'happy': '#2ecc71',
-                    'neutral': '#f39c12',
-                    'stressed': '#e74c3c'
-                };
-                return moodColors[this.getMoodState()];
-            }
-
-            boostMotivation() {
-                this.motivation = Math.min(100, this.motivation + 20);
-                this.energy = Math.min(100, this.energy + 15);
-                this.updateVisuals();
-            }
-
-            updateVisuals() {
-                const moodElement = this.element.querySelector('.worker-mood');
-                const energyElement = this.element.querySelector('.worker-energy');
-                const motivationElement = this.element.querySelector('.worker-motivation');
-
-                moodElement.style.backgroundColor = this.getMoodColor();
-                energyElement.style.width = `${this.energy}%`;
-                motivationElement.style.width = `${this.motivation}%`;
-            }
-        }
-
-        class MotivationMayhem {
-            constructor() {
-                this.workers = [];
-                this.productivityScore = 0;
-                this.timeLeft = GAME_DURATION;
-                this.achievements = [];
-                this.initGame();
-            }
-
-            initGame() {
-                this.createWorkers();
-                this.startTimer();
-                this.generateRandomEvents();
-            }
-
-            createWorkers() {
-                const workersContainer = document.getElementById('workers');
-                for (let i = 0; i < MAX_WORKERS; i++) {
-                    const worker = new GameWorker(i);
-                    this.workers.push(worker);
-                    workersContainer.appendChild(worker.element);
-                }
-            }
-
-            startTimer() {
-                const timerElement = document.getElementById('timer');
-                const gameInterval = setInterval(() => {
-                    this.timeLeft--;
-                    timerElement.textContent = this.timeLeft;
-                    this.updateProductivity();
-
-                    if (this.timeLeft <= 0) {
-                        clearInterval(gameInterval);
-                        this.endGame();
-                    }
-                }, 1000);
-            }
-
-            updateProductivity() {
-                const averageMotivation = this.workers.reduce((sum, worker) => sum + worker.motivation, 0) / this.workers.length;
-                this.productivityScore = Math.floor(averageMotivation);
-                document.getElementById('productivityScore').textContent = this.productivityScore;
-                this.checkAchievements();
-            }
-
-            generateRandomEvents() {
-                setInterval(() => {
-                    const randomEvent = Math.random();
-                    if (randomEvent < 0.3) this.coffeeBreakerEvent();
-                    if (randomEvent > 0.7) this.teamConflictEvent();
-                }, 10000);
-            }
-
-            coffeeBreakerEvent() {
-                this.workers.forEach(worker => {
-                    worker.motivation = Math.min(100, worker.motivation + 15);
-                    worker.updateVisuals();
-                });
-            }
-
-            teamConflictEvent() {
-                this.workers.forEach(worker => {
-                    worker.motivation = Math.max(0, worker.motivation - 10);
-                    worker.updateVisuals();
-                });
-            }
-
-            checkAchievements() {
-                const highMotivationAchievement = this.workers.every(worker => worker.motivation > 90);
-                const lowConflictAchievement = this.productivityScore > 80;
-
-                if (highMotivationAchievement && !this.achievements.includes('high_motivation')) {
-                    this.achievements.push('high_motivation');
-                    this.displayAchievement('High Team Motivation');
-                }
-
-                if (lowConflictAchievement && !this.achievements.includes('low_conflict')) {
-                    this.achievements.push('low_conflict');
-                    this.displayAchievement('Low Workplace Conflict');
-                }
-            }
-
-            displayAchievement(text) {
-                const achievementsContainer = document.getElementById('achievements');
-                const badge = document.createElement('div');
-                badge.title = text;
-                achievementsContainer.appendChild(badge);
-            }
-
-            endGame() {
-                document.getElementById('gameOver').style.display = 'block';
-                document.getElementById('finalScore').textContent = this.productivityScore;
-            }
-        }
-
-        function restartGame() {
-            document.getElementById('gameOver').style.display = 'none';
-            document.getElementById('workers').innerHTML = '';
-            document.getElementById('achievements').innerHTML = '';
-            new MotivationMayhem();
-        }
-
-        // Start the game
-        new MotivationMayhem();
+    const fuck = ["citizen", "resident", 'smile's', "undocumented"]
     """
-    # good_code = """
-    # const fuck = ["citizen", "resident", "smile's", "undocumented"]
-    # console.log(fuck)
-    # """
-    # print(lint_code(bad_code))
-    lint_code(bad_code)
+    lint_code(bad_code, "test")
 
 
 if __name__ == "__main__":
     main()
-
-"""
-- eslint only catches first error in file, so might need to loop the results back thru the linter 
-"""

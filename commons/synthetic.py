@@ -154,9 +154,7 @@ async def generate_question(
         raise
 
 
-async def lint_and_fix_code(
-    client: LlmClient, model: str, answer: CodeAnswer, qa_id: str
-):
+async def lint_and_fix_code(client: LlmClient, model: str, answer: CodeAnswer, id: str):
     """
     @dev Executes ESlint on the input index.js file and will query LLM to fix any errors.
     @dev Will update the input answer object in-place with a fixed index.js file.
@@ -171,20 +169,14 @@ async def lint_and_fix_code(
     )
 
     # lint index.js, if there are errors (return_code is 1), then fix them with _fix_syntax_errors()
-    lint_response = lint_code(answer.files[js_index].content)
+    lint_response = lint_code(answer.files[js_index].content, id)
     if lint_response.return_code == 1:
-        logger.info(f"Lint response structure: {vars(lint_response)}")
-        logger.info(f"{qa_id} linter err: {lint_response.output}")
-        logger.info(f"{qa_id} linter input: {lint_response.input}")
+        # logger.info(f"{id} linter err: {lint_response.output}")
+        # logger.info(f"{id} linter input: {lint_response.input}")
         answer = await _fix_syntax_errors(
-            client, model, answer, lint_response.output, qa_id
+            client, model, answer, lint_response.output, id
         )
-
-        # lint the fixed index.js remove this later.
-        lint2 = lint_code(answer.files[js_index].content)
-        logger.info(
-            f"{qa_id} linter2 {lint2.return_code} error: {lint2.output} input: {lint2.input}"
-        )
+    # if linting failed, or if there are no errors, then do nothing which will return the unmodified answer.
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
@@ -481,7 +473,7 @@ async def _fix_syntax_errors(
 ) -> CodeAnswer:
     """
     takes in a code answer and attempts to fix any syntax errors.
-    """  # logger.info(f"@@@ syn base code: {answer}")
+    """
     syntax_error_prompt = f"""
     <system>
         Here is some code that you must fix:
@@ -513,8 +505,7 @@ async def _fix_syntax_errors(
         "top_p": 0.1,
     }
 
-    # logger.info(f"@@@ syn base code: {answer}")
-    logger.info(f"{id} fixing syntax errors")
+    logger.info(f"{id}: fixing errors identified by linter")
     try:
         result, completion = await client.chat.completions.create_with_completion(
             **kwargs
@@ -533,7 +524,7 @@ async def _fix_syntax_errors(
         return result
     except Exception as e:
         # return original answer if failed to fix syntax errors
-        logger.error(f"{id} failed to fix syntax errors: {e}")
+        logger.error(f"{id}: failed to fix errors: {e}")
         return answer
 
 
@@ -590,9 +581,6 @@ async def _augment_answer(
                 **kwargs_clone,
             },
         )
-
-        # # merge generated JS code into HTML file
-        # result = _merge_js_and_html(result)
 
         logger.info(f" {id} {augmentation} answer generated")
         return model, result, augmentation, id
@@ -741,8 +729,10 @@ async def build_prompt_responses_pair():
     for model, result, level, qa_id in results:
         if not result:
             raise RuntimeError("Error generating prompt-response pair")
+
         # merge generated JS code into HTML file
         result = _merge_js_and_html(result)
+
         formatted_files = [
             {
                 "filename": file.filename,
