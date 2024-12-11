@@ -21,6 +21,7 @@ from tenacity import (
 
 from commons.config import ANSWER_MODELS, GENERATOR_MODELS
 from commons.dataset.personas import get_random_persona
+from commons.linter.linter import lint_code
 from commons.llm import get_llm_api_client
 from commons.prompt_builders import (
     additional_notes_for_question_prompt,
@@ -153,6 +154,31 @@ async def generate_question(
         raise
 
 
+async def lint_and_fix_code(client: LlmClient, model: str, answer: CodeAnswer, id: str):
+    """
+    @dev Executes ESlint on the input index.js file and will query LLM to fix any errors.
+    @dev Will update the input answer object in-place with a fixed index.js file.
+    @param client: LLM Client object
+    @param model: name of the LLM model used as a string
+    @param answer: CodeAnswer object that is modified in-place
+    @param qa_id: unique id for the code answer that is being modified.
+    """
+    # get the index which contains index.js
+    js_index, _ = next(
+        (i, file) for i, file in enumerate(answer.files) if file.filename == "index.js"
+    )
+
+    # lint index.js, if there are errors (return_code is 1), then fix them with _fix_syntax_errors()
+    lint_response = lint_code(answer.files[js_index].content, id)
+    if lint_response.return_code == 1:
+        # logger.info(f"{id} linter err: {lint_response.output}")
+        # logger.info(f"{id} linter input: {lint_response.input}")
+        answer = await _fix_syntax_errors(
+            client, model, answer, lint_response.output, id
+        )
+    # if linting failed, or if there are no errors, then do nothing which will return the unmodified answer.
+
+
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_answer(
     client: LlmClient,
@@ -217,6 +243,9 @@ async def generate_answer(
             },
         )
         logger.info(f"{qa_id} Answer Generation Completed ")
+        # execute auto-linting and use LLm to fix syntax errors if any. Will modify the response_model in place.
+        await lint_and_fix_code(client, model, response_model, qa_id)
+
         return model, response_model
     except Exception as e:
         logger.error(f"Error while generating {qa_id} answer: {e}")
@@ -439,6 +468,67 @@ def _build_answer_augment_prompt(
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
+async def _fix_syntax_errors(
+    client: LlmClient, model: str, answer: CodeAnswer, linter_feedback: str, id: str
+) -> CodeAnswer:
+    """
+    takes in a code answer and attempts to fix any syntax errors.
+    """
+    syntax_error_prompt = f"""
+    <system>
+        Here is some code that you must fix:
+        <base_code>
+            {answer}
+        </base_code>
+        Here is the error found in <base_code>:
+        <error_message>
+            {linter_feedback}
+        </error_message>
+        <role>
+            You are an expert coding agent. You must modify <base_code> to fix the errors found in <error_message>.
+        </role>
+    </system>
+    """
+    messages = [
+        {
+            "role": "system",
+            "content": syntax_error_prompt,
+        },
+    ]
+
+    kwargs = {
+        "response_model": CodeAnswer,
+        "model": model,
+        "messages": messages,
+        "temperature": 0.0,
+        "max_tokens": 8192,
+        "top_p": 0.1,
+    }
+
+    logger.info(f"{id}: fixing errors identified by linter")
+    try:
+        result, completion = await client.chat.completions.create_with_completion(
+            **kwargs
+        )
+        kwargs_clone = kwargs.copy()
+        langfuse_context.update_current_observation(
+            input=kwargs_clone.pop("messages"),
+            model=model,
+            output=result.model_dump(),
+            usage=_get_llm_usage(completion),
+            metadata={
+                **kwargs_clone,
+            },
+        )
+
+        return result
+    except Exception as e:
+        # return original answer if failed to fix syntax errors
+        logger.error(f"{id}: failed to fix errors: {e}")
+        return answer
+
+
+@observe(as_type="generation", capture_input=True, capture_output=True)
 async def _augment_answer(
     client: LlmClient,
     model: str,
@@ -491,9 +581,6 @@ async def _augment_answer(
                 **kwargs_clone,
             },
         )
-
-        # merge generated JS code into HTML file
-        result = _merge_js_and_html(result)
 
         logger.info(f" {id} {augmentation} answer generated")
         return model, result, augmentation, id
@@ -560,8 +647,6 @@ async def build_prompt_responses_pair():
         )
         if result is None:
             raise ValueError("generate_answer() returned none")
-        # TODO remove after testing ensure single index.html file just for now
-        result = _merge_js_and_html(result)
 
         return model, result, level, qa_id
 
@@ -644,6 +729,9 @@ async def build_prompt_responses_pair():
     for model, result, level, qa_id in results:
         if not result:
             raise RuntimeError("Error generating prompt-response pair")
+
+        # merge generated JS code into HTML file
+        result = _merge_js_and_html(result)
 
         formatted_files = [
             {
