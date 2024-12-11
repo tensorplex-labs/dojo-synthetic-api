@@ -582,6 +582,10 @@ async def _augment_answer(
             },
         )
 
+
+        # merge generated JS code into HTML file
+        result = _merge_js_and_html(result)
+
         logger.info(f" {id} {augmentation} answer generated")
         return model, result, augmentation, id
     except Exception as e:
@@ -647,7 +651,7 @@ async def build_prompt_responses_pair():
         )
         if result is None:
             raise ValueError("generate_answer() returned none")
-
+            
         return model, result, level, qa_id
 
     ##### START OF FUNCTION LOGIC #####
