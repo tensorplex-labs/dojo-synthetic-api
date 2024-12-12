@@ -173,10 +173,13 @@ async def lint_and_fix_code(client: LlmClient, model: str, answer: CodeAnswer, i
     if lint_response.return_code == 1:
         # logger.info(f"{id} linter err: {lint_response.output}")
         # logger.info(f"{id} linter input: {lint_response.input}")
-        answer = await _fix_syntax_errors(
+        fixed_answer = await _fix_syntax_errors(
             client, model, answer, lint_response.output, id
         )
-    # if linting failed, or if there are no errors, then do nothing which will return the unmodified answer.
+        return fixed_answer
+    else:
+        # if linting failed, or if there are no errors, then do nothing which will return the unmodified answer.
+        return answer
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
@@ -244,7 +247,7 @@ async def generate_answer(
         )
         logger.info(f"{qa_id} Answer Generation Completed ")
         # execute auto-linting and use LLm to fix syntax errors if any. Will modify the response_model in place.
-        await lint_and_fix_code(client, model, response_model, qa_id)
+        response_model = await lint_and_fix_code(client, model, response_model, qa_id)
 
         return model, response_model
     except Exception as e:
