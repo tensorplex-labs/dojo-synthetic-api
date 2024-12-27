@@ -125,7 +125,7 @@ def build_code_answer_prompt(
             - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it should not also cause the browser to scroll.
             - Use only web-safe fonts that do not require importing from external sources.
             - Ensure any implementations of time are accurate and not dependent on device frame rate.
-            - Never create any alert or input boxes. Ensure your code does implement alert or input boxes.
+            - Never create any alert or input boxes. Ensure your code does not implement alert or input boxes.
             - Refer to the <examples>
             - Your output should follow the <response_format>
         </instructions>
