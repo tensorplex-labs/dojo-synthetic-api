@@ -233,9 +233,11 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
             f"The {subject} must have gameplay and content inspired by the persona."
         )
     elif topic == Topics.SCIENCE:
-        subject = "streamlined science simulation"
+        subject = "streamlined, interactive simulation"
         system_topic_context = "- Your question must not contain any audio features."
-        user_topic_context = f"The {subject} must demonstrate a scientific concept that is related to the persona."
+        user_topic_context = f"""The {subject} must demonstrate a scientific concept related to the persona.
+            - The visuals of the {subject} must be inspired by the persona.
+            """
     else:
         subject = "interactive visualization"
     persona_question_examples = f"""

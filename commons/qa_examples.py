@@ -274,6 +274,36 @@ def _get_science_question_examples() -> str:
         1. Click and drag on the white cue ball to set its initial velocity vector. The direction and length of the drag should determine the direction and speed of the cue ball when released. A faint line should appear during the drag to indicate the projected path.
         2. Press the "R" key to reset the table, randomly positioning the colored balls while keeping the white cue ball in its starting position. This action should also reset the score counter to zero.
     </example_output_2>
+    <example_input_3>
+        Generate a self-contained coding problem that requires the programmer to implement a streamlined, interactive simulation with 3 user actions for the following persona: "a military strategist who has served in the Indian Army for over 20 years."
+    </example_input_3>
+    <example_output_3>
+        Create an interactive particle simulation demonstrating the principles of projectile motion and gravitational effects in a military-themed environment.
+
+        Features:
+        - Create a side-view scene with a desert landscape background using CSS gradients.
+        - Display a launching platform (styled as a military bunker) on the left side of the screen.
+        - Implement a targeting system with a visible trajectory arc that updates in real-time as the user adjusts launch parameters.
+        - Create particles that follow realistic projectile motion physics, accounting for initial velocity, angle, and gravity.
+        - Display real-time data panel showing:
+        * Current projectile velocity
+        * Launch angle
+        * Maximum height reached
+        * Time of flight
+        * Distance traveled
+        - Add a wind direction indicator at the top of the screen (represented by an arrow).
+        - Implement wind effects that influence particle trajectories.
+        - Create target zones on the right side of the screen that change position when hit.
+        - Add visual effects for particle launches (small explosion animation at launch).
+        - Include particle trail effects that fade over time.
+        - Display a score counter for successful target hits.
+        - Create a reset button styled as a military command button.
+
+        User Actions:
+        1. Click and drag on the launcher to set the launch angle (0-90 degrees). A visual indicator should show the current angle.
+        2. Use the up/down arrow keys to adjust the initial launch velocity (shown as a power meter on screen).
+        3. Press the spacebar to launch a particle, which will follow the calculated trajectory while being affected by gravity and wind.
+    </example_output_3>
     """
 
 
@@ -468,5 +498,39 @@ def _get_science_answer_examples() -> str:
         }
     </example_output_2>
     """
-    examples = [example_1, example_2]
-    return random.choice(examples)
+    example_3 = """
+    <example_input_3>
+        Create an interactive visualization of a vaccine molecular structure.
+
+        Features:
+        - Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
+        - Each atom should be represented by a sphere, with connecting lines between atoms.
+        - Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
+        - Implement a smooth rotation animation of the molecule
+        - Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
+        - Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
+        - Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
+
+        User actions:
+        1. Hover over an atom to view more information about the atom.
+        2. Adjust the slider to control the rotation speed of the molecule animation.
+        3. Click and drag the molecule to rotate it manually.
+    </example_input_3>
+    <example_output_3>
+    [
+        {
+            "filename": "index.html",
+            "content": "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"><title>Military Projectile Simulator</title><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif}#gameCanvas{width:100vmin;height:100vmin;position:relative;background:linear-gradient(180deg,#87CEEB 0%,#E6B980 85%,#D4A976 100%)}#interface{position:absolute;top:10px;left:10px;background:rgba(47,79,79,0.8);color:#fff;padding:10px;border-radius:5px;font-size:12px}#stats{margin-bottom:10px}#powerMeter{width:100px;height:10px;background:#333;margin:5px 0}#powerFill{width:50%;height:100%;background:#ff4444;transition:width 0.3s}#windIndicator{position:absolute;top:10px;right:10px;background:rgba(47,79,79,0.8);color:#fff;padding:10px;border-radius:5px}#score{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(47,79,79,0.8);color:#fff;padding:10px;border-radius:5px}#resetBtn{background:#8B0000;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;margin-top:5px}#instructions{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(47,79,79,0.8);color:#fff;padding:10px;border-radius:5px;font-size:12px;text-align:center}</style></head><body><canvas id=\"gameCanvas\"></canvas><div id=\"interface\"><div id=\"stats\">Velocity: <span id=\"velocity\">50</span> m/s<br>Angle: <span id=\"angle\">45</span>°<br>Max Height: <span id=\"maxHeight\">0</span>m<br>Flight Time: <span id=\"flightTime\">0</span>s<br>Distance: <span id=\"distance\">0</span>m</div><div id=\"powerMeter\"><div id=\"powerFill\"></div></div><button id=\"resetBtn\">RESET</button></div><div id=\"windIndicator\">Wind: <span id=\"windSpeed\">0</span> m/s</div><div id=\"score\">Score: <span id=\"scoreValue\">0</span></div><div id=\"instructions\">↑/↓: Adjust Power | Click & Drag: Set Angle | Space: Launch</div><script src=\"index.js\"></script></body></html>",
+            "language": "html"
+        },
+        {
+            "filename": "index.js",
+            "content": "document.addEventListener('DOMContentLoaded',()=>{const canvas=document.getElementById('gameCanvas');const ctx=canvas.getContext('2d');const powerFill=document.getElementById('powerFill');const resetBtn=document.getElementById('resetBtn');let canvasSize=Math.min(window.innerWidth,window.innerHeight);canvas.width=canvasSize;canvas.height=canvasSize;const stats={velocity:50,angle:45,maxHeight:0,flightTime:0,distance:0,score:0};const particles=[];const trails=[];const targets=[];let isDragging=false;let windSpeed=Math.random()*10-5;let isLaunching=false;class Particle{constructor(x,y,velocity,angle){this.x=x;this.y=y;this.vx=velocity*Math.cos(angle*Math.PI/180);this.vy=-velocity*Math.sin(angle*Math.PI/180);this.trail=[];this.maxHeight=y;this.startTime=Date.now();}update(){this.vy+=0.5;this.x+=this.vx+(windSpeed*0.1);this.y+=this.vy;if(this.y<this.maxHeight)this.maxHeight=this.y;this.trail.push({x:this.x,y:this.y,age:0});if(this.trail.length>20)this.trail.shift();this.trail.forEach(point=>point.age++);return this.y<canvas.height;}}class Target{constructor(){this.reset();}reset(){this.x=canvas.width*0.7+Math.random()*canvas.width*0.2;this.y=canvas.height*0.7+Math.random()*canvas.height*0.2;this.radius=20;this.hit=false;}}function createExplosion(x,y){for(let i=0;i<20;i++){const angle=Math.random()*Math.PI*2;const velocity=Math.random()*5;const particle={x,y,vx:Math.cos(angle)*velocity,vy:Math.sin(angle)*velocity,life:1};trails.push(particle);}}function updateExplosions(){for(let i=trails.length-1;i>=0;i--){const particle=trails[i];particle.x+=particle.vx;particle.y+=particle.vy;particle.life-=0.02;if(particle.life<=0)trails.splice(i,1);}}function drawBunker(){ctx.fillStyle='#4A5F4A';ctx.beginPath();ctx.moveTo(50,canvas.height);ctx.lineTo(50,canvas.height-60);ctx.lineTo(100,canvas.height-60);ctx.lineTo(100,canvas.height);ctx.fill();ctx.fillStyle='#2F4F4F';ctx.fillRect(70,canvas.height-80,30,20);}function drawLauncher(){ctx.save();ctx.translate(85,canvas.height-70);ctx.rotate(-stats.angle*Math.PI/180);ctx.fillStyle='#000000';ctx.fillRect(0,-5,40,10);ctx.restore();}function drawParticles(){particles.forEach(p=>{ctx.fillStyle='#8B0000';ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(139,0,0,0.2)';ctx.beginPath();p.trail.forEach((point,i)=>{if(i===0)ctx.moveTo(point.x,point.y);else ctx.lineTo(point.x,point.y);});ctx.stroke();});}function drawExplosions(){trails.forEach(p=>{ctx.fillStyle=`rgba(255,69,0,${p.life})`;ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();});}function drawTargets(){targets.forEach(t=>{if(!t.hit){ctx.fillStyle='#8B0000';ctx.beginPath();ctx.arc(t.x,t.y,t.radius,0,Math.PI*2);ctx.fill();}});}function drawTrajectory(){if(!isLaunching){const points=[];const v=stats.velocity;const angle=stats.angle;const rad=angle*Math.PI/180;let x=85;let y=canvas.height-70;let vx=v*Math.cos(rad);let vy=-v*Math.sin(rad);for(let t=0;t<100;t+=1){points.push({x,y});vy+=0.5;x+=vx+(windSpeed*0.1);y+=vy;if(y>canvas.height)break;}ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.beginPath();points.forEach((p,i)=>{if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.stroke();}}function drawWindIndicator(){const arrow=document.getElementById('windIndicator');arrow.innerHTML=`Wind: ${windSpeed.toFixed(1)} m/s ${windSpeed>0?'→':'←'}`;}function updateStats(){document.getElementById('velocity').textContent=stats.velocity.toFixed(1);document.getElementById('angle').textContent=stats.angle.toFixed(1);document.getElementById('maxHeight').textContent=((canvas.height-stats.maxHeight)/10).toFixed(1);document.getElementById('flightTime').textContent=(stats.flightTime/1000).toFixed(1);document.getElementById('distance').textContent=(stats.distance/10).toFixed(1);document.getElementById('scoreValue').textContent=stats.score;}function checkCollisions(){particles.forEach(p=>{targets.forEach(t=>{if(!t.hit){const dx=p.x-t.x;const dy=p.y-t.y;if(Math.sqrt(dx*dx+dy*dy)<t.radius){t.hit=true;stats.score++;createExplosion(t.x,t.y);}}});});}function update(){ctx.clearRect(0,0,canvas.width,canvas.height);drawBunker();drawLauncher();drawTrajectory();drawParticles();drawTargets();drawExplosions();for(let i=particles.length-1;i>=0;i--){if(!particles[i].update()){particles.splice(i,1);}}updateExplosions();checkCollisions();updateStats();requestAnimationFrame(update);}function launch(){if(!isLaunching){isLaunching=true;const particle=new Particle(85,canvas.height-70,stats.velocity,stats.angle);particles.push(particle);createExplosion(85,canvas.height-70);setTimeout(()=>isLaunching=false,1000);}}canvas.addEventListener('mousedown',(e)=>{isDragging=true;});canvas.addEventListener('mousemove',(e)=>{if(isDragging){const rect=canvas.getBoundingClientRect();const x=e.clientX-rect.left;const y=e.clientY-rect.top;const dx=x-85;const dy=canvas.height-70-y;stats.angle=Math.max(0,Math.min(90,Math.atan2(-dy,dx)*180/Math.PI));}});canvas.addEventListener('mouseup',()=>{isDragging=false;});document.addEventListener('keydown',(e)=>{if(e.code==='ArrowUp'){stats.velocity=Math.min(100,stats.velocity+1);powerFill.style.width=`${stats.velocity}%`;}else if(e.code==='ArrowDown'){stats.velocity=Math.max(0,stats.velocity-1);powerFill.style.width=`${stats.velocity}%`;}else if(e.code==='Space'){e.preventDefault();launch();}});resetBtn.addEventListener('click',()=>{particles.length=0;trails.length=0;targets.length=0;stats.score=0;windSpeed=Math.random()*10-5;for(let i=0;i<3;i++){targets.push(new Target());}});function init(){canvas.width=canvasSize;canvas.height=canvasSize;for(let i=0;i<3;i++){targets.push(new Target());}update();}window.addEventListener('resize',()=>{canvasSize=Math.min(window.innerWidth,window.innerHeight);init();});init();});",
+            "language": "javascript"
+        }
+    ]
+    </example_output_3>
+    """
+    examples = [example_1, example_2, example_3]
+    selection = random.choices(examples, k=2)
+    return "".join(selection)
