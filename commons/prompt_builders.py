@@ -285,8 +285,6 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
             Adhere to the guidelines given to you.
         </user>
     </system>
-
-    #Unique Coding Question#:
     """
     return question_prompt.format(
         num_requirements=num_requirements,
