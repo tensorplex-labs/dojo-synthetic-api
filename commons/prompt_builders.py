@@ -236,10 +236,13 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
         subject = "streamlined, interactive simulation"
         system_topic_context = "- Your question must not contain any audio features."
         user_topic_context = f"""The {subject} must demonstrate a scientific concept related to the persona.
-            - The visuals of the {subject} must be inspired by the persona.
+            The visuals of the {subject} must be inspired by the persona.
             """
     else:
         subject = "interactive visualization"
+        user_topic_context = f"""The {subject} must aesthetically demonstrate something related to the persona.
+            The visuals of the {subject} must be inspired by the persona.
+            """
     persona_question_examples = f"""
     {get_persona_question_examples(topic)}
     """

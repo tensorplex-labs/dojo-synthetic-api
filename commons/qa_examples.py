@@ -343,6 +343,80 @@ def _get_animation_question_examples() -> str:
             2. Adjust the slider to control the rotation speed of the molecule animation.
             3. Click and drag the molecule to rotate it manually.
         </example_output_2>
+        <example_input_3>
+            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with 3 user actions for the following persona: a retired professional cheerleader who has participated in various international competitions.
+        </example_input_3>
+        <example_output_3>
+            Create an interactive pom-pom trail visualization that responds to mouse movement and user controls.
+
+            Features:
+            - Display a trail of colorful circular pom-poms that follow the user's mouse cursor across the screen
+            - Each pom-pom should be represented by a cluster of small circles arranged in a circular pattern to create a fluffy appearance
+            - The trail should consist of at least 20 pom-poms that follow the mouse cursor with a slight delay, creating a smooth, wave-like motion
+            - Implement a color-cycling animation for the pom-poms, transitioning through a preset palette of vibrant colors
+            - Add a particle effect that emanates from each pom-pom when the user clicks, simulating sparkles or confetti
+            - Include a control panel with:
+            * A slider to adjust the length of the pom-pom trail (from 10 to 30 pom-poms)
+            * A color picker that sets the base color scheme for the pom-poms
+            * A button to toggle between smooth and bouncy movement patterns
+            - When movement pattern is set to "bouncy", the pom-poms should follow the cursor with an energetic, spring-like motion
+
+            User Actions:
+            1. Move the mouse cursor to control the pom-pom trail's position and create dynamic patterns
+            2. Click anywhere on the screen to trigger a burst of sparkle particles from each pom-pom in the trail
+            3. Use the control panel to:
+            - Adjust the trail length using the slider
+            - Select different color schemes using the color picker
+            - Toggle between smooth and bouncy movement patterns using the button
+        </example_output_3>
+        <example_input_4>
+        Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with 2 user actions for the following persona: A young artist eager to learn the techniques and secrets of weaving intricate patterns.
+        </example_input_4>
+        <example_output_4>
+            Create an interactive pattern weaver that generates mesmerizing kaleidoscopic designs using HTML, CSS, and JavaScript.
+
+            Features:
+            - Display a circular canvas where patterns are generated in real-time as the user moves their mouse.
+            - The pattern should be symmetrically mirrored across multiple axes to create a kaleidoscope effect.
+            - Implement at least 8 mirror segments that reflect the user's drawing motions.
+            - As the user moves their mouse within the canvas, colorful lines should be drawn that create flowing, continuous patterns.
+            - The lines should have a smooth, gradient-like color transition that shifts through the rainbow spectrum.
+            - The thickness of the lines should vary based on the mouse movement speed - faster movements create thinner lines, slower movements create thicker lines.
+            - Include a color palette selector that allows users to choose between different color schemes (e.g., warm colors, cool colors, pastels).
+            - Add a 'clear canvas' button that smoothly fades out the existing pattern and resets the canvas.
+            - The entire pattern should slowly rotate continuously, creating an animated effect.
+
+            User Actions:
+            1. Move the mouse within the circular canvas to draw symmetrical patterns. The pattern will be automatically mirrored across all segments in real-time.
+            2. Click a button to cycle through different color schemes for the pattern lines. Each click should smoothly transition the existing pattern to the new color scheme.
+        </example_output_4>
+        <example_input_5>
+            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with 2 user actions for the following persona: A soccer coach who is passionately nationalistic about Portugal's football team and often overly optimistic about their performance on the world stage.
+        </example_input_5>
+        <example_output_5>
+            Create an interactive soccer field visualization that simulates Portugal's dynamic passing patterns.
+
+            Features:
+            - Display a top-down view of a soccer field with standard field markings (lines, center circle, penalty boxes) using HTML canvas.
+            - Show 11 red circular nodes representing Portugal's players positioned in a 4-3-3 formation.
+            - Each player node should have a small Portuguese flag element above it.
+            - Implement an animated passing sequence where a glowing ball travels between player nodes along curved paths.
+            - The passing lines should be drawn with a trailing effect in Portugal's national colors (red and green).
+            - The ball's movement should have smooth acceleration and deceleration between passes.
+            - Display a "Pass Completion Rate" counter at the top of the screen that starts at 100%.
+            - Include a speed control slider that adjusts how fast the passing sequence occurs.
+            - Implement a user controlled defender that can intercept the ball.
+            - When passes fail (when the defender intercepts the ball), the passing and receiving player nodes should briefly flash in a darker shade.
+            - The passing sequence should continuously loop, only briefly stopping after an interception.
+            - Each player node should slowly oscillate to mimic off the ball movement.
+
+            User Actions:
+            1. Use the arrow keys to control the defender. Successfully intercepting the ball will:
+            - Cause the current pass to fail
+            - Decrease the "Pass Completion Rate" by 5%
+            - Create a brief visual disruption effect on the passing line
+            2. Use a slider control to adjust the speed of the passing sequence from slow (tactical analysis speed) to fast (match speed).
+        </example_output_5>
         """
 
 
@@ -417,8 +491,122 @@ def _get_animation_answer_examples() -> str:
         }
     </example_output_2>
     """
-    examples = [example_1, example_2]
-    return random.choice(examples)
+    example_3 = """
+    <example_input_3>
+        Create an interactive pom-pom trail visualization that responds to mouse movement and user controls.
+
+            Features:
+            - Display a trail of colorful circular pom-poms that follow the user's mouse cursor across the screen
+            - Each pom-pom should be represented by a cluster of small circles arranged in a circular pattern to create a fluffy appearance
+            - The trail should consist of at least 20 pom-poms that follow the mouse cursor with a slight delay, creating a smooth, wave-like motion
+            - Implement a color-cycling animation for the pom-poms, transitioning through a preset palette of vibrant colors
+            - Add a particle effect that emanates from each pom-pom when the user clicks, simulating sparkles or confetti
+            - Include a control panel with:
+            * A slider to adjust the length of the pom-pom trail (from 10 to 30 pom-poms)
+            * A color picker that sets the base color scheme for the pom-poms
+            * A button to toggle between smooth and bouncy movement patterns
+            - When movement pattern is set to "bouncy", the pom-poms should follow the cursor with an energetic, spring-like motion
+
+            User Actions:
+            1. Move the mouse cursor to control the pom-pom trail's position and create dynamic patterns
+            2. Click anywhere on the screen to trigger a burst of sparkle particles from each pom-pom in the trail
+            3. Use the control panel to:
+            - Adjust the trail length using the slider
+            - Select different color schemes using the color picker
+            - Toggle between smooth and bouncy movement patterns using the button
+    </example_input_3>
+    <example_output_3>
+        [
+            {
+                "filename": "index.js",
+                "content": "const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),lengthSlider=document.getElementById('lengthSlider'),lengthValue=document.getElementById('lengthValue'),colorPicker=document.getElementById('colorPicker'),patternToggle=document.getElementById('patternToggle');let width=canvas.width=window.innerWidth,height=canvas.height=window.innerHeight,mouseX=width/2,mouseY=height/2,isBouncy=!1,trailLength=20,baseColor=colorPicker.value;class PomPom{constructor(x,y){this.x=x,this.y=y,this.targetX=x,this.targetY=y,this.velX=0,this.velY=0,this.size=20,this.color=baseColor,this.particles=[]}update(targetX,targetY){this.targetX=targetX,this.targetY=targetY,isBouncy?(this.velX+=(this.targetX-this.x)*.1,this.velY+=(this.targetY-this.y)*.1,this.velX*=.8,this.velY*=.8,this.x+=this.velX,this.y+=this.velY):(this.x+=(this.targetX-this.x)*.2,this.y+=(this.targetY-this.y)*.2),this.particles=this.particles.filter(p=>p.life>0),this.particles.forEach(p=>{p.x+=p.vx,p.y+=p.vy,p.life-=1,p.vy+=.1})}draw(hueOffset){for(let i=0;i<12;i++){const angle=i/12*Math.PI*2,fluffX=this.x+Math.cos(angle)*(this.size*.5),fluffY=this.y+Math.sin(angle)*(this.size*.5);ctx.beginPath(),ctx.arc(fluffX,fluffY,this.size*.4,0,Math.PI*2),ctx.fillStyle=this.shiftHue(this.color,hueOffset),ctx.fill()}this.particles.forEach(p=>{ctx.beginPath(),ctx.arc(p.x,p.y,p.size,0,Math.PI*2),ctx.fillStyle=`rgba(255, 255, 255, ${p.life/50})`,ctx.fill()})}addParticles(){for(let i=0;i<10;i++)this.particles.push({x:this.x,y:this.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,size:Math.random()*3+1,life:50})}shiftHue(color,offset){const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);let[h,s,l]=rgbToHsl(r,g,b);h=(h+offset)%360;const[r2,g2,b2]=hslToRgb(h,s,l);return`rgb(${r2}, ${g2}, ${b2})`}}function rgbToHsl(r,g,b){r/=255,g/=255,b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min)h=s=0;else{const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4}h/=6}return[360*h,100*s,100*l]}function hslToRgb(h,s,l){h/=360,s/=100,l/=100;let r,g,b;if(0===s)r=g=b=l;else{const hue2rgb=(p,q,t)=>(t<0&&(t+=1),t>1&&(t-=1),t<1/6?p+6*(q-p)*t:t<.5?q:t<2/3?p+6*(q-p)*(2/3-t):p),q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;r=hue2rgb(p,q,h+1/3),g=hue2rgb(p,q,h),b=hue2rgb(p,q,h-1/3)}return[Math.round(255*r),Math.round(255*g),Math.round(255*b)]}let pomPoms=[];function init(){pomPoms=[];for(let i=0;i<trailLength;i++)pomPoms.push(new PomPom(width/2,height/2))}function animate(){ctx.fillStyle='rgba(17, 17, 17, 0.1)',ctx.fillRect(0,0,width,height);let lastX=mouseX,lastY=mouseY;pomPoms.forEach((pom,index)=>{pom.update(lastX,lastY),pom.draw(index*(360/trailLength)),lastX=pom.x,lastY=pom.y}),requestAnimationFrame(animate)}canvas.addEventListener('mousemove',e=>{mouseX=e.clientX,mouseY=e.clientY}),canvas.addEventListener('click',()=>{pomPoms.forEach(pom=>pom.addParticles())}),lengthSlider.addEventListener('input',e=>{trailLength=parseInt(e.target.value),lengthValue.textContent=trailLength,init()}),colorPicker.addEventListener('input',e=>{baseColor=e.target.value,pomPoms.forEach(pom=>pom.color=baseColor)}),patternToggle.addEventListener('click',()=>{isBouncy=!isBouncy,patternToggle.textContent=isBouncy?'Toggle Smooth Mode':'Toggle Bouncy Mode'}),window.addEventListener('resize',()=>{width=canvas.width=window.innerWidth,height=canvas.height=window.innerHeight}),init(),animate();const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),lengthSlider=document.getElementById('lengthSlider'),lengthValue=document.getElementById('lengthValue'),colorPicker=document.getElementById('colorPicker'),patternToggle=document.getElementById('patternToggle');let width=canvas.width=window.innerWidth,height=canvas.height=window.innerHeight,mouseX=width/2,mouseY=height/2,isBouncy=!1,trailLength=20,baseColor=colorPicker.value;class PomPom{constructor(x,y){this.x=x,this.y=y,this.targetX=x,this.targetY=y,this.velX=0,this.velY=0,this.size=20,this.color=baseColor,this.particles=[]}update(targetX,targetY){this.targetX=targetX,this.targetY=targetY,isBouncy?(this.velX+=(this.targetX-this.x)*.1,this.velY+=(this.targetY-this.y)*.1,this.velX*=.8,this.velY*=.8,this.x+=this.velX,this.y+=this.velY):(this.x+=(this.targetX-this.x)*.2,this.y+=(this.targetY-this.y)*.2),this.particles=this.particles.filter(p=>p.life>0),this.particles.forEach(p=>{p.x+=p.vx,p.y+=p.vy,p.life-=1,p.vy+=.1})}draw(hueOffset){for(let i=0;i<12;i++){const angle=i/12*Math.PI*2,fluffX=this.x+Math.cos(angle)*(this.size*.5),fluffY=this.y+Math.sin(angle)*(this.size*.5);ctx.beginPath(),ctx.arc(fluffX,fluffY,this.size*.4,0,Math.PI*2),ctx.fillStyle=this.shiftHue(this.color,hueOffset),ctx.fill()}this.particles.forEach(p=>{ctx.beginPath(),ctx.arc(p.x,p.y,p.size,0,Math.PI*2),ctx.fillStyle=`rgba(255, 255, 255, ${p.life/50})`,ctx.fill()})}addParticles(){for(let i=0;i<10;i++)this.particles.push({x:this.x,y:this.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,size:Math.random()*3+1,life:50})}shiftHue(color,offset){const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);let[h,s,l]=rgbToHsl(r,g,b);h=(h+offset)%360;const[r2,g2,b2]=hslToRgb(h,s,l);return`rgb(${r2}, ${g2}, ${b2})`}}function rgbToHsl(r,g,b){r/=255,g/=255,b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min)h=s=0;else{const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4}h/=6}return[360*h,100*s,100*l]}function hslToRgb(h,s,l){h/=360,s/=100,l/=100;let r,g,b;if(0===s)r=g=b=l;else{const hue2rgb=(p,q,t)=>(t<0&&(t+=1),t>1&&(t-=1),t<1/6?p+6*(q-p)*t:t<.5?q:t<2/3?p+6*(q-p)*(2/3-t):p),q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;r=hue2rgb(p,q,h+1/3),g=hue2rgb(p,q,h),b=hue2rgb(p,q,h-1/3)}return[Math.round(255*r),Math.round(255*g),Math.round(255*b)]}let pomPoms=[];function init(){pomPoms=[];for(let i=0;i<trailLength;i++)pomPoms.push(new PomPom(width/2,height/2))}function animate(){ctx.fillStyle='rgba(17, 17, 17, 0.1)',ctx.fillRect(0,0,width,height);let lastX=mouseX,lastY=mouseY;pomPoms.forEach((pom,index)=>{pom.update(lastX,lastY),pom.draw(index*(360/trailLength)),lastX=pom.x,lastY=pom.y}),requestAnimationFrame(animate)}canvas.addEventListener('mousemove',e=>{mouseX=e.clientX,mouseY=e.clientY}),canvas.addEventListener('click',()=>{pomPoms.forEach(pom=>pom.addParticles())}),lengthSlider.addEventListener('input',e=>{trailLength=parseInt(e.target.value),lengthValue.textContent=trailLength,init()}),colorPicker.addEventListener('input',e=>{baseColor=e.target.value,pomPoms.forEach(pom=>pom.color=baseColor)}),patternToggle.addEventListener('click',()=>{isBouncy=!isBouncy,patternToggle.textContent=isBouncy?'Toggle Smooth Mode':'Toggle Bouncy Mode'}),window.addEventListener('resize',()=>{width=canvas.width=window.innerWidth,height=canvas.height=window.innerHeight}),init(),animate();",
+                "language": "javascript"
+            },
+            {
+                "filename": "index.html",
+                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Interactive Pom-Pom Trail</title><style>body{margin:0;overflow:hidden;background-color:#111;font-family:Arial,sans-serif}.controls{position:fixed;bottom:20px;left:20px;background:rgba(0,0,0,0.7);padding:15px;border-radius:10px;color:#fff;z-index:100}.controls label{display:block;margin:5px 0}.controls input[type="range"]{width:150px}.controls button{background:#444;color:#fff;border:none;padding:8px 15px;border-radius:5px;cursor:pointer;margin-top:5px}.controls button:hover{background:#666}</style></head><body><div class="controls"><label>Trail Length: <span id="lengthValue">20</span><input type="range" id="lengthSlider" min="10" max="30" value="20" /></label><label>Base Color: <input type="color" id="colorPicker" value="#ff4488" /></label><button id="patternToggle">Toggle Bouncy Mode</button></div><canvas id="canvas"></canvas><script src="index.js"></script></body></html>",
+                "language": "html"
+            }
+        ]
+    </example_output_3>
+    """
+    example_4 = """
+    <example_input_4>
+        Create an interactive pattern weaver that generates mesmerizing kaleidoscopic designs using HTML, CSS, and JavaScript.
+
+        Features:
+        - Display a circular canvas where patterns are generated in real-time as the user moves their mouse.
+        - The pattern should be symmetrically mirrored across multiple axes to create a kaleidoscope effect.
+        - Implement at least 8 mirror segments that reflect the user's drawing motions.
+        - As the user moves their mouse within the canvas, colorful lines should be drawn that create flowing, continuous patterns.
+        - The lines should have a smooth, gradient-like color transition that shifts through the rainbow spectrum.
+        - The thickness of the lines should vary based on the mouse movement speed - faster movements create thinner lines, slower movements create thicker lines.
+        - Include a color palette selector that allows users to choose between different color schemes (e.g., warm colors, cool colors, pastels).
+        - Add a 'clear canvas' button that smoothly fades out the existing pattern and resets the canvas.
+        - The entire pattern should slowly rotate continuously, creating an animated effect.
+
+        User Actions:
+        1. Move the mouse within the circular canvas to draw symmetrical patterns. The pattern will be automatically mirrored across all segments in real-time.
+        2. Click a button to cycle through different color schemes for the pattern lines. Each click should smoothly transition the existing pattern to the new color scheme.
+    </example_input_4>
+    <example_output_4>
+        [
+            {
+                "filename": "index.js",
+                "content": "const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),colorSchemeBtn=document.getElementById('colorScheme'),clearBtn=document.getElementById('clear'),colorSchemes=[['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEEAD'],['#264653','#2A9D8F','#E9C46A','#F4A261','#E76F51'],['#BDE0FE','#A2D2FF','#CDB4DB','#FFC8DD','#FFAFCC'],['#390099','#9E0059','#FF0054','#FF5400','#FFBD00']];let width=canvas.width=Math.min(window.innerWidth,window.innerHeight)*.8,height=canvas.height=width,centerX=width/2,centerY=height/2,rotation=0,lastX=0,lastY=0,isDrawing=!1,currentSchemeIndex=0,currentColorIndex=0;function getColor(){const e=colorSchemes[currentSchemeIndex];return currentColorIndex=(currentColorIndex+1)%e.length,e[currentColorIndex]}function drawSegment(e,t,n,r,i=8){const o=2*Math.PI/i,a=getColor(),s=Math.sqrt(Math.pow(n-e,2)+Math.pow(r-t,2)),c=Math.max(1,10-.1*s);ctx.lineWidth=c,ctx.strokeStyle=a,ctx.lineCap='round';for(let a=0;a<i;a++){ctx.save(),ctx.translate(centerX,centerY),ctx.rotate(o*a+rotation);const i=e-centerX,s=t-centerY,c=n-centerX,l=r-centerY;ctx.beginPath(),ctx.moveTo(i,s),ctx.lineTo(c,l),ctx.stroke(),ctx.scale(-1,1),ctx.beginPath(),ctx.moveTo(i,s),ctx.lineTo(c,l),ctx.stroke(),ctx.restore()}}function animate(){rotation+=.001,requestAnimationFrame(animate)}function handleMouseMove(e){if(!isDrawing)return;const t=canvas.getBoundingClientRect(),n=e.clientX-t.left,r=e.clientY-t.top;Math.sqrt(Math.pow(n-centerX,2)+Math.pow(r-centerY,2))<=width/2&&drawSegment(lastX,lastY,n,r),lastX=n,lastY=r}function handleMouseDown(e){isDrawing=!0;const t=canvas.getBoundingClientRect();lastX=e.clientX-t.left,lastY=e.clientY-t.top}function handleMouseUp(){isDrawing=!1}function changeColorScheme(){currentSchemeIndex=(currentSchemeIndex+1)%colorSchemes.length}function clearCanvas(){ctx.fillStyle='rgba(0, 0, 0, 0.1)';!function e(){ctx.fillRect(0,0,width,height),ctx.globalAlpha>.01?requestAnimationFrame(e):(ctx.clearRect(0,0,width,height),ctx.globalAlpha=1)}()}window.addEventListener('resize',()=>{width=canvas.width=.8*Math.min(window.innerWidth,window.innerHeight),height=canvas.height=width,centerX=width/2,centerY=height/2}),canvas.addEventListener('mousedown',handleMouseDown),canvas.addEventListener('mousemove',handleMouseMove),canvas.addEventListener('mouseup',handleMouseUp),canvas.addEventListener('mouseleave',handleMouseUp),colorSchemeBtn.addEventListener('click',changeColorScheme),clearBtn.addEventListener('click',clearCanvas),canvas.addEventListener('contextmenu',e=>e.preventDefault()),canvas.addEventListener('dragstart',e=>e.preventDefault()),animate();const instructions=document.createElement('div');instructions.style.cssText='position:fixed;top:20px;color:white;font-size:14px;text-align:center;opacity:0.7;',instructions.textContent='Move your mouse to draw. Use the buttons below to change colors or clear the canvas.',document.body.appendChild(instructions);",
+                "language": "javascript"
+            },
+            {
+                "filename": "index.html",
+                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Kaleidoscope Pattern Weaver</title><style>body{margin:0;overflow:hidden;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Arial,sans-serif}#canvas{border-radius:50%;cursor:crosshair}.controls{position:fixed;bottom:20px;display:flex;gap:10px}.btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);padding:8px 15px;border-radius:20px;cursor:pointer;transition:all .3s}.btn:hover{background:rgba(255,255,255,.2)}</style></head><body><canvas id="canvas"></canvas><div class="controls"><button id="colorScheme" class="btn">Change Colors</button><button id="clear" class="btn">Clear Canvas</button></div><script src="index.js"></script></body></html>",
+                "language": "html"
+            }
+        ]
+    </example_output_4>
+    """
+    example_5 = """
+    <example_input_5>
+            Create an interactive soccer field visualization that simulates Portugal's dynamic passing patterns.
+
+            Features:
+            - Display a top-down view of a soccer field with standard field markings (lines, center circle, penalty boxes) using HTML canvas.
+            - Show 11 red circular nodes representing Portugal's players positioned in a 4-3-3 formation.
+            - Each player node should have a small Portuguese flag element above it.
+            - Implement an animated passing sequence where a glowing ball travels between player nodes along curved paths.
+            - The passing lines should be drawn with a trailing effect in Portugal's national colors (red and green).
+            - The ball's movement should have smooth acceleration and deceleration between passes.
+            - Display a "Pass Completion Rate" counter at the top of the screen that starts at 100%.
+            - Include a speed control slider that adjusts how fast the passing sequence occurs.
+            - Implement a user controlled defender that can intercept the ball.
+            - When passes fail (when the defender intercepts the ball), the passing and receiving player nodes should briefly flash in a darker shade.
+            - The passing sequence should continuously loop, only briefly stopping after an interception.
+            - Each player node should slowly oscillate to mimic off the ball movement.
+
+            User Actions:
+            1. Use the arrow keys to control the defender. Successfully intercepting the ball will:
+            - Cause the current pass to fail
+            - Decrease the "Pass Completion Rate" by 5%
+            - Create a brief visual disruption effect on the passing line
+            2. Use a slider control to adjust the speed of the passing sequence from slow (tactical analysis speed) to fast (match speed).
+    </example_input_5>
+    <example_output_5>
+        [
+            {
+                "filename": "index.js",
+                "content": "const canvas=document.getElementById("field"),ctx=canvas.getContext("2d"),speedSlider=document.getElementById("speedSlider"),completionDisplay=document.getElementById("completion"),width=800,height=600,players=[{x:400,y:500,role:"GK"},{x:200,y:400,role:"LB"},{x:300,y:400,role:"CB"},{x:500,y:400,role:"CB"},{x:600,y:400,role:"RB"},{x:250,y:300,role:"CM"},{x:400,y:250,role:"CM"},{x:550,y:300,role:"CM"},{x:200,y:150,role:"LW"},{x:400,y:100,role:"ST"},{x:600,y:150,role:"RW"}],passingSequence=[[0,2],[2,6],[6,9],[9,8],[8,5],[5,7],[7,10],[10,9],[9,6],[6,3],[3,1]],defender={x:400,y:300,speed:1},keys={ArrowLeft:!1,ArrowRight:!1,ArrowUp:!1,ArrowDown:!1};let passCompletionRate=100,baseSpeed=5,currentPassIndex=0,ballPosition={x:0,y:0},passProgress=0,isPassFailed=!1,oscillationAngle=0;const oscillationSpeed=.02,oscillationRadius=20;canvas.width=width,canvas.height=height,window.addEventListener("keydown",e=>{keys.hasOwnProperty(e.key)&&(keys[e.key]=!0)}),window.addEventListener("keyup",e=>{keys.hasOwnProperty(e.key)&&(keys[e.key]=!1)});function drawField(){ctx.fillStyle="#2e8b57",ctx.fillRect(0,0,width,height),ctx.strokeStyle="#fff",ctx.lineWidth=2,ctx.strokeRect(50,50,width-100,height-100),ctx.beginPath(),ctx.arc(width/2,height/2,60,0,2*Math.PI),ctx.stroke(),ctx.beginPath(),ctx.moveTo(width/2,50),ctx.lineTo(width/2,height-50),ctx.stroke(),drawPenaltyAreas()}function drawPenaltyAreas(){const e=150,t=100;ctx.strokeRect(50,height/2-t/2,e,t),ctx.strokeRect(width-50-e,height/2-t/2,e,t)}function drawPlayers(){oscillationAngle+=oscillationSpeed,players.forEach((e,t)=>{const n=Math.cos(oscillationAngle)*oscillationRadius,r=Math.sin(oscillationAngle)*oscillationRadius;ctx.beginPath(),ctx.arc(e.x+n,e.y+r,15,0,2*Math.PI),ctx.fillStyle=isPassFailed&&(t===passingSequence[currentPassIndex][0]||t===passingSequence[currentPassIndex][1])?"#8b0000":"#ff0000",ctx.fill(),ctx.stroke(),drawFlag(e.x+n,e.y+r-25)}),ctx.beginPath(),ctx.arc(defender.x,defender.y,12,0,2*Math.PI),ctx.fillStyle="#0000FF",ctx.fill(),ctx.stroke()}function drawFlag(e,t){ctx.fillStyle="#006400",ctx.fillRect(e-10,t-5,20,10),ctx.fillStyle="#ff0000",ctx.fillRect(e-10,t-5,8,10)}function drawBall(){const e=players[passingSequence[currentPassIndex][0]],t=players[passingSequence[currentPassIndex][1]],n=passProgress/100,r={x:(e.x+t.x)/2+50,y:(e.y+t.y)/2-50};ballPosition=getBezierPoint(e,r,t,n),ctx.beginPath(),ctx.arc(ballPosition.x,ballPosition.y,8,0,2*Math.PI),ctx.fillStyle="#fff",ctx.fill(),drawPassingLine(e,r,t,n)}function drawPassingLine(e,t,n,r){ctx.beginPath(),ctx.moveTo(e.x,e.y);for(let i=0;i<=r;i+=.1){const r=getBezierPoint(e,t,n,i);ctx.lineTo(r.x,r.y)}ctx.strokeStyle=isPassFailed?"#8b0000":"#006400",ctx.lineWidth=3,ctx.stroke()}function getBezierPoint(e,t,n,r){return{x:Math.pow(1-r,2)*e.x+2*(1-r)*r*t.x+Math.pow(r,2)*n.x,y:Math.pow(1-r,2)*e.y+2*(1-r)*r*t.y+Math.pow(r,2)*n.y}}function update(){const e=baseSpeed*speedSlider.value/5;keys.ArrowLeft&&(defender.x=Math.max(50,defender.x-defender.speed)),keys.ArrowRight&&(defender.x=Math.min(width-50,defender.x+defender.speed)),keys.ArrowUp&&(defender.y=Math.max(50,defender.y-defender.speed)),keys.ArrowDown&&(defender.y=Math.min(height-50,defender.y+defender.speed));const t=Math.hypot(defender.x-ballPosition.x,defender.y-ballPosition.y);t<30&&!isPassFailed&&(isPassFailed=!0,passCompletionRate=Math.max(0,passCompletionRate-5),completionDisplay.textContent=passCompletionRate,setTimeout(()=>{isPassFailed=!1,passProgress=0,currentPassIndex=(currentPassIndex+1)%passingSequence.length},1e3)),isPassFailed||(passProgress+=e,passProgress>=100&&(passProgress=0,currentPassIndex=(currentPassIndex+1)%passingSequence.length))}function animate(){ctx.clearRect(0,0,width,height),drawField(),drawPlayers(),drawBall(),update(),requestAnimationFrame(animate)}animate();",
+                "language": "javascript"
+            },
+            {
+                "filename": "index.html",
+                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Portugal Soccer Passing Simulation</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1a1a1a;font-family:Arial,sans-serif}#container{position:relative}#stats{position:absolute;top:10px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,0.7);padding:10px;border-radius:5px;text-align:center}#controls{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);padding:10px;border-radius:5px;display:flex;gap:20px;align-items:center}#controls label{color:#fff}#speedSlider{width:150px}.btn{background:#006400;color:#fff;border:none;padding:8px 15px;border-radius:5px;cursor:pointer}.btn:hover{background:#008000}</style></head><body><div id="container"><canvas id="field"></canvas><div id="stats">Pass Completion Rate: <span id="completion">100</span>%</div><div id="controls"><label>Speed: <input type="range" id="speedSlider" min="1" max="10" value="5"/></label></div></div><script src="index.js"></script></body></html>",
+                "language": "html"
+            }
+        ]
+    </example_output_5>
+    """
+    examples = [example_1, example_2, example_3, example_4, example_5]
+    selection = random.choices(examples, k=2)
+    return "".join(selection)
 
 
 def _get_science_answer_examples() -> str:
