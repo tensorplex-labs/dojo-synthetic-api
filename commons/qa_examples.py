@@ -131,8 +131,85 @@ def _get_game_answer_examples() -> str:
             }
         </example_output_3>
     """
-    examples = [example_1, example_2, example_3]
-    selection = random.choices(examples, k=2)
+    example_4 = """
+        <example_input_4>
+            Implement a fun, streamlined web game called 'Cyberspace Conquest' where the player navigates through cyberspace and defends against enemy malware.
+
+            Features:
+            - Create a 2D game area with a neon grid that scrolls horizontally in the background to represent cyberspace.
+            - The game area must wrap around all edges (malware and players that go off one side appear on the opposite side).
+            - The player controls a triangular hacker sprite to navigate through cyberspace. Player movement should resemble a spaceship.
+            - The player must fire projectiles (maximum of 5 at one time) at enemy malware. The projectiles should travel a finite distance before disappearing.
+            - Create enemy malware as irregular polygons that drift through cyberspace. The malware should move in straight lines at different angles and speeds.
+            - When malware is hit by the player's projectiles, it should split into smaller malware, and the player's score should increase.
+            - The player has 3 lives. If the player collides with malware, the player should lose a life, and become briefly invulnerable, before respawning at the center of the screen.
+            - Show a game over screen when the player loses all their lives, showing the final score and a 'Play Again' button.
+            - The game should display the player's score, high score and lives on the screen.
+            - Use a cyberpunk colour scheme and aesthetic (deep purple as the background, neon pink for the HUD).
+
+            User Actions:
+            1. Use the arrow keys to navigate through cyberspace.
+            2. Press the spacebar to fire projectiles at enemy malware.
+        </example_input_4>
+        <example_output_4>
+            {
+                "files": [
+                    {
+                        "filename": "index.js",
+                        "content": "const canvas=document.getElementById("gameCanvas"),ctx=canvas.getContext("2d"),scoreElement=document.getElementById("score"),highScoreElement=document.getElementById("highScore"),livesElement=document.getElementById("lives"),gameOverScreen=document.getElementById("gameOver"),finalScoreElement=document.getElementById("finalScore"),playAgainButton=document.getElementById("playAgain"),GRID_SIZE=40,PLAYER_SIZE=20,PROJECTILE_SPEED=10,MALWARE_COUNT=4,player={x:400,y:400,angle:0,speed:0,turnSpeed:0,projectiles:[]},malwares=[],keys={};let canvasWidth=800,canvasHeight=800,scale=1,gridOffset=0,score=0,highScore=0,lives=3,gameOver=false,invulnerable=false,invulnerableTimer=0,lastTime=0;function resizeCanvas(){const e=document.getElementById("gameContainer");scale=Math.min(e.clientWidth/canvasWidth,e.clientHeight/canvasHeight),canvas.width=canvasWidth*scale,canvas.height=canvasHeight*scale,ctx.scale(scale,scale)}window.addEventListener("resize",resizeCanvas),resizeCanvas();class Projectile{constructor(e,t,i){this.x=e,this.y=t,this.angle=i,this.distance=0}move(){this.x+=Math.cos(this.angle)*PROJECTILE_SPEED,this.y+=Math.sin(this.angle)*PROJECTILE_SPEED,this.x=(this.x+canvasWidth)%canvasWidth,this.y=(this.y+canvasHeight)%canvasHeight,this.distance+=PROJECTILE_SPEED}draw(){ctx.strokeStyle="#00ff00",ctx.beginPath(),ctx.moveTo(this.x-Math.cos(this.angle)*5,this.y-Math.sin(this.angle)*5),ctx.lineTo(this.x+Math.cos(this.angle)*5,this.y+Math.sin(this.angle)*5),ctx.stroke()}}class Malware{constructor(e,t,i,s,a,n){this.x=e,this.y=t,this.size=i,this.angle=s,this.speed=a,this.points=n||this.generatePoints()}generatePoints(){const e=[];for(let t=0;t<Math.floor(3*Math.random())+5;t++){const i=t/(Math.floor(3*Math.random())+5)*Math.PI*2,s=this.size*(.8+.4*Math.random());e.push({x:Math.cos(i)*s,y:Math.sin(i)*s})}return e}move(){this.x+=Math.cos(this.angle)*this.speed,this.y+=Math.sin(this.angle)*this.speed,this.x=(this.x+canvasWidth)%canvasWidth,this.y=(this.y+canvasHeight)%canvasHeight}draw(){ctx.strokeStyle="#ff1493",ctx.beginPath(),ctx.moveTo(this.x+this.points[0].x,this.y+this.points[0].y);for(let e=1;e<this.points.length;e++)ctx.lineTo(this.x+this.points[e].x,this.y+this.points[e].y);ctx.closePath(),ctx.stroke(),ctx.strokeStyle="#ff69b4",ctx.beginPath();for(let e=0;e<this.points.length;e++){const t=this.points[e],i=this.points[(e+2)%this.points.length];ctx.moveTo(this.x+t.x,this.y+t.y),ctx.lineTo(this.x+i.x,this.y+i.y)}ctx.stroke()}}function createMalware(e,t,i){return new Malware(e||Math.random()*canvasWidth,t||Math.random()*canvasHeight,i||20*Math.random()+30,Math.random()*Math.PI*2,1.5*Math.random()+.5)}function drawGrid(){ctx.strokeStyle="#2E1A47",gridOffset=(gridOffset+1)%GRID_SIZE;for(let e=-GRID_SIZE;e<=canvasWidth+GRID_SIZE;e+=GRID_SIZE)ctx.beginPath(),ctx.moveTo(e+gridOffset,0),ctx.lineTo(e+gridOffset,canvasHeight),ctx.stroke();for(let e=0;e<=canvasHeight;e+=GRID_SIZE)ctx.beginPath(),ctx.moveTo(0,e),ctx.lineTo(canvasWidth,e),ctx.stroke()}function drawPlayer(){ctx.save(),ctx.translate(player.x,player.y),ctx.rotate(player.angle),ctx.strokeStyle=invulnerable?"#ffffff":"#00ffff",ctx.beginPath(),ctx.moveTo(PLAYER_SIZE,0),ctx.lineTo(-PLAYER_SIZE/2,-PLAYER_SIZE/2),ctx.lineTo(-PLAYER_SIZE/2,PLAYER_SIZE/2),ctx.closePath(),ctx.stroke(),invulnerable||(ctx.strokeStyle="#00cccc",ctx.beginPath(),ctx.moveTo(PLAYER_SIZE/2,0),ctx.lineTo(-PLAYER_SIZE/4,-PLAYER_SIZE/4),ctx.lineTo(-PLAYER_SIZE/4,PLAYER_SIZE/4),ctx.closePath(),ctx.stroke()),ctx.restore()}function updatePlayer(){player.angle+=player.turnSpeed,player.x+=Math.cos(player.angle)*player.speed,player.y+=Math.sin(player.angle)*player.speed,player.x=(player.x+canvasWidth)%canvasWidth,player.y=(player.y+canvasHeight)%canvasHeight,player.speed*=.995,player.turnSpeed*=.92,invulnerable&&(invulnerableTimer--,invulnerableTimer<=0&&(invulnerable=!1))}function fireProjectile(){player.projectiles.length<5&&player.projectiles.push(new Projectile(player.x+Math.cos(player.angle)*PLAYER_SIZE,player.y+Math.sin(player.angle)*PLAYER_SIZE,player.angle))}function updateProjectiles(){for(let e=player.projectiles.length-1;e>=0;e--){const t=player.projectiles[e];t.move(),t.distance>300&&player.projectiles.splice(e,1)}}function checkCollisions(){if(!invulnerable)for(let e=0;e<malwares.length;e++){const t=malwares[e],i=player.x-t.x,s=player.y-t.y;if(Math.sqrt(i*i+s*s)<t.size+PLAYER_SIZE/2){lives--,invulnerable=!0,invulnerableTimer=120,player.x=canvasWidth/2,player.y=canvasHeight/2,player.speed=0,lives<=0&&endGame();break}}for(let e=player.projectiles.length-1;e>=0;e--){const t=player.projectiles[e];for(let i=malwares.length-1;i>=0;i--){const s=malwares[i],a=t.x-s.x,n=t.y-s.y;if(Math.sqrt(a*a+n*n)<s.size){player.projectiles.splice(e,1),s.size>20&&(malwares.push(createMalware(s.x,s.y,.6*s.size)),malwares.push(createMalware(s.x,s.y,.6*s.size))),malwares.splice(i,1),score+=Math.floor(s.size),malwares.length<MALWARE_COUNT&&malwares.push(createMalware());break}}}}function updateGame(){gameOver||(updatePlayer(),updateProjectiles(),malwares.forEach(e=>e.move()),checkCollisions())}function drawGame(){ctx.fillStyle="#1a0033",ctx.fillRect(0,0,canvasWidth,canvasHeight),drawGrid(),malwares.forEach(e=>e.draw()),player.projectiles.forEach(e=>e.draw()),drawPlayer()}function updateHUD(){scoreElement.textContent=`Score: ${score}`,highScoreElement.textContent=`High Score: ${highScore}`,livesElement.textContent=`Lives: ${lives}`}function startGame(){score=0,lives=3,gameOver=!1,invulnerable=!1,player.x=canvasWidth/2,player.y=canvasHeight/2,player.angle=0,player.speed=0,player.turnSpeed=0,player.projectiles=[],malwares.length=0;for(let e=0;e<MALWARE_COUNT;e++)malwares.push(createMalware());gameOverScreen.style.display="none",gameLoop()}function endGame(){gameOver=!0,highScore=Math.max(highScore,score),finalScoreElement.textContent=score,gameOverScreen.style.display="flex"}function gameLoop(e){0===lastTime&&(lastTime=e);const t=(e-lastTime)/1e3;lastTime=e,gameOver||(updateGame(),drawGame(),updateHUD(),requestAnimationFrame(gameLoop))}window.addEventListener("keydown",e=>{["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)&&(e.preventDefault(),keys[e.code]=!0),"Space"===e.code&&fireProjectile()}),window.addEventListener("keyup",e=>{["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)&&(e.preventDefault(),keys[e.code]=!1)}),setInterval(()=>{gameOver||(keys.ArrowUp&&(player.speed+=.15),keys.ArrowDown&&(player.speed-=.08),keys.ArrowLeft&&(player.turnSpeed-=.02),keys.ArrowRight&&(player.turnSpeed+=.02))},1e3/60),playAgainButton.addEventListener("click",startGame),startGame();",
+                        "language": "javascript"
+                    },
+                    {
+                        "filename": "index.html",
+                        "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /><title>Cyberspace Conquest</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:"Courier New",monospace;background:#000}#gameContainer{position:relative;width:100vmin;height:100vmin;margin:auto}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%}#hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;color:#ff1493;font-size:18px;text-shadow:0 0 10px #ff1493}#gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(26,0,51,0.9);color:#00ffff;padding:20px;border-radius:10px;text-align:center;display:none;flex-direction:column;align-items:center;border:2px solid #ff1493;box-shadow:0 0 20px #ff1493}#playAgain{margin-top:20px;padding:10px 20px;font-size:18px;background:#1a0033;color:#00ffff;border:2px solid #00ffff;border-radius:5px;cursor:pointer;text-transform:uppercase;letter-spacing:2px}#playAgain:hover{background:#2a0053;box-shadow:0 0 10px #00ffff}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="hud"><span id="score">Score: 0</span><span id="highScore">High Score: 0</span><span id="lives">Lives: 3</span></div><div id="gameOver"><h2>SYSTEM COMPROMISED</h2><p>Final Score: <span id="finalScore">0</span></p><button id="playAgain">Play Again</button></div></div><script src="index.js"></script></body></html>",
+                        "language": "html"
+                    }
+                ]
+            }
+        </example_output_4>
+    """
+    example_5 = """
+        <example_input_5>
+            Implement a fun web game called "Beat Match Master" where players must catch falling music notes by clicking at the right moment while avoiding disruptive elements.
+
+            Features:
+            - Create a vertical game area with a neon grid background that pulses to a constant rhythm (60 BPM).
+            - Display three vertical "track lines" where notes can fall, colored in distinct neon colors (pink, cyan, green).
+            - Generate music notes that fall down these track lines at a constant speed. The notes should be simple geometric shapes (circles, squares, triangles).
+            - Each note should have a "perfect catch zone" at the bottom of its track line, visualized as a thin horizontal line.
+            - Create visual feedback when notes are caught: successful catches create expanding rings of light, while misses create a brief static effect.
+            - Add "disruption waves" that periodically move horizontally across the screen. These waves should be visually distinct (zigzag patterns) and move at varying speeds.
+            - Display a score multiplier that increases with consecutive successful catches and resets on misses.
+            - Show the current score prominently at the top of the screen with a retro digital display aesthetic.
+            - Create a combo counter that tracks successive successful catches.
+            - Add visual effects that intensify as the combo counter increases (background pulse becomes stronger, colors become more vibrant).
+            - When the player reaches certain score thresholds, increase the speed and frequency of falling notes.
+            - Display a "Game Over" screen when three notes are missed, showing final score and a "Play Again" button.
+            - The game's color scheme should use bright neon colors against a dark background to create a club atmosphere.
+
+            User Actions:
+            1. Press the A, S, or D keys to catch notes in the left, middle, or right tracks respectively when they align with the catch zone.
+            2. Press the spacebar to activate "Bass Drop" which slows down all notes and waves for 5 seconds (can be used once every 30 seconds).
+        </example_input_5>
+        <example_output_5>
+            {
+                "files": [
+                    {
+                        "filename": "index.js",
+                        "content": "const canvas=document.getElementById("gameCanvas"),ctx=canvas.getContext("2d"),scoreElement=document.getElementById("score"),comboElement=document.getElementById("combo"),gameOverScreen=document.getElementById("gameOver"),finalScoreElement=document.getElementById("finalScore"),playAgainButton=document.getElementById("playAgain"),bassDropCooldownElement=document.getElementById("bassDropCooldown");let canvasWidth=800,canvasHeight=800,scale=1;function resizeCanvas(){const container=document.getElementById("gameContainer"),containerWidth=container.clientWidth,containerHeight=container.clientHeight;scale=Math.min(containerWidth/canvasWidth,containerHeight/canvasHeight),canvas.width=canvasWidth*scale,canvas.height=canvasHeight*scale,ctx.scale(scale,scale)}window.addEventListener("resize",resizeCanvas),resizeCanvas();const TRACK_COUNT=3,TRACK_WIDTH=80,NOTE_SIZE=40,CATCH_ZONE_HEIGHT=20,TRACK_COLORS=["#FF1493","#00FFFF","#00FF7F"],NOTE_SHAPES=["circle","square","triangle"],NOTE_SPEED=5,PERFECT_THRESHOLD=30,TRACK_SPACING=(canvasWidth-TRACK_WIDTH*TRACK_COUNT)/(TRACK_COUNT+1);class Note{constructor(track,shape){this.track=track,this.y=-NOTE_SIZE,this.shape=shape,this.speed=NOTE_SPEED,this.x=TRACK_SPACING+(TRACK_WIDTH+TRACK_SPACING)*track+TRACK_WIDTH/2}update(){this.y+=this.speed}draw(){const x=this.x,y=this.y;ctx.fillStyle=TRACK_COLORS[this.track],ctx.strokeStyle=TRACK_COLORS[this.track],"circle"===this.shape?(ctx.beginPath(),ctx.arc(x,y,NOTE_SIZE/2,0,2*Math.PI),ctx.fill()):"square"===this.shape?ctx.fillRect(x-NOTE_SIZE/2,y-NOTE_SIZE/2,NOTE_SIZE,NOTE_SIZE):(ctx.beginPath(),ctx.moveTo(x,y-NOTE_SIZE/2),ctx.lineTo(x+NOTE_SIZE/2,y+NOTE_SIZE/2),ctx.lineTo(x-NOTE_SIZE/2,y+NOTE_SIZE/2),ctx.closePath(),ctx.fill())}}class DisruptionWave{constructor(){this.x=-100,this.speed=3*Math.random()+2,this.amplitude=30,this.frequency=.05}update(){this.x+=this.speed}draw(){ctx.strokeStyle="rgba(255,0,255,0.3)",ctx.beginPath();for(let y=0;y<canvasHeight;y+=20)ctx.lineTo(this.x+Math.sin(y*this.frequency)*this.amplitude,y);ctx.stroke()}}class Game{constructor(){this.notes=[],this.waves=[],this.score=0,this.combo=0,this.multiplier=1,this.missedNotes=0,this.consecutiveMisses=0,this.lastNoteTime=0,this.nextWaveTime=0,this.pulsePhase=0,this.bassDropActive=!1,this.bassDropCooldown=0,this.gameOver=!1,this.effects=[]}spawnNote(){Date.now()-this.lastNoteTime>1e3&&(this.notes.push(new Note(Math.floor(Math.random()*TRACK_COUNT),NOTE_SHAPES[Math.floor(Math.random()*NOTE_SHAPES.length)])),this.lastNoteTime=Date.now())}spawnWave(){Date.now()-this.nextWaveTime>3e3&&(this.waves.push(new DisruptionWave),this.nextWaveTime=Date.now())}addEffect(x,y,success){for(let i=0;i<3;i++)this.effects.push({x:x,y:y,radius:0,maxRadius:150+50*i,speed:8+2*i,success:success,alpha:1})}updateEffects(){this.effects=this.effects.filter(e=>(e.radius+=e.speed,e.alpha=Math.max(0,1-e.radius/e.maxRadius),e.alpha>0))}drawEffects(){this.effects.forEach(e=>{const color=e.success?`rgba(0,255,255,${e.alpha})`:`rgba(255,0,0,${e.alpha})`;ctx.strokeStyle=color,ctx.lineWidth=3,ctx.beginPath(),ctx.arc(e.x,e.y,e.radius,0,2*Math.PI),ctx.stroke(),ctx.lineWidth=1})}drawBackground(){ctx.fillStyle="#000033",ctx.fillRect(0,0,canvasWidth,canvasHeight);const gridSize=50,intensity=.3+.1*Math.sin(this.pulsePhase);ctx.strokeStyle=`rgba(0,255,255,${intensity})`;for(let x=0;x<canvasWidth;x+=gridSize)ctx.beginPath(),ctx.moveTo(x,0),ctx.lineTo(x,canvasHeight),ctx.stroke();for(let y=0;y<canvasHeight;y+=gridSize)ctx.beginPath(),ctx.moveTo(0,y),ctx.lineTo(canvasWidth,y),ctx.stroke()}drawTracks(){for(let i=0;i<TRACK_COUNT;i++){const x=TRACK_SPACING+(TRACK_WIDTH+TRACK_SPACING)*i;ctx.fillStyle=`rgba(${0===i?"255,20,147":1===i?"0,255,255":"0,255,127"},0.2)`,ctx.fillRect(x,0,TRACK_WIDTH,canvasHeight),ctx.fillStyle=TRACK_COLORS[i],ctx.fillRect(x,canvasHeight-CATCH_ZONE_HEIGHT,TRACK_WIDTH,CATCH_ZONE_HEIGHT)}}update(){this.gameOver||(this.pulsePhase+=.05,this.bassDropCooldown>0&&this.bassDropCooldown--,this.spawnNote(),this.spawnWave(),this.notes.forEach(n=>n.update()),this.waves=this.waves.filter(w=>(w.update(),w.x<canvasWidth)),this.notes=this.notes.filter(n=>n.y>canvasHeight?(this.consecutiveMisses++,this.combo=0,this.multiplier=1,this.consecutiveMisses>=3&&this.endGame(),!1):!0),this.updateEffects())}draw(){this.drawBackground(),this.drawTracks(),this.notes.forEach(n=>n.draw()),this.waves.forEach(w=>w.draw()),this.drawEffects()}checkNote(track){const catchY=canvasHeight-CATCH_ZONE_HEIGHT,note=this.notes.find(n=>n.track===track&&Math.abs(n.y-catchY)<PERFECT_THRESHOLD);if(note){Math.abs(note.y-catchY)<PERFECT_THRESHOLD&&(this.score+=100*this.multiplier,this.combo++,this.multiplier=1+Math.floor(this.combo/10),this.consecutiveMisses=0,this.addEffect(note.x,catchY,!0),this.notes=this.notes.filter(n=>n!==note))}}activateBassDropp(){0===this.bassDropCooldown&&(this.bassDropActive=!0,this.notes.forEach(n=>n.speed=NOTE_SPEED/2),this.waves.forEach(w=>w.speed/=2),setTimeout(()=>{this.bassDropActive=!1,this.notes.forEach(n=>n.speed=NOTE_SPEED),this.waves.forEach(w=>w.speed*=2)},5e3),this.bassDropCooldown=1800)}endGame(){this.gameOver=!0,finalScoreElement.textContent=this.score,gameOverScreen.style.display="flex"}reset(){this.notes=[],this.waves=[],this.score=0,this.combo=0,this.multiplier=1,this.consecutiveMisses=0,this.missedNotes=0,this.lastNoteTime=0,this.nextWaveTime=0,this.pulsePhase=0,this.bassDropActive=!1,this.bassDropCooldown=0,this.gameOver=!1,this.effects=[],gameOverScreen.style.display="none"}}const game=new Game;function gameLoop(){game.gameOver||(game.update(),game.draw(),scoreElement.textContent=`Score: ${game.score}`,comboElement.textContent=`Combo: ${game.combo}x${game.multiplier}`,bassDropCooldownElement.textContent=game.bassDropCooldown>0?`Bass Drop: ${Math.ceil(game.bassDropCooldown/60)}s`:"Bass Drop Ready",requestAnimationFrame(gameLoop))}document.addEventListener("keydown",e=>{"KeyA"===e.code||"KeyS"===e.code||"KeyD"===e.code||"Space"===e.code?(e.preventDefault(),"KeyA"===e.code?game.checkNote(0):"KeyS"===e.code?game.checkNote(1):"KeyD"===e.code?game.checkNote(2):"Space"===e.code&&game.activateBassDropp()):void 0}),playAgainButton.addEventListener("click",()=>{game.reset(),gameLoop()}),gameLoop();",
+                        "language": "javascript"
+                    },
+                    {
+                        "filename": "index.html",
+                        "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /><title>Beat Match Master</title><style>body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;background:#000}#gameContainer{position:relative;width:100vmin;height:100vmin;margin:auto}#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%}#hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;color:#00ff00;font-size:24px;font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;text-shadow:0 0 10px #00ff00}#gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);color:#00ff00;padding:20px;border-radius:10px;text-align:center;display:none;flex-direction:column;align-items:center;font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;text-shadow:0 0 10px #00ff00}#playAgain{margin-top:20px;padding:10px 20px;font-size:18px;background:#00ff00;color:black;border:none;border-radius:5px;cursor:pointer;font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif}#playAgain:hover{background:#00cc00}#controls{position:absolute;top:40px;left:50%;transform:translateX(-50%);color:#00ff00;font-size:14px;text-align:center;text-shadow:0 0 5px #00ff00}</style></head><body><div id="gameContainer"><canvas id="gameCanvas"></canvas><div id="hud"><span id="score">Score: 0</span><span id="combo">Combo: 0x1</span><span id="bassDropCooldown">Bass Drop Ready</span></div><div id="gameOver"><h2>Game Over</h2><p>Final Score: <span id="finalScore">0</span></p><button id="playAgain">Play Again</button></div><div id="controls">A/S/D - Catch Notes | SPACE - Activate Bass Drop</div></div><script src="index.js"></script></body></html>",
+                        "language": "html"
+                    }
+                ]
+            }
+        </example_output_5>
+    """
+    examples = [example_1, example_2, example_3, example_4, example_5]
+    selection = random.sample(examples, k=2)
     return "".join(selection)
 
 
@@ -165,7 +242,6 @@ def _get_game_question_examples() -> str:
         <example_input_1>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 1 user actions for the following persona: A police officer who is constantly trying to catch the pickpocket artist in the act.
         </example_input_1>
-
         <example_output_1>
             Implement a web game of a police officer trying to catch a pickpocket in a crowded street scene.
 
@@ -181,7 +257,6 @@ def _get_game_question_examples() -> str:
             User Actions:
             - use the WASD keys to control the policeman. Get close to the pickpocket to capture them and increase your score!
         </example_output_1>
-
         <example_input_2>
             Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 2 user actions for the following persona: A middle-aged son who is a flight attendant, bonded with air travel stories.
         </example_input_2>
@@ -228,6 +303,53 @@ def _get_game_question_examples() -> str:
             1. Use arrow keys to control the delivery van (Up/Down for forward/reverse, Left/Right for steering).
             2. Press Spacebar to 'lock in' your parking attempt when you think you're properly parked. If successful, gain points and move to next layout. If unsuccessful, lose 5 seconds from the timer.
         </example_output_3>
+        <example_input_4>
+            Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 2 user actions for the following persona: A reformed hacker now working as a confidential informant, assisting in identifying and tracking down other hackers
+        </example_input_4>
+        <example_output_4>
+            Implement a fun, streamlined web game called 'Cyberspace Conquest' where the player navigates through cyberspace and defends against enemy malware.
+
+            Features:
+            - Create a 2D game area with a neon grid that scrolls horizontally in the background to represent cyberspace.
+            - The game area must wrap around all edges (malware and players that go off one side appear on the opposite side).
+            - The player controls a triangular hacker sprite to navigate through cyberspace. Player movement should resemble a spaceship.
+            - The player must fire projectiles (maximum of 5 at one time) at enemy malware. The projectiles should travel a finite distance before disappearing.
+            - Create enemy malware as irregular polygons that drift through cyberspace. The malware should move in straight lines at different angles and speeds.
+            - When malware is hit by the player's projectiles, it should split into smaller malware, and the player's score should increase.
+            - The player has 3 lives. If the player collides with malware, the player should lose a life, and become briefly invulnerable, before respawning at the center of the screen.
+            - Show a game over screen when the player loses all their lives, showing the final score and a 'Play Again' button.
+            - The game should display the player's score, high score and lives on the screen.
+            - Use a cyberpunk colour scheme and aesthetic (deep purple as the background, neon pink for the HUD).
+
+            User Actions:
+            1. Use the arrow keys to navigate through cyberspace.
+            2. Press the spacebar to fire projectiles at enemy malware.
+        </example_output_4>
+        <example_input_5>
+            Generate a self-contained coding problem that requires the programmer to implement a fun, streamlined, hyper-casual web game with 2 user actions for the following persona: A seasoned DJ with decades of experience in the club scene and a vast knowledge of techno and house music.
+        </example_input_5>
+        <example_output_5>
+            Implement a fun web game called "Beat Match Master" where players must catch falling music notes by clicking at the right moment while avoiding disruptive elements.
+
+            Features:
+            - Create a vertical game area with a neon grid background that pulses to a constant rhythm (60 BPM).
+            - Display three vertical "track lines" where notes can fall, colored in distinct neon colors (pink, cyan, green).
+            - Generate music notes that fall down these track lines at a constant speed. The notes should be simple geometric shapes (circles, squares, triangles).
+            - Each note should have a "perfect catch zone" at the bottom of its track line, visualized as a thin horizontal line.
+            - Create visual feedback when notes are caught: successful catches create expanding rings of light, while misses create a brief static effect.
+            - Add "disruption waves" that periodically move horizontally across the screen. These waves should be visually distinct (zigzag patterns) and move at varying speeds.
+            - Display a score multiplier that increases with consecutive successful catches and resets on misses.
+            - Show the current score prominently at the top of the screen with a retro digital display aesthetic.
+            - Create a combo counter that tracks successive successful catches.
+            - Add visual effects that intensify as the combo counter increases (background pulse becomes stronger, colors become more vibrant).
+            - When the player reaches certain score thresholds, increase the speed and frequency of falling notes.
+            - Display a "Game Over" screen when three notes are missed, showing final score and a "Play Again" button.
+            - The game's color scheme should use bright neon colors against a dark background to create a club atmosphere.
+
+            User Actions:
+            1. Press the A, S, or D keys to catch notes in the left, middle, or right tracks respectively when they align with the catch zone.
+            2. Press the spacebar to activate "Bass Drop" which slows down all notes and waves for 5 seconds (can be used once every 30 seconds).
+        </example_output_5>
     """
 
 
@@ -605,7 +727,7 @@ def _get_animation_answer_examples() -> str:
     </example_output_5>
     """
     examples = [example_1, example_2, example_3, example_4, example_5]
-    selection = random.choices(examples, k=2)
+    selection = random.sample(examples, k=2)
     return "".join(selection)
 
 
@@ -726,5 +848,5 @@ def _get_science_answer_examples() -> str:
     </example_output_3>
     """
     examples = [example_1, example_2, example_3]
-    selection = random.choices(examples, k=2)
+    selection = random.sample(examples, k=2)
     return "".join(selection)
