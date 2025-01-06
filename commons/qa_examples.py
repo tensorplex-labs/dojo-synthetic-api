@@ -184,7 +184,7 @@ def _get_game_answer_examples() -> str:
             - Create a combo counter that tracks successive successful catches.
             - Add visual effects that intensify as the combo counter increases (background pulse becomes stronger, colors become more vibrant).
             - When the player reaches certain score thresholds, increase the speed and frequency of falling notes.
-            - Display a "Game Over" screen when three notes are missed, showing final score and a "Play Again" button.
+            - Display a "Game Over" screen when three consecutive notes are missed, showing final score and a "Play Again" button.
             - The game's color scheme should use bright neon colors against a dark background to create a club atmosphere.
 
             User Actions:
@@ -343,7 +343,7 @@ def _get_game_question_examples() -> str:
             - Create a combo counter that tracks successive successful catches.
             - Add visual effects that intensify as the combo counter increases (background pulse becomes stronger, colors become more vibrant).
             - When the player reaches certain score thresholds, increase the speed and frequency of falling notes.
-            - Display a "Game Over" screen when three notes are missed, showing final score and a "Play Again" button.
+            - Display a "Game Over" screen when three consecutive notes are missed, showing final score and a "Play Again" button.
             - The game's color scheme should use bright neon colors against a dark background to create a club atmosphere.
 
             User Actions:
