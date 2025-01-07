@@ -446,24 +446,31 @@ def _get_animation_question_examples() -> str:
             2. Adjust the volume slider to increase or decrease the loudness of the piano.
         </example_output_1>
         <example_input_2>
-            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with persona inspired visuals and content, with 3 user actions for the following persona: "An immunologist An immunologist studying the development of vaccines against infectious diseases".
+            Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with 2 user actions for the following persona: A competitive archer and fellow instructor who constantly challenges and pushes the instructor to improve their skills.
         </example_input_2>
         <example_output_2>
-            Create an interactive visualization of a vaccine molecular structure.
+            Create an interactive archery target practice simulator that visualizes different arrow trajectories on an archery range.
 
             Features:
-            - Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
-            - Each atom should be represented by a sphere, with connecting lines between atoms.
-            - Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
-            - Implement a smooth rotation animation of the molecule
-            - Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
-            - Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
-            - Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
+            - Display a side-view archery range with a regulation height target (4 feet center)
+            - Implement an arrow that can be launched with different trajectories
+            - When the arrow is launched, it should follow a parabolic arc according to basic physics principles
+            - Include a power meter that fills up while the user holds down the mouse button, determining the arrow's initial velocity
+            - The angle of the shot should be determined by the vertical position of the mouse cursor when releasing the button.
+            - Display a real-time arc angle indicator that updates as the user moves their mouse vertically. The angle of the shot should be displayed in degrees next to the arrow.
+            - When the arrow reaches the target, provide visual feedback:
+            * Green hit marker effect for shots that hit the target.
+            * Red hit marker effect for shots that miss the target.
+            - Keep track and display the current accuracy percentage.
+            - The target should have realistic scoring rings that the arrow can stick into.
+            - Implement a simple animation when the arrow embeds into the target.
+            - Reset the arrow to its starting position after each shot. Successful shots should remain in the target.
+            
+            User Actions:
+            1. Press and hold the mouse button to draw the bow and charge the power meter, then release to shoot.
+            2. Move the mouse cursor up and down to adjust the angle of the shot.
 
-            User actions:
-            1. Hover over an atom to view more information about the atom.
-            2. Adjust the slider to control the rotation speed of the molecule animation.
-            3. Click and drag the molecule to rotate it manually.
+            Note: This visualization draws inspiration from archery mechanics, particularly the importance of arc in arrow trajectory, which is fundamental to competitive archery techniques.
         </example_output_2>
         <example_input_3>
             Generate a self-contained coding problem that requires the programmer to implement a interactive visualization with 3 user actions for the following persona: a retired professional cheerleader who has participated in various international competitions.
@@ -545,33 +552,40 @@ def _get_animation_question_examples() -> str:
 def _get_animation_answer_examples() -> str:
     example_1 = """
     <example_input_1>
-        Create an interactive visualization of a vaccine molecular structure.
+        Create an interactive archery target practice simulator that visualizes different arrow trajectories on an archery range.
 
         Features:
-        - Implement a 3D rotating model of a simplified vaccine molecule using HTML5 canvas and vanilla JavaScript. The molecule should consist of at least 10 interconnected atoms.
-        - Each atom should be represented by a sphere, with connecting lines between atoms.
-        - Color-code each atom based on type (e.g. red for oxygen, blue for nitrogen)
-        - Implement a smooth rotation animation of the molecule
-        - Allow users to click and drag the molecule to rotate it manually in any direction. The rotation should be smooth and responsive.
-        - Include a slider control that adjusts the rotation speed of the automatic animation. The slider should range from completely stopped to rapid rotation.
-        - Add hover functionality so that when a user hovers over an atom, a tooltip appears displaying information about that atom type (e.g. element name, atomic number, typical role in vaccines).
+        - Display a side-view archery range with a regulation height target (4 feet center)
+        - Implement an arrow that can be launched with different trajectories
+        - When the arrow is launched, it should follow a parabolic arc according to basic physics principles
+        - Include a power meter that fills up while the user holds down the mouse button, determining the arrow's initial velocity
+        - The angle of the shot should be determined by the vertical position of the mouse cursor when releasing the button.
+        - Display a real-time arc angle indicator that updates as the user moves their mouse vertically. The angle of the shot should be displayed in degrees next to the arrow.
+        - When the arrow reaches the target, provide visual feedback:
+        * Green hit marker effect for shots that hit the target.
+        * Red hit marker effect for shots that miss the target.
+        - Keep track and display the current accuracy percentage.
+        - The target should have realistic scoring rings that the arrow can stick into.
+        - Implement a simple animation when the arrow embeds into the target.
+        - Reset the arrow to its starting position after each shot. Successful shots should remain in the target.
+        
+        User Actions:
+        1. Press and hold the mouse button to draw the bow and charge the power meter, then release to shoot.
+        2. Move the mouse cursor up and down to adjust the angle of the shot.
 
-        User actions:
-        1. Hover over an atom to view more information about the atom.
-        2. Adjust the slider to control the rotation speed of the molecule animation.
-        3. Click and drag the molecule to rotate it manually.
+        Note: This visualization draws inspiration from archery mechanics, particularly the importance of arc in arrow trajectory, which is fundamental to competitive archery techniques.
     </example_input_1>
     <example_output_1>
         {
         "files": [
             {
                 "filename": "index.js",
-                "content": "const canvas=document.getElementById("canvas");const ctx=canvas.getContext("2d");const speedSlider=document.getElementById("speedSlider");const tooltip=document.getElementById("tooltip");const atoms=[{x:0,y:0,z:0,radius:20,color:"#ff4136",element:"Oxygen",atomicNumber:8,role:"Forms hydrogen bonds in vaccine proteins"},{x:50,y:0,z:0,radius:25,color:"#0074d9",element:"Nitrogen",atomicNumber:7,role:"Essential component of amino acids in vaccine antigens"},{x:-50,y:0,z:0,radius:15,color:"#ffdc00",element:"Sulfur",atomicNumber:16,role:"Forms disulfide bonds in vaccine proteins"},{x:0,y:50,z:0,radius:30,color:"#2ecc40",element:"Carbon",atomicNumber:6,role:"Backbone of organic molecules in vaccines"},{x:0,y:-50,z:0,radius:18,color:"#ff851b",element:"Phosphorus",atomicNumber:15,role:"Part of nucleic acids in mRNA vaccines"},{x:0,y:0,z:50,radius:22,color:"#b10dc9",element:"Sodium",atomicNumber:11,role:"Electrolyte in vaccine formulations"},{x:0,y:0,z:-50,radius:28,color:"#f012be",element:"Potassium",atomicNumber:19,role:"Electrolyte in vaccine formulations"},{x:50,y:50,z:50,radius:17,color:"#aaaaaa",element:"Aluminum",atomicNumber:13,role:"Adjuvant in some vaccines"},{x:-50,y:-50,z:-50,radius:24,color:"#01ff70",element:"Magnesium",atomicNumber:12,role:"Cofactor for enzymes in vaccine production"},{x:-50,y:50,z:-50,radius:26,color:"#7fdbff",element:"Calcium",atomicNumber:20,role:"Stabilizer in vaccine formulations"}];let rotationX=0;let rotationY=0;let rotationZ=0;let isDragging=false;let lastMouseX,lastMouseY;let autoRotationSpeed=0.01;function drawMolecule(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(canvas.width/2,canvas.height/2);const sortedAtoms=atoms.slice().sort((a,b)=>b.z-a.z);ctx.strokeStyle="#ccc";ctx.lineWidth=2;for(let i=0;i<atoms.length;i++){for(let j=i+1;j<atoms.length;j++){drawConnection(atoms[i],atoms[j]);}}sortedAtoms.forEach((atom)=>{const{x,y,z,radius,color}=rotatePoint(atom);const scale=200/(200-z);ctx.beginPath();ctx.arc(x*scale,y*scale,radius*scale,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle="#000";ctx.stroke();});ctx.restore();}function drawConnection(atom1,atom2){const p1=rotatePoint(atom1);const p2=rotatePoint(atom2);ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();}function rotatePoint(point){let{x,y,z}=point;let temp=y;y=y*Math.cos(rotationX)-z*Math.sin(rotationX);z=temp*Math.sin(rotationX)+z*Math.cos(rotationX);temp=x;x=x*Math.cos(rotationY)+z*Math.sin(rotationY);z=-temp*Math.sin(rotationY)+z*Math.cos(rotationY);temp=x;x=x*Math.cos(rotationZ)-y*Math.sin(rotationZ);y=temp*Math.sin(rotationZ)+y*Math.cos(rotationZ);return{...point,x,y,z};}function animate(){if(!isDragging){rotationY+=autoRotationSpeed;}drawMolecule();requestAnimationFrame(animate);}canvas.addEventListener("mousedown",(e)=>{isDragging=true;lastMouseX=e.clientX;lastMouseY=e.clientY;});canvas.addEventListener("mousemove",(e)=>{if(isDragging){const deltaX=e.clientX-lastMouseX;const deltaY=e.clientY-lastMouseY;rotationY+=deltaX*0.01;rotationX+=deltaY*0.01;lastMouseX=e.clientX;lastMouseY=e.clientY;}const rect=canvas.getBoundingClientRect();const mouseX=e.clientX-rect.left;const mouseY=e.clientY-rect.top;handleHover(mouseX,mouseY);});canvas.addEventListener("mouseup",()=>{isDragging=false;});canvas.addEventListener("mouseleave",()=>{isDragging=false;tooltip.style.display="none";});speedSlider.addEventListener("input",(e)=>{autoRotationSpeed=e.target.value/5000;});function handleHover(mouseX,mouseY){const hoveredAtom=atoms.find((atom)=>{const{x,y,z,radius}=rotatePoint(atom);const scale=200/(200-z);const scaledX=x*scale+canvas.width/2;const scaledY=y*scale+canvas.height/2;const distance=Math.sqrt((mouseX-scaledX)**2+(mouseY-scaledY)**2);return distance<=radius*scale;});if(hoveredAtom){tooltip.style.display="block";tooltip.style.left=`${mouseX+10}px`;tooltip.style.top=`${mouseY+10}px`;tooltip.innerHTML=`<strong>${hoveredAtom.element}</strong><br>Atomic Number: ${hoveredAtom.atomicNumber}<br>Role: ${hoveredAtom.role}`;}else{tooltip.style.display="none";}}animate();const instructions=document.createElement("div");instructions.style.position="absolute";instructions.style.top="10px";instructions.style.left="10px";instructions.style.backgroundColor="rgba(255, 255, 255, 0.8)";instructions.style.padding="10px";instructions.style.borderRadius="5px";instructions.style.fontSize="14px";instructions.innerHTML=`<strong>Instructions:</strong><br>- Click and drag to rotate the molecule<br>- Use the slider to adjust rotation speed<br>- Hover over atoms for more information`;document.body.appendChild(instructions);",
+                "content": "const canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d"),stats=document.getElementById("stats"),width=canvas.width=800,height=canvas.height=600,targetX=width-100,targetY=height-240,targetRadius=60,rings=[{radius:60,color:"#FFFFFF",points:1},{radius:48,color:"#000000",points:2},{radius:36,color:"#1E90FF",points:3},{radius:24,color:"#FF0000",points:4},{radius:12,color:"#FFD700",points:5}];let power=0,isCharging=!1,angle=0,arrowX=100,arrowY=height-100,arrowVelX=0,arrowVelY=0,isFlying=!1,shots=0,hits=0,arrows=[],hitAnimations=[];function drawTarget(){rings.forEach(e=>{ctx.beginPath(),ctx.arc(targetX,targetY,e.radius,0,2*Math.PI),ctx.fillStyle=e.color,ctx.fill(),ctx.stroke()})}function drawPowerMeter(){ctx.fillStyle="rgba(0,0,0,0.5)",ctx.fillRect(50,height-30,100,20),ctx.fillStyle=`rgb(${255*power/100}, ${255*(1-power/100)}, 0)`,ctx.fillRect(50,height-30,power,20)}function drawAngleIndicator(){ctx.save(),ctx.translate(arrowX,arrowY),ctx.rotate(-angle),ctx.beginPath(),ctx.moveTo(0,0),ctx.lineTo(50,0),ctx.strokeStyle="rgba(255,255,255,0.5)",ctx.setLineDash([5,5]),ctx.stroke(),ctx.setLineDash([]),ctx.rotate(angle),ctx.fillStyle="white",ctx.font="16px Arial";const e=Math.round(180*angle/Math.PI);ctx.fillText(`${e}°`,60,0),ctx.restore()}function drawArrow(e,t,r){ctx.save(),ctx.translate(e,t),ctx.rotate(r),ctx.beginPath(),ctx.moveTo(-20,0),ctx.lineTo(20,0),ctx.strokeStyle="#8B4513",ctx.lineWidth=3,ctx.stroke(),ctx.beginPath(),ctx.moveTo(20,0),ctx.lineTo(15,-5),ctx.lineTo(15,5),ctx.fillStyle="#A0522D",ctx.fill(),ctx.beginPath(),ctx.moveTo(-20,0),ctx.lineTo(-15,-5),ctx.lineTo(-10,0),ctx.lineTo(-15,5),ctx.fillStyle="#FF0000",ctx.fill(),ctx.restore()}function updateArrow(){if(isFlying){arrowVelY+=.5,arrowX+=arrowVelX,arrowY+=arrowVelY;const e=arrowX-targetX,t=arrowY-targetY,r=Math.sqrt(e*e+t*t);if(r<targetRadius){isFlying=!1,shots++;let e=0;for(let t=rings.length-1;t>=0;t--)if(r<=rings[t].radius){e=rings[t].points;break}hits++,arrows.push({x:arrowX,y:arrowY,rotation:Math.atan2(arrowVelY,arrowVelX)}),hitAnimations.push({x:arrowX,y:arrowY,radius:0,opacity:.8,color:"#00ff00"}),resetArrow()}arrowY>height-20&&(shots++,hitAnimations.push({x:arrowX,y:arrowY,radius:0,opacity:.8,color:"#ff0000"}),resetArrow())}}function resetArrow(){arrowX=100,arrowY=height-100,arrowVelX=0,arrowVelY=0,isFlying=!1,power=0,updateStats()}function updateStats(){const e=0===shots?0:Math.round(hits/shots*100);stats.textContent=`Shots: ${shots} | Hits: ${hits} | Accuracy: ${e}%`}function draw(){ctx.clearRect(0,0,width,height),ctx.fillStyle="#8b7355",ctx.fillRect(0,height-40,width,40),drawTarget(),arrows.forEach(e=>{drawArrow(e.x,e.y,e.rotation)}),isFlying||(drawPowerMeter(),drawAngleIndicator()),isFlying?drawArrow(arrowX,arrowY,Math.atan2(arrowVelY,arrowVelX)):drawArrow(arrowX,arrowY,-angle),updateArrow(),updateHitAnimations(),requestAnimationFrame(draw)}function updatePower(){isCharging&&!isFlying&&(power=Math.min(100,power+2)),setTimeout(updatePower,20)}function updateHitAnimations(){hitAnimations=hitAnimations.filter(e=>(ctx.beginPath(),ctx.arc(e.x,e.y,e.radius,0,2*Math.PI),ctx.strokeStyle=`${e.color}${Math.floor(255*e.opacity).toString(16).padStart(2,"0")}`,ctx.lineWidth=3,ctx.stroke(),e.radius+=2,e.opacity-=.02,e.opacity>0))}canvas.addEventListener("mousedown",e=>{isFlying||(isCharging=!0)}),canvas.addEventListener("mousemove",e=>{if(!isFlying){const t=canvas.getBoundingClientRect(),r=e.clientY-t.top;angle=Math.max(0,Math.min(Math.PI/2,(height-r)/height*Math.PI))}}),canvas.addEventListener("mouseup",e=>{isCharging&&!isFlying&&(isCharging=!1,isFlying=!0,arrowVelX=.2*power*Math.cos(-angle),arrowVelY=.2*power*Math.sin(-angle))}),window.addEventListener("keydown",e=>{"Space"===e.code&&e.preventDefault()}),window.addEventListener("resize",()=>{width=canvas.width=Math.min(800,window.innerWidth),height=canvas.height=Math.min(600,window.innerHeight)}),updatePower(),draw();",
                 "language": "javascript"
             },
             {
                 "filename": "index.html",
-                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Vaccine Molecular Structure Visualization</title><style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; font-family: Arial, sans-serif; } #canvas { border: 1px solid #ccc; background-color: #fff; } #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background-color: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 5px; } #speedSlider { width: 200px; margin: 0 10px; } #tooltip { position: absolute; background-color: rgba(0, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; pointer-events: none; display: none; } </style></head><body><canvas id="canvas" width="800" height="600"></canvas><div id="controls"><span>Rotation Speed:</span><input type="range" id="speedSlider" min="0" max="100" value="50" /></div><div id="tooltip"></div><script src="index.js"></script></body></html>",
+                "content": "<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Archery Practice Simulator</title><style>body{margin:0;overflow:hidden;background:#2c3e50;display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial,sans-serif}#canvas{background:linear-gradient(180deg,#87ceeb 0%,#87ceeb 60%,#8b7355 60%,#8b7355 100%)}#stats{position:fixed;top:10px;left:10px;color:white;background:rgba(0,0,0,0.5);padding:10px;border-radius:5px;font-size:14px}#instructions{position:fixed;bottom:10px;left:10px;color:white;background:rgba(0,0,0,0.5);padding:10px;border-radius:5px;font-size:14px}</style></head><body><canvas id="canvas"></canvas><div id="stats">Accuracy: 0%</div><div id="instructions">Hold mouse to charge power<br/>Release to shoot<br/>Mouse height controls angle</div><script src="index.js"></script></body></html>",
                 "language": "html"
             }
             ]
