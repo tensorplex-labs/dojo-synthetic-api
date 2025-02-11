@@ -4,10 +4,7 @@ import json
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-
 from commons.cache import RedisCache
-
-# from commons.prompt_builders import Language
 from commons.synthetic import (
     ResponseStrategy,
     build_prompt_responses_pair,
@@ -22,7 +19,6 @@ worker = Worker(
         response_strategy=ResponseStrategy.AUGMENTATION_DETERIORIATE,
     )
 )
-
 
 class SyntheticGenResponse(BaseModel):
     success: bool
