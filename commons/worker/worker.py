@@ -5,6 +5,7 @@ from loguru import logger
 
 from commons.cache import RedisCache
 from commons.config import get_settings
+from openai import AuthenticationError, PermissionDeniedError
 
 
 class Worker:
@@ -66,6 +67,8 @@ class Worker:
                 except asyncio.CancelledError:
                     logger.opt().info("Running worker was cancelled")
                     break
+                except (AuthenticationError, PermissionDeniedError):
+                    raise
                 except Exception as exc:
                     logger.opt(exception=True).error(f"ERROR: {exc}")
         finally:
@@ -107,6 +110,8 @@ class Worker:
             logger.debug(f"Worker-{worker_id} doing work")
             value = await self._do_work()
             await cache.enqueue(value)
+        except (AuthenticationError, PermissionDeniedError):
+            raise
         except Exception as exc:
             logger.opt(exception=True).error(
                 f"Error processing one unit of work: {exc}"

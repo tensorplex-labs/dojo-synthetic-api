@@ -1,7 +1,6 @@
 import asyncio
 import os
 import random
-import sys
 import uuid
 from enum import Enum
 from typing import List, Tuple, cast
@@ -11,7 +10,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AsyncOpenAI, AuthenticationError
+from openai import AsyncOpenAI, AuthenticationError, PermissionDeniedError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -499,9 +498,9 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
 
         results = await asyncio.gather(*tasks)
 
-    except AuthenticationError as e:
-        logger.error(f"Shutting down synthetic-API: {e}")
-        sys.exit(1)
+    except (AuthenticationError, PermissionDeniedError) as e:
+        logger.error(f"Fatal Error when generating question-answer pair: {e}")
+        raise e
     except Exception as e:
         raise e
     responses = []
