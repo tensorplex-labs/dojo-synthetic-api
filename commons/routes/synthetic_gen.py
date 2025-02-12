@@ -4,6 +4,7 @@ import json
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from commons.cache import RedisCache
 from commons.synthetic import (
     ResponseStrategy,

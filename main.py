@@ -6,13 +6,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from openai import AuthenticationError, PermissionDeniedError
 from rich.traceback import install
 
 from commons.config import get_settings, parse_cli_args
 from commons.dataset.personas import load_persona_dataset
 from commons.routes.health import health_router
 from commons.routes.synthetic_gen import cache, synthetic_gen_router, worker
-from openai import AuthenticationError, PermissionDeniedError
 
 load_dotenv()
 install(show_locals=True)
@@ -21,15 +21,15 @@ install(show_locals=True)
 @asynccontextmanager
 async def _lifespan_context(app: FastAPI):  # noqa: ARG001 #pyright: ignore[reportUnusedParameter]
     # Start up tasks
-    app.state.persona_dataset = load_persona_dataset()   
+    app.state.persona_dataset = load_persona_dataset()
     # create workers to concurrently generate question-answer pairs; wrap worker.run in a task so it can be cancelled
     worker_task = asyncio.create_task(worker.run())
     # check that generation did not raise any fatal errors.
     worker_task.add_done_callback(_check_fatal_errors)
     logger.info("Performed startup tasks")
-    
+
     yield
-    
+
     # shutdown tasks
     await worker.stop()
     await cache.close()
@@ -53,6 +53,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(synthetic_gen_router)
 
+
 def _check_fatal_errors(task: asyncio.Task):
     """
     checks worker response for fatal exceptions. Shuts down server if fatal error is detected.
@@ -62,19 +63,20 @@ def _check_fatal_errors(task: asyncio.Task):
     except (AuthenticationError, PermissionDeniedError) as e:
         asyncio.create_task(_fatal_shutdown(e))
 
+
 async def _fatal_shutdown(e: Exception):
     logger.error(f"Shutting down FastAPI server due to fatal error: {e}")
     await worker.stop()
     await cache.close()
-        
+
     # Get all running tasks except current
-    tasks = [task for task in asyncio.all_tasks()
-             if task is not asyncio.current_task()]
+    tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
 
     # Cancel all tasks
     for task in tasks:
         task.cancel()
-    
+
+
 async def main():
     parse_cli_args()
     uvicorn_config = get_settings().uvicorn

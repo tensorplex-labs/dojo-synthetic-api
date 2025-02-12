@@ -2,10 +2,10 @@ import asyncio
 from typing import Any, Awaitable, Callable
 
 from loguru import logger
+from openai import AuthenticationError, PermissionDeniedError
 
 from commons.cache import RedisCache
 from commons.config import get_settings
-from openai import AuthenticationError, PermissionDeniedError
 
 
 class Worker:
