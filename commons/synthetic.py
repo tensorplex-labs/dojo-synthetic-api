@@ -771,3 +771,43 @@ async def build_prompt_responses_pair():
         "persona": persona,
         "augment_type": augment_strategy.name,
     }
+
+
+async def main_standalone():
+    """Run build_prompt_responses_pair as a standalone function for testing."""
+    import time
+
+    from commons.dataset.personas import load_persona_dataset
+
+    load_persona_dataset()
+    logger.info("Starting standalone synthetic data generation")
+    start_time = time.time()
+
+    try:
+        # Generate one prompt-response pair with augmentation
+        result = await build_prompt_responses_pair(
+            ResponseStrategy.AUGMENTATION_DETERIORIATE
+        )
+
+        # Print the results
+        logger.info(f"Generated prompt: {result['prompt'][:100]}...")
+        logger.info(f"Number of responses: {len(result['responses'])}")
+        logger.info(f"Topic: {result['topic']}")
+        logger.info(f"Persona: {result['persona'][:50]}...")
+
+        # Save to file for inspection
+        import json
+
+        with open("synthetic_output.json", "w") as f:
+            json.dump(result, f, indent=2)
+        logger.info("Results saved to synthetic_output.json")
+
+    except Exception as e:
+        logger.error(f"Error running standalone: {e}")
+        raise
+    finally:
+        logger.info(f"Completed in {time.time() - start_time:.2f} seconds")
+
+
+if __name__ == "__main__":
+    asyncio.run(main_standalone())
