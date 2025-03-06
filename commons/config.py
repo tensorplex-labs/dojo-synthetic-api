@@ -176,10 +176,12 @@ ANSWER_MODELS = [
     # "cohere/command-r-plus",
     # "openai/o1-preview-2024-09-12",
     # "openai/o1-mini-2024-09-12",
-    "anthropic/claude-3.5-sonnet",
+    # "anthropic/claude-3.5-sonnet",
     # "meta-llama/llama-3.1-405b-instruct",
     # "openai/gpt-4o-mini",
     # "openai/gpt-4o",
     # "mistralai/mistral-7b-instruct-v0.1",
     # "deepseek/deepseek-coder",
+    "anthropic/claude-3.7-sonnet",
+    "deepseek/deepseek-r1",
 ]
