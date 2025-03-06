@@ -14,34 +14,40 @@ from commons.types import Topics
 
 load_dotenv()
 
-
-async def main():
-    """
+"""
+    model_lab.py
     1. generate a question from each topic
     2. send each question to each model
     3. save all results as a json file
+
+    instructions
+    - edit the question_model and answer_models variables with the desired models
+    - question_model will be used to generate the question
+    - each answer model will generate code for that question.
+    - to run the script: python -m commons.model_lab
+    - output will be saved to whatever is defined in the OUTPUT_FILE variable
 
     to-do:
     - merge auto-linting feature from dev branch into this script
     - create a front-end to display results
     - experiment with different instructor clients for different models.
+"""
 
-    to run:
-    python -m commons.model_lab
-    """
+# get model names from openrouter website
+question_model = "anthropic/claude-3.5-sonnet"
+answer_models = [
+    "anthropic/claude-3.5-haiku",
+    "anthropic/claude-3.5-haiku:beta",
+]
+OUTPUT_FILE = "syn-gen-trials.json"
 
+
+async def main():
     logger.info("Starting standalone synthetic data generation")
 
     load_persona_dataset()
 
     client = get_llm_api_client()
-
-    # get model names from openrouter website
-    question_model = "anthropic/claude-3.5-sonnet"
-    answer_models = [
-        "anthropic/claude-3.5-haiku",
-        "anthropic/claude-3.5-haiku:beta",
-    ]
 
     try:
         # 1. generate a question from each topic
@@ -126,9 +132,9 @@ async def main():
         # Save to file for inspection
         import json
 
-        with open("syn-gen-trials.json", "w") as f:
+        with open(OUTPUT_FILE, "w") as f:
             json.dump(result, f, indent=2)
-        logger.info("Results saved to syn-gen-trials.json")
+        logger.info(f"Results saved to {OUTPUT_FILE}")
 
     except Exception as e:
         logger.error(f"Error running model_lab.py: {e}")
