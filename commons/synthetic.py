@@ -552,6 +552,9 @@ async def main_standalone():
     - add auto-linting to answer generation
     - create a front-end to display results
     - trial with non-anthropic models.
+
+    to run:
+    python -m commons.synthetic
     """
 
     from commons.dataset.personas import load_persona_dataset
@@ -561,7 +564,10 @@ async def main_standalone():
 
     client = get_llm_api_client()
     question_model = "anthropic/claude-3.5-sonnet"
-    answer_models = ["anthropic/claude-3.5-haiku"]
+    answer_models = [
+        "anthropic/claude-3.5-haiku",
+        "anthropic/claude-3.5-haiku:beta",
+    ]
 
     try:
         # 1. generate a question from each topic
@@ -619,6 +625,7 @@ async def main_standalone():
                     {
                         "name": f"{model}_{q['topic'].name}",
                         "answer": ans,
+                        "question": q["question"],
                     }
                 )
 
@@ -634,6 +641,7 @@ async def main_standalone():
                             "filename": file.filename,
                             "content": file.content,
                             "language": file.language,
+                            "question": ans["question"],
                         }
                         for file in ans["answer"].files
                     ]
