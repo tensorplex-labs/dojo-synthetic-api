@@ -774,39 +774,114 @@ async def build_prompt_responses_pair():
 
 
 async def main_standalone():
-    """Run build_prompt_responses_pair as a standalone function for testing."""
-    import time
+    """
+    Run build_prompt_responses_pair as a standalone function for testing.
+    1. generate a question from each topic
+    2. send question to each model
+    3. save each result as file
+
+    to-do:
+    - add auto-linting to answer generation
+    - create a front-end to display results
+    - trial with non-anthropic models.
+    """
 
     from commons.dataset.personas import load_persona_dataset
 
     load_persona_dataset()
     logger.info("Starting standalone synthetic data generation")
-    start_time = time.time()
+
+    client = get_llm_api_client()
+    question_model = "anthropic/claude-3.5-sonnet"
+    answer_models = ["anthropic/claude-3.5-haiku"]
 
     try:
-        # Generate one prompt-response pair with augmentation
-        result = await build_prompt_responses_pair(
-            ResponseStrategy.AUGMENTATION_DETERIORIATE
-        )
+        # 1. generate a question from each topic
+        questions = []
+        for topic in Topics:
+            logger.info(f"generating {topic.name} question ...")
+            persona = get_random_persona()
+            question = await generate_question(client, question_model, topic, persona)
+            questions.append({"topic": topic, "question": question})
 
-        # Print the results
-        logger.info(f"Generated prompt: {result['prompt'][:100]}...")
-        logger.info(f"Number of responses: {len(result['responses'])}")
-        logger.info(f"Topic: {result['topic']}")
-        logger.info(f"Persona: {result['persona'][:50]}...")
+        # 2. for each question, generate an answer from each model.
+        answers = []
+        for model in answer_models:
+            for q in questions:
+                logger.info(
+                    f"generating {q['topic'].name} answer with model: {model} ..."
+                )
+                try:
+                    _, ans = await generate_answer(
+                        client,
+                        model,
+                        q["question"],
+                        q["topic"],
+                        f"{model}_{q['topic']}",
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error generating {q['topic'].name} answer with model: {model}: {e}"
+                    )
+                    continue
+                ans_with_html = build_single_index_html(ans)
+                html_file = next(
+                    (
+                        file
+                        for file in ans_with_html.files
+                        if file.filename == "index.html"
+                    ),
+                    None,
+                )
+                if html_file:
+                    pass
+                else:
+                    raise ValueError("No index.html file found in the answer")
+
+                ans.files = [
+                    file for file in ans.files if file.filename == "index.html"
+                ]
+                # replace old html with updated html with inlined JS and CSS.
+                if ans.files:
+                    # result.files[0].content = final_html
+                    ans.files[0].content = html_file.content
+                else:
+                    raise ValueError("No index.html file found in the result")
+                answers.append(
+                    {
+                        "name": f"{model}_{q['topic'].name}",
+                        "answer": ans,
+                    }
+                )
+
+        # 3. save answers to file
+        result = []
+        for ans in answers:
+            # Convert each CodeAnswer to dict and add to result list
+            result.append(
+                {
+                    "files": [
+                        {
+                            "tag": ans["name"],
+                            "filename": file.filename,
+                            "content": file.content,
+                            "language": file.language,
+                        }
+                        for file in ans["answer"].files
+                    ]
+                }
+            )
 
         # Save to file for inspection
         import json
 
-        with open("synthetic_output.json", "w") as f:
+        with open("syn-gen-trials.json", "w") as f:
             json.dump(result, f, indent=2)
-        logger.info("Results saved to synthetic_output.json")
+        logger.info("Results saved to syn-gen-trials.json")
 
     except Exception as e:
         logger.error(f"Error running standalone: {e}")
         raise
-    finally:
-        logger.info(f"Completed in {time.time() - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":
