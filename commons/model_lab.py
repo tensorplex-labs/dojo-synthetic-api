@@ -36,8 +36,10 @@ load_dotenv()
 # get model names from openrouter website
 question_model = "anthropic/claude-3.5-sonnet"
 answer_models = [
-    "anthropic/claude-3.5-haiku",
-    "anthropic/claude-3.5-haiku:beta",
+    "deepseek/deepseek-r1",
+    "qwen/qwen2.5-32b-instruct",
+    # "anthropic/claude-3.5-haiku",
+    # "anthropic/claude-3.5-haiku:beta",
 ]
 OUTPUT_FILE = "syn-gen-trials.json"
 
@@ -57,6 +59,7 @@ async def main():
             persona = get_random_persona()
             question = await generate_question(client, question_model, topic, persona)
             questions.append({"topic": topic, "question": question})
+            break  # gen 1 question only.
 
         # 2. for each question, generate an answer from each model.
         answers = []

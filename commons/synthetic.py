@@ -191,7 +191,7 @@ async def generate_answer(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=response_model._raw_response.usage,
             metadata={
                 "question": question,
                 "err": err,
