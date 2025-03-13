@@ -125,7 +125,8 @@ class RedisCache:
 
         # keep the historical data as is
         # use uuid7 so keys in redis are sorted by time
-        hist_key = self._build_key(self._hist_key_prefix, uuid_utils.uuid7().__str__())
+        redis_task_id = uuid_utils.uuid7().__str__()
+        hist_key = self._build_key(self._hist_key_prefix, redis_task_id)
         try:
             logger.debug(f"Writing persistent data into {hist_key}")
             # place into persistent key
