@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from langfuse.client import ModelUsage
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AsyncOpenAI, AuthenticationError
+from openai import AuthenticationError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -31,10 +31,6 @@ from commons.prompt_builders import (
 from commons.types import Topics
 
 load_dotenv()
-
-
-# define some types
-LlmClient = AsyncOpenAI | instructor.AsyncInstructor
 
 
 def _get_llm_usage(completion):
@@ -154,7 +150,9 @@ async def generate_question(
         raise
 
 
-async def lint_and_fix_code(client: LlmClient, model: str, answer: CodeAnswer, id: str):
+async def lint_and_fix_code(
+    client: instructor.AsyncInstructor, model: str, answer: CodeAnswer, id: str
+):
     """
     @dev Executes ESlint on the input index.js file and will query LLM to fix any errors.
     @dev Will update the input answer object in-place with a fixed index.js file.
@@ -184,7 +182,7 @@ async def lint_and_fix_code(client: LlmClient, model: str, answer: CodeAnswer, i
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_answer(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     topic: Topics,
@@ -257,7 +255,7 @@ async def generate_answer(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def augment_question(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     augmentation_level: QuestionAugmentation,
@@ -472,7 +470,11 @@ def _build_answer_augment_prompt(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def _fix_syntax_errors(
-    client: LlmClient, model: str, answer: CodeAnswer, linter_feedback: str, id: str
+    client: instructor.AsyncInstructor,
+    model: str,
+    answer: CodeAnswer,
+    linter_feedback: str,
+    id: str,
 ) -> CodeAnswer:
     """
     takes in a code answer and attempts to fix any syntax errors.
@@ -533,7 +535,7 @@ async def _fix_syntax_errors(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def _augment_answer(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     answer: CodeAnswer,
     question: str,
