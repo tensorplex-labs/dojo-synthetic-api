@@ -585,7 +585,6 @@ async def _augment_answer(
             },
         )
 
-
         # merge generated JS code into HTML file
         result = _merge_js_and_html(result)
 
@@ -654,7 +653,7 @@ async def build_prompt_responses_pair():
         )
         if result is None:
             raise ValueError("generate_answer() returned none")
-            
+
         return model, result, level, qa_id
 
     ##### START OF FUNCTION LOGIC #####

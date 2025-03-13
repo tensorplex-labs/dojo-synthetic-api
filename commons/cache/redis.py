@@ -31,8 +31,6 @@ class RedisCache:
     # key to figure out how many workers are working
     _num_workers_active_key: str = "num_workers_active"
     _encoding: str = "utf-8"
-    # key to map ID to augment_type
-    _augment_type_key: str = "augment_type"
     redis: Redis  # pyright: ignore[reportMissingTypeArgument]
 
     def __new__(cls) -> "RedisCache":
@@ -130,15 +128,6 @@ class RedisCache:
         redis_task_id = uuid_utils.uuid7().__str__()
         hist_key = self._build_key(self._hist_key_prefix, redis_task_id)
         try:
-            # collect augment_type and store in redis
-            augment_type = data["augment_type"]
-            json_string = f'{{"augment_type": "{augment_type}"}}'
-
-            first_cid = data["responses"][0]["cid"]
-            augment_type_key = self._build_key(self._augment_type_key, first_cid)
-            logger.debug(f"Writing augment_type into {augment_type_key}")
-            await self.redis.set(augment_type_key, json_string, ex=3600 * 24)
-
             logger.debug(f"Writing persistent data into {hist_key}")
             # place into persistent key
             str_data = json.dumps(jsonable_encoder(data)).encode(self._encoding)
