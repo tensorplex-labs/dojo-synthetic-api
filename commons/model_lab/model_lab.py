@@ -27,10 +27,6 @@ load_dotenv()
     - to run the script: python -m commons.model_lab
     - output will be saved to whatever is defined in the OUTPUT_FILE variable
 
-    to-do:
-    - merge auto-linting feature from dev branch into this script
-    - create a front-end to display results
-    - experiment with different instructor clients for different models.
 """
 
 # get model names from openrouter website
