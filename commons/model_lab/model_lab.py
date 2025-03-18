@@ -26,7 +26,8 @@ load_dotenv()
     - each answer model will generate code for that question.
     - to run the script: python -m commons.model_lab
     - output will be saved to whatever is defined in the OUTPUT_FILE variable
-
+    - to view outputs from the commons/model_lab directory, run "python -m http.server 8000"
+    - open the browser and navigate to "http://localhost:8000/viewer.html" to view the results
 """
 
 # get model names from openrouter website
