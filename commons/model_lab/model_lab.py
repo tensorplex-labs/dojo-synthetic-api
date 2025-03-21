@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -39,6 +40,7 @@ answer_models = [
     # "anthropic/claude-3.5-haiku:beta",
 ]
 OUTPUT_FILE = "syn-gen-trials.json"
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 async def main():
@@ -129,12 +131,13 @@ async def main():
                 }
             )
 
-        # Save to file for inspection
+        # Save to file in the current directory
+        output_path = os.path.join(CURRENT_DIR, OUTPUT_FILE)
         import json
 
-        with open(OUTPUT_FILE, "w") as f:
+        with open(output_path, "w") as f:
             json.dump(result, f, indent=2)
-        logger.info(f"Results saved to {OUTPUT_FILE}")
+        logger.info(f"Results saved to {output_path}")
 
     except Exception as e:
         logger.error(f"Error running model_lab.py: {e}")
