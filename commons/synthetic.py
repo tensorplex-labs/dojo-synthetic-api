@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from langfuse.client import ModelUsage
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AsyncOpenAI, AuthenticationError
+from openai import AuthenticationError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -31,10 +31,6 @@ from commons.prompt_builders import (
 from commons.types import Topics
 
 load_dotenv()
-
-
-# define some types
-LlmClient = AsyncOpenAI | instructor.AsyncInstructor
 
 
 def _get_llm_usage(completion):
@@ -154,7 +150,9 @@ async def generate_question(
         raise
 
 
-async def lint_and_fix_code(client: LlmClient, model: str, answer: CodeAnswer, id: str):
+async def lint_and_fix_code(
+    client: instructor.AsyncInstructor, model: str, answer: CodeAnswer, id: str
+):
     """
     @dev Executes ESlint on the input index.js file and will query LLM to fix any errors.
     @dev Will update the input answer object in-place with a fixed index.js file.
@@ -184,7 +182,7 @@ async def lint_and_fix_code(client: LlmClient, model: str, answer: CodeAnswer, i
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_answer(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     topic: Topics,
@@ -219,7 +217,8 @@ async def generate_answer(
         "messages": messages,
         "max_retries": AsyncRetrying(stop=stop_after_attempt(2), reraise=True),
         "temperature": 0.0,
-        "max_tokens": 8192,
+        # "max_tokens": 8192,
+        "max_tokens": 16384,
         "top_p": random.uniform(0.9, 1.0),
     }
     if model.startswith("openai"):
@@ -257,7 +256,7 @@ async def generate_answer(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def augment_question(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     augmentation_level: QuestionAugmentation,
@@ -472,7 +471,11 @@ def _build_answer_augment_prompt(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def _fix_syntax_errors(
-    client: LlmClient, model: str, answer: CodeAnswer, linter_feedback: str, id: str
+    client: instructor.AsyncInstructor,
+    model: str,
+    answer: CodeAnswer,
+    linter_feedback: str,
+    id: str,
 ) -> CodeAnswer:
     """
     takes in a code answer and attempts to fix any syntax errors.
@@ -533,7 +536,7 @@ async def _fix_syntax_errors(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def _augment_answer(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     answer: CodeAnswer,
     question: str,
@@ -771,3 +774,126 @@ async def build_prompt_responses_pair():
         "persona": persona,
         "augment_type": augment_strategy.name,
     }
+
+
+async def main_standalone():
+    """
+    Run build_prompt_responses_pair as a standalone function for testing.
+    1. generate a question from each topic
+    2. send question to each model
+    3. save each result as file
+
+    to-do:
+    - add auto-linting to answer generation
+    - create a front-end to display results
+    - trial with non-anthropic models.
+
+    to run:
+    python -m commons.synthetic
+    """
+
+    from commons.dataset.personas import load_persona_dataset
+
+    load_persona_dataset()
+    logger.info("Starting standalone synthetic data generation")
+
+    client = get_llm_api_client()
+    question_model = "anthropic/claude-3.5-sonnet"
+    answer_models = [
+        "anthropic/claude-3.5-haiku",
+        "anthropic/claude-3.5-haiku:beta",
+    ]
+
+    try:
+        # 1. generate a question from each topic
+        questions = []
+        for topic in Topics:
+            logger.info(f"generating {topic.name} question ...")
+            persona = get_random_persona()
+            question = await generate_question(client, question_model, topic, persona)
+            questions.append({"topic": topic, "question": question})
+
+        # 2. for each question, generate an answer from each model.
+        answers = []
+        for model in answer_models:
+            for q in questions:
+                logger.info(
+                    f"generating {q['topic'].name} answer with model: {model} ..."
+                )
+                try:
+                    _, ans = await generate_answer(
+                        client,
+                        model,
+                        q["question"],
+                        q["topic"],
+                        f"{model}_{q['topic']}",
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error generating {q['topic'].name} answer with model: {model}: {e}"
+                    )
+                    continue
+                ans_with_html = build_single_index_html(ans)
+                html_file = next(
+                    (
+                        file
+                        for file in ans_with_html.files
+                        if file.filename == "index.html"
+                    ),
+                    None,
+                )
+                if html_file:
+                    pass
+                else:
+                    raise ValueError("No index.html file found in the answer")
+
+                ans.files = [
+                    file for file in ans.files if file.filename == "index.html"
+                ]
+                # replace old html with updated html with inlined JS and CSS.
+                if ans.files:
+                    # result.files[0].content = final_html
+                    ans.files[0].content = html_file.content
+                else:
+                    raise ValueError("No index.html file found in the result")
+                answers.append(
+                    {
+                        "name": f"{model}_{q['topic'].name}",
+                        "answer": ans,
+                        "question": q["question"],
+                    }
+                )
+
+        # 3. save answers to file
+        result = []
+        for ans in answers:
+            # Convert each CodeAnswer to dict and add to result list
+            result.append(
+                {
+                    "files": [
+                        {
+                            "tag": ans["name"],
+                            "filename": file.filename,
+                            "content": file.content,
+                            "language": file.language,
+                            "question": ans["question"],
+                        }
+                        for file in ans["answer"].files
+                    ]
+                }
+            )
+
+        # Save to file for inspection
+        import json
+
+        with open("syn-gen-trials.json", "w") as f:
+            json.dump(result, f, indent=2)
+        logger.info("Results saved to syn-gen-trials.json")
+
+    except Exception as e:
+        logger.error(f"Error running standalone: {e}")
+        raise
+
+
+if __name__ == "__main__":
+    asyncio.run(main_standalone())

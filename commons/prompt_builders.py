@@ -125,6 +125,7 @@ def build_code_answer_prompt(
             - Always prevent the default behaviour of any user inputs; If your program requires spacebar as an input, it should not also cause the browser to scroll.
             - Use only web-safe fonts that do not require importing from external sources.
             - Ensure any implementations of time are accurate and not dependent on device frame rate.
+            - Never create any alert or input boxes. Ensure your code does not implement alert or input boxes.
             - Refer to the <examples>
             - Your output should follow the <response_format>
         </instructions>
@@ -228,15 +229,19 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
     if topic == Topics.GAMES:
         subject = "fun, streamlined, hyper-casual web game"
         system_topic_context = "- Your question must not contain any audio features."
-        user_topic_context = (
-            f"The {subject} must have gameplay and content inspired by the persona."
-        )
+        user_topic_context = f"""The {subject} must have gameplay and content inspired by the persona.
+            The visuals of the {subject} must be inspired by the persona."""
     elif topic == Topics.SCIENCE:
-        subject = "streamlined science simulation"
+        subject = "streamlined, interactive simulation"
         system_topic_context = "- Your question must not contain any audio features."
-        user_topic_context = f"The {subject} must demonstrate a scientific concept that is related to the persona."
+        user_topic_context = f"""The {subject} must demonstrate a scientific concept related to the persona.
+            The visuals of the {subject} must be inspired by the persona.
+            """
     else:
         subject = "interactive visualization"
+        user_topic_context = f"""The {subject} must aesthetically demonstrate something related to the persona.
+            The visuals of the {subject} must be inspired by the persona.
+            """
     persona_question_examples = f"""
     {get_persona_question_examples(topic)}
     """
@@ -282,8 +287,6 @@ def build_question_with_persona(persona: str, num_requirements: int, topic: Topi
             Adhere to the guidelines given to you.
         </user>
     </system>
-
-    #Unique Coding Question#:
     """
     return question_prompt.format(
         num_requirements=num_requirements,

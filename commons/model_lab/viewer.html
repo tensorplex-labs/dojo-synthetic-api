@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Model Lab Viewer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .controls {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      select {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        margin-right: 10px;
+        min-width: 200px;
+      }
+      button {
+        padding: 8px 16px;
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #3367d6;
+      }
+      .preview {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      .preview-header {
+        padding: 15px;
+        background-color: #f0f0f0;
+        border-bottom: 1px solid #ddd;
+      }
+      .preview-content {
+        height: 600px;
+        border: none;
+        width: 100%;
+      }
+      .code-view {
+        padding: 15px;
+        background-color: #f8f8f8;
+        border-top: 1px solid #ddd;
+        max-height: 300px;
+        overflow: auto;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 14px;
+        display: none;
+      }
+      .question-view {
+        padding: 15px;
+        background-color: #f8f8f8;
+        border-top: 1px solid #ddd;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Model Lab Viewer</h1>
+
+      <div class="controls">
+        <select id="modelSelect">
+          <option value="">Select a model</option>
+        </select>
+        <button id="toggleCode">Show Code</button>
+      </div>
+
+      <div class="preview">
+        <div class="preview-header">
+          <span id="modelInfo">No model selected</span>
+        </div>
+        <div id="questionView" class="question-view"></div>
+        <iframe id="previewFrame" class="preview-content"></iframe>
+        <div id="codeView" class="code-view"></div>
+      </div>
+    </div>
+
+    <script>
+      // Load the JSON data
+      let trialsData = [];
+      let showingCode = false;
+
+      fetch("syn-gen-trials.json")
+        .then((response) => response.json())
+        .then((data) => {
+          trialsData = data;
+          populateModelSelect(data);
+        })
+        .catch((error) => {
+          console.error("Error loading JSON:", error);
+          document.getElementById("modelInfo").textContent =
+            "Error loading data";
+        });
+
+      function populateModelSelect(data) {
+        const select = document.getElementById("modelSelect");
+
+        data.forEach((trial, index) => {
+          if (trial.files && trial.files.length > 0) {
+            const file = trial.files[0];
+            const option = document.createElement("option");
+            option.value = index;
+            option.textContent = file.tag || `Trial ${index + 1}`;
+            select.appendChild(option);
+          }
+        });
+
+        select.addEventListener("change", updatePreview);
+      }
+
+      function updatePreview() {
+        const select = document.getElementById("modelSelect");
+        const index = select.value;
+
+        if (index === "") {
+          return;
+        }
+
+        const trial = trialsData[index];
+        const file = trial.files[0];
+
+        // Update model info
+        document.getElementById("modelInfo").textContent =
+          file.tag || `Trial ${parseInt(index) + 1}`;
+
+        // Update code view
+        document.getElementById("codeView").textContent = file.content;
+
+        // Update question view
+        document.getElementById("questionView").textContent =
+          file.question || "No question available";
+
+        // Update iframe with HTML content
+        const iframe = document.getElementById("previewFrame");
+        iframe.srcdoc = file.content;
+      }
+
+      // Toggle code view
+      document
+        .getElementById("toggleCode")
+        .addEventListener("click", function () {
+          const codeView = document.getElementById("codeView");
+          showingCode = !showingCode;
+          codeView.style.display = showingCode ? "block" : "none";
+          this.textContent = showingCode ? "Hide Code" : "Show Code";
+        });
+    </script>
+  </body>
+</html>
