@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -25,10 +26,8 @@ load_dotenv()
     - edit the question_model and answer_models variables with the desired models
     - question_model will be used to generate the question
     - each answer model will generate code for that question.
-    - to run the script: python -m commons.model_lab
+    - to run the script: python -m commons.model_lab.model_lab
     - output will be saved to whatever is defined in the OUTPUT_FILE variable
-    - to view outputs from the commons/model_lab directory, run "python -m http.server 8000"
-    - open the browser and navigate to "http://localhost:8000/viewer.html" to view the results
 """
 
 # get model names from openrouter website
@@ -36,6 +35,8 @@ question_model = "anthropic/claude-3.5-sonnet"
 answer_models = [
     "deepseek/deepseek-r1",
     "qwen/qwen2.5-32b-instruct",
+    "anthropic/claude-3.7-sonnet",
+    "anthropic/claude-3.5-sonnet",
     # "anthropic/claude-3.5-haiku",
     # "anthropic/claude-3.5-haiku:beta",
 ]
@@ -58,7 +59,7 @@ async def main():
             persona = get_random_persona()
             question = await generate_question(client, question_model, topic, persona)
             questions.append({"topic": topic, "question": question})
-            break  # gen 1 question only.
+            # break  # gen 1 question only.
 
         # 2. for each question, generate an answer from each model.
         answers = []
@@ -67,6 +68,7 @@ async def main():
                 logger.info(
                     f"generating {q['topic'].name} answer with model: {model} ..."
                 )
+                start_time = time.time()
                 try:
                     _, ans = await generate_answer(
                         client,
@@ -81,7 +83,9 @@ async def main():
                         f"Error generating {q['topic'].name} answer with model: {model}: {e}"
                     )
                     continue
-
+                logger.success(
+                    f"Generated {q['topic'].name} answer with model: {model} in {time.time() - start_time:.2f} seconds"
+                )
                 # merge generated index.js into index.html
                 ans_with_html = build_single_index_html(ans)
                 html_file = next(

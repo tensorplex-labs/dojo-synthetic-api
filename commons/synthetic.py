@@ -217,7 +217,8 @@ async def generate_answer(
         "messages": messages,
         "max_retries": AsyncRetrying(stop=stop_after_attempt(2), reraise=True),
         "temperature": 0.0,
-        "max_tokens": 8192,
+        # "max_tokens": 8192,
+        "max_tokens": 16384,
         "top_p": random.uniform(0.9, 1.0),
     }
     if model.startswith("openai"):
