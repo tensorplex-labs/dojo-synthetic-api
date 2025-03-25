@@ -8,7 +8,7 @@ from loguru import logger
 from commons.dataset.personas import get_random_persona, load_persona_dataset
 from commons.llm import get_llm_api_client
 from commons.synthetic import (
-    build_single_index_html,
+    _merge_js_and_html,
     generate_answer,
     generate_question,
 )
@@ -31,12 +31,17 @@ load_dotenv()
 """
 
 # get model names from openrouter website
+
 question_model = "anthropic/claude-3.5-sonnet"
+question_model = "deepseek/deepseek-r1:free"
 answer_models = [
-    "deepseek/deepseek-r1",
-    "qwen/qwen2.5-32b-instruct",
-    "anthropic/claude-3.7-sonnet",
-    "anthropic/claude-3.5-sonnet",
+    # "deepseek/deepseek-r1",
+    "deepseek/deepseek-r1:free",
+    # "deepseek/deepseek-chat-v3-0324:free",
+    # "qwen/qwen2.5-32b-instruct",  # 0.79/M
+    # "qwen/qwq-32b",  # 0.12/M in 0.18/M out
+    # # "anthropic/claude-3.7-sonnet",
+    # # "anthropic/claude-3.5-sonnet",
     # "anthropic/claude-3.5-haiku",
     # "anthropic/claude-3.5-haiku:beta",
 ]
@@ -87,26 +92,7 @@ async def main():
                     f"Generated {q['topic'].name} answer with model: {model} in {time.time() - start_time:.2f} seconds"
                 )
                 # merge generated index.js into index.html
-                ans_with_html = build_single_index_html(ans)
-                html_file = next(
-                    (
-                        file
-                        for file in ans_with_html.files
-                        if file.filename == "index.html"
-                    ),
-                    None,
-                )
-                if html_file:
-                    pass
-                else:
-                    raise ValueError("No index.html file found in the answer")
-                ans.files = [
-                    file for file in ans.files if file.filename == "index.html"
-                ]
-                if ans.files:
-                    ans.files[0].content = html_file.content
-                else:
-                    raise ValueError("No index.html file found in the result")
+                ans = _merge_js_and_html(ans)
 
                 answers.append(
                     {
