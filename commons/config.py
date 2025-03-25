@@ -178,7 +178,7 @@ ANSWER_MODELS = [
     # "openai/o1-preview-2024-09-12",
     # "openai/o1-mini-2024-09-12",
     "deepseek/deepseek-r1:free",
-    "anthropic/claude-3.5-sonnet",
+    # "anthropic/claude-3.5-sonnet",
     # "meta-llama/llama-3.1-405b-instruct",
     # "openai/gpt-4o-mini",
     # "openai/gpt-4o",
