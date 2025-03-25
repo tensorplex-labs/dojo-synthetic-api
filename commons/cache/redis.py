@@ -119,6 +119,10 @@ class RedisCache:
         Returns:
             int: Number of elements in the queue.
         """
+        # Check if queue is already full (max 10 items)
+        if await self.is_queue_full(max_size=10):
+            logger.info("Queue is full, skipping enqueue operation")
+            return await self.get_queue_length()
 
         if data is None:
             raise ValueError("Data is required")
@@ -133,9 +137,13 @@ class RedisCache:
             args = parse_cli_args()
             if args.env_name and args.env_name == "prod":
                 # expire in 4 hours time
-                await self.redis.set(hist_key, str_data, ex=3600 * 4)  # pyright: ignore[reportUnknownMemberType]
+                await self.redis.set(
+                    hist_key, str_data, ex=3600 * 4
+                )  # pyright: ignore[reportUnknownMemberType]
             else:
-                await self.redis.set(hist_key, str_data)  # pyright: ignore[reportUnknownMemberType]
+                await self.redis.set(
+                    hist_key, str_data
+                )  # pyright: ignore[reportUnknownMemberType]
 
             queue_key = self._build_key(self._queue_key)
             logger.debug(f"Writing queue data into {queue_key}")
@@ -156,12 +164,16 @@ class RedisCache:
     async def dequeue(self) -> str | None:
         """Dequeue an item from the specified queue key, assumes it is a queue and
         returns the value as as a string
+
+        FOR TESTNET: added re-enqueuing of the item to push it back to the queue
         """
         current_key: str = self._build_key(self._queue_key)
         try:
             value_raw = await cast(
                 Awaitable[str | bytes | list[Any] | None],
-                self.redis.lpop(current_key),  # pyright: ignore[reportUnknownMemberType]
+                self.redis.lpop(
+                    current_key
+                ),  # pyright: ignore[reportUnknownMemberType]
             )
 
             value: str | None = None
@@ -169,9 +181,37 @@ class RedisCache:
                 raise NotImplementedError("not implemented")
             elif isinstance(value_raw, bytes):
                 value = value_raw.decode(self._encoding)
+
+            # Re-enqueue the item to create a rotating queue
+            if value is not None:
+                # Convert value back to bytes if needed before re-enqueueing
+                value_to_push = (
+                    value.encode(self._encoding)
+                    if isinstance(value, str)
+                    else value_raw
+                )
+                await self.redis.rpush(current_key, value_to_push)
+                logger.debug(
+                    f"Re-enqueued item to create rotation in queue: {current_key}"
+                )
+
             return value
         except Exception as exc:
             logger.opt(exception=True).error(
                 f"Error dequeuing data from key: {current_key}, error: {exc}"
             )
             raise
+
+    async def is_queue_full(self, max_size: int = 10) -> bool:
+        """
+        FOR TESTNET: maintain a queue of 10 items
+        Check if the queue has reached the maximum size limit.
+
+        Args:
+            max_size: Maximum number of items allowed in the queue. Default is 10.
+
+        Returns:
+            bool: True if queue length is greater than or equal to max_size, False otherwise.
+        """
+        queue_length = await self.get_queue_length()
+        return queue_length >= max_size
