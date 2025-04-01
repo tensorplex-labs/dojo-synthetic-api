@@ -9,6 +9,7 @@ from typing import List, Tuple, cast
 import instructor
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from langfuse.client import ModelUsage
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
 from openai import AuthenticationError
@@ -31,12 +32,17 @@ from commons.types import Topics
 load_dotenv()
 
 
-def log_llm_usage(completion):
-    return {
+def _get_llm_usage(completion):
+    usage: ModelUsage = {
+        "unit": "TOKENS",
         "input": completion.usage.prompt_tokens,
         "output": completion.usage.completion_tokens,
-        "unit": "TOKENS",
+        "total_cost": None,
+        "total": None,
+        "input_cost": None,
+        "output_cost": None,
     }
+    return usage
 
 
 class CodingQuestion(BaseModel):
@@ -121,7 +127,7 @@ async def generate_question(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(response_model.usage),
             metadata={
                 "topic": _topic,
                 "used_models": used_models,
@@ -179,7 +185,10 @@ async def generate_answer(
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
     try:
-        response_model = await client.chat.completions.create(**kwargs)
+        (
+            response_model,
+            completion,
+        ) = await client.chat.completions.create_with_completion(**kwargs)
 
         kwargs_clone = kwargs.copy()
         kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
@@ -187,7 +196,7 @@ async def generate_answer(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(completion),
             metadata={
                 "question": question,
                 "err": err,
@@ -286,7 +295,7 @@ async def augment_question(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(response_model),
             metadata={
                 "topic": topic,
                 "question": question,
