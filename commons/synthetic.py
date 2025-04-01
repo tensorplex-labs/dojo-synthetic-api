@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AsyncOpenAI, AuthenticationError
+from openai import AuthenticationError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -29,10 +29,6 @@ from commons.prompt_builders import (
 from commons.types import Topics
 
 load_dotenv()
-
-
-# define some types
-LlmClient = AsyncOpenAI | instructor.AsyncInstructor
 
 
 def log_llm_usage(completion):
@@ -141,7 +137,7 @@ async def generate_question(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_answer(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     topic: Topics,
@@ -229,7 +225,7 @@ def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def augment_question(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     augmentation_level: AugmentationLevel,
