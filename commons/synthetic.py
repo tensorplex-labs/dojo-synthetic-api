@@ -9,9 +9,10 @@ from typing import List, Tuple, cast
 import instructor
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from langfuse.client import ModelUsage
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AsyncOpenAI, AuthenticationError
+from openai import AuthenticationError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -31,16 +32,17 @@ from commons.types import Topics
 load_dotenv()
 
 
-# define some types
-LlmClient = AsyncOpenAI | instructor.AsyncInstructor
-
-
-def log_llm_usage(completion):
-    return {
+def _get_llm_usage(completion):
+    usage: ModelUsage = {
+        "unit": "TOKENS",
         "input": completion.usage.prompt_tokens,
         "output": completion.usage.completion_tokens,
-        "unit": "TOKENS",
+        "total_cost": None,
+        "total": None,
+        "input_cost": None,
+        "output_cost": None,
     }
+    return usage
 
 
 class CodingQuestion(BaseModel):
@@ -125,7 +127,7 @@ async def generate_question(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(response_model),
             metadata={
                 "topic": _topic,
                 "used_models": used_models,
@@ -141,7 +143,7 @@ async def generate_question(
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_answer(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     topic: Topics,
@@ -176,14 +178,17 @@ async def generate_answer(
         "messages": messages,
         "max_retries": AsyncRetrying(stop=stop_after_attempt(2), reraise=True),
         "temperature": 0.0,
-        "max_tokens": 8192,
+        "max_tokens": 16384,
         "top_p": random.uniform(0.9, 1.0),
     }
     if model.startswith("openai"):
         kwargs["seed"] = random.randint(0, cast(int, 1e9))  # needed for OpenAI
 
     try:
-        response_model = await client.chat.completions.create(**kwargs)
+        (
+            response_model,
+            completion,
+        ) = await client.chat.completions.create_with_completion(**kwargs)
 
         kwargs_clone = kwargs.copy()
         kwargs_clone["response_model"] = kwargs["response_model"].model_json_schema()
@@ -191,7 +196,7 @@ async def generate_answer(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(completion),
             metadata={
                 "question": question,
                 "err": err,
@@ -229,7 +234,7 @@ def get_answer_model_ids(response_strategy: ResponseStrategy) -> str | list[str]
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def augment_question(
-    client: LlmClient,
+    client: instructor.AsyncInstructor,
     model: str,
     question: str,
     augmentation_level: AugmentationLevel,
@@ -290,7 +295,7 @@ async def augment_question(
             input=kwargs_clone.pop("messages"),
             model=model,
             output=response_model.model_dump(),
-            # usage=log_llm_usage(response_model.usage),
+            usage=_get_llm_usage(response_model),
             metadata={
                 "topic": topic,
                 "question": question,
@@ -410,9 +415,17 @@ async def build_prompt_responses_pair(response_strategy: ResponseStrategy):
         qa_id: str,
         level: AugmentationLevel | None = None,
     ):
-        model, result = await generate_answer(
-            client, model, question, topic=topic, qa_id=qa_id
-        )
+        try:
+            model, result = await asyncio.wait_for(
+                generate_answer(client, model, question, topic=topic, qa_id=qa_id),
+                timeout=600,
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"Answer generation for {qa_id} timed out after 10 minutes")
+            raise
+        except Exception:
+            raise
+
         if result is None:
             raise ValueError("generate_answer() returned none")
         # TODO remove after testing ensure single index.html file just for now
