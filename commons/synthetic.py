@@ -1,7 +1,6 @@
 import asyncio
 import os
 import random
-import sys
 import uuid
 from enum import Enum
 from typing import List, Tuple, cast
@@ -12,7 +11,7 @@ from dotenv import load_dotenv
 from langfuse.client import ModelUsage
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AuthenticationError
+from openai import AuthenticationError, PermissionDeniedError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -664,7 +663,7 @@ async def build_prompt_responses_pair():
     persona = get_random_persona()
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
-    selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)[0]
+    selected_topic = random.choices(list(Topics), weights=[0.45, 0.3, 0.25], k=1)[0]
     try:
         # 3. generate a question using the topic
         question_prompt = await generate_question(
@@ -726,10 +725,12 @@ async def build_prompt_responses_pair():
                         qa_id=qa_id,
                     )
                 )
-            results = await asyncio.gather(*tasks)
-    except AuthenticationError as e:
-        logger.error(f"Shutting down synthetic-API: {e}")
-        sys.exit(1)
+
+        results = await asyncio.gather(*tasks)
+
+    except (AuthenticationError, PermissionDeniedError) as e:
+        logger.error(f"Fatal Error when generating question-answer pair: {e}")
+        raise e
     except Exception as e:
         raise e
     # parse QA pairs, format and return response.
