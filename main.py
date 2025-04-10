@@ -11,6 +11,7 @@ from rich.traceback import install
 from commons.config import get_settings, parse_cli_args
 from commons.dataset.personas import load_persona_dataset
 from commons.routes.health import health_router
+from commons.routes.hf_endpoint import human_feedback_router
 from commons.routes.synthetic_gen import cache, synthetic_gen_router, worker
 
 load_dotenv()
@@ -46,6 +47,7 @@ app.add_middleware(
 # Include the code_gen router
 app.include_router(health_router)
 app.include_router(synthetic_gen_router)
+app.include_router(human_feedback_router)
 
 
 async def main():
