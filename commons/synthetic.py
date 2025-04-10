@@ -42,7 +42,6 @@ def _get_llm_usage(completion):
         "input_cost": None,
         "output_cost": None,
     }
-
     return usage
 
 
@@ -216,7 +215,6 @@ async def generate_answer(
         "messages": messages,
         "max_retries": AsyncRetrying(stop=stop_after_attempt(2), reraise=True),
         "temperature": 0.0,
-        # "max_tokens": 8192,
         "max_tokens": 16384,
         "top_p": random.uniform(0.9, 1.0),
     }
@@ -650,13 +648,21 @@ async def build_prompt_responses_pair():
         qa_id: str,
         level: QuestionAugmentation | None = None,
     ):
-        model, result = await generate_answer(
-            client, model, question, topic=topic, qa_id=qa_id
-        )
-        if result is None:
-            raise ValueError("generate_answer() returned none")
+        try:
+            model, result = await asyncio.wait_for(
+                generate_answer(client, model, question, topic=topic, qa_id=qa_id),
+                timeout=600,
+            )
 
-        return model, result, level, qa_id
+            if result is None:
+                raise ValueError("generate_answer() returned none")
+
+            return model, result, level, qa_id
+        except asyncio.TimeoutError:
+            logger.error(f"Answer generation for {qa_id} timed out after 10 minutes")
+            raise
+        except Exception:
+            raise
 
     ##### START OF FUNCTION LOGIC #####
     # 1. get random persona from hugging face

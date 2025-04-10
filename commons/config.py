@@ -121,7 +121,8 @@ def parse_cli_args():
 
 
 GENERATOR_MODELS = [
-    "anthropic/claude-3.5-sonnet",
+    # "anthropic/claude-3.5-sonnet",
+    "deepseek/deepseek-r1:free",
     # "qwen/qwen-2.5-72b-instruct",
     # "anthropic/claude-3-5-haiku",
 ]
@@ -129,5 +130,6 @@ GENERATOR_MODELS = [
 ANSWER_MODELS = [
     # "qwen/qwen-2.5-coder-32b-instruct"
     # "anthropic/claude-3-5-haiku",
-    "anthropic/claude-3.5-sonnet",
+    "deepseek/deepseek-r1:free",
+    # "anthropic/claude-3.5-sonnet",
 ]
