@@ -731,8 +731,7 @@ async def build_prompt_responses_pair():
                         qa_id=qa_id,
                     )
                 )
-
-        results = await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks)
 
     except (AuthenticationError, PermissionDeniedError) as e:
         logger.error(f"Fatal Error when generating question-answer pair: {e}")
