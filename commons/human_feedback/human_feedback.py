@@ -107,6 +107,9 @@ async def _generate_human_feedback(
 
 
 async def main():
+    """
+    for testing human feedback generation. Remove in prod.
+    """
     import json
     import os
 
@@ -150,6 +153,7 @@ Note:
         miner_feedbacks=[
             MinerFeedback(
                 hotkey="0x1234",
+                miner_response_id="1234",
                 feedback="Use colour to distinguish between intentional and unintentional fouls",
             )
         ],

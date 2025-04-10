@@ -11,6 +11,7 @@ from commons.synthetic import CodeAnswer
 
 class MinerFeedback(BaseModel):
     hotkey: str
+    miner_response_id: str
     feedback: str
 
 
