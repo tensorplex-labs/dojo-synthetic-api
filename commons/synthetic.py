@@ -778,5 +778,7 @@ async def build_prompt_responses_pair():
         "augmented_prompts": augmented_prompts,
         "topic": selected_topic.name,
         "persona": persona,
-        "augment_type": augment_strategy.name,
+        "metadata": {
+            "augment_type": augment_strategy.name,
+        },
     }
