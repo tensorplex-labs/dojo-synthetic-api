@@ -1,9 +1,16 @@
 """
 human_feedback.py implements human feedback generation.
+
+incoming HumanFeedbackRequests should trigger generation of hf tasks
+- concurrently generate hf tasks for each miner_feedback
+- store completed HumanFeedbackResponse in redis
+    key: 3 x miner_response_id + validator_task_id?
+    value: HumanFeedbackResponse
+
 """
 
+import asyncio
 import random
-import uuid
 from typing import List
 
 from langfuse.decorators import langfuse_context, observe
@@ -13,12 +20,14 @@ from tenacity import (
     stop_after_attempt,
 )
 
+from commons.cache import RedisCache
 from commons.config import ANSWER_MODELS
 from commons.human_feedback.hf_prompts import get_hf_prompt
 from commons.human_feedback.types import (
     HumanFeedbackRequest,
     HumanFeedbackResponse,
     HumanFeedbackTask,
+    ImprovedCode,
 )
 from commons.llm import get_llm_api_client
 from commons.synthetic import (
@@ -31,35 +40,62 @@ from commons.synthetic import (
 
 async def generate_human_feedback(
     hf_request: HumanFeedbackRequest,
-) -> HumanFeedbackResponse:
+    hf_id: str,
+) -> None:
     """
     Driver func to generate human feedback for a given request.
     """
-    hf_tasks: List[HumanFeedbackTask] = []
-    for miner_feedback in hf_request.miner_feedbacks:
-        generated_code = await _generate_human_feedback(
-            hf_request.base_prompt, hf_request.base_code, miner_feedback.feedback
-        )
-        hf_task = HumanFeedbackTask(
-            miner_hotkey=miner_feedback.hotkey,
-            feedback=miner_feedback.feedback,
-            generated_code=generated_code,
-        )
-        hf_tasks.append(hf_task)
+    redis = RedisCache()
+    try:
+        logger.info(f"generating human feedback for {hf_id}")
+        # concurrently generate improved outputs from the miner feedbacks
+        async_tasks = [
+            _generate_human_feedback(
+                hf_request.base_prompt,
+                hf_request.base_code,
+                miner_feedback.feedback,
+                miner_feedback.miner_response_id,
+            )
+            for miner_feedback in hf_request.miner_feedbacks
+        ]
+        improved_codes: List[ImprovedCode] = await asyncio.gather(*async_tasks)
+        logger.trace(f"hf generation for {hf_id} completed")
+        # Create HumanFeedbackTasks from improved code
+        hf_tasks: List[HumanFeedbackTask] = []
+        for miner_feedback in hf_request.miner_feedbacks:
+            corresponding_code = [
+                data.code
+                for data in improved_codes
+                if data.miner_response_id == miner_feedback.miner_response_id
+            ]
+            _hf_task = HumanFeedbackTask(
+                miner_hotkey=miner_feedback.hotkey,
+                feedback=miner_feedback.feedback,
+                generated_code=corresponding_code[0],
+            )
+            hf_tasks.append(_hf_task)
 
-    return HumanFeedbackResponse(
-        base_prompt=hf_request.base_prompt,
-        base_code=hf_request.base_code,
-        human_feedback_tasks=hf_tasks,
-    )
+        # compile into response object
+        hf_resp = HumanFeedbackResponse(
+            base_prompt=hf_request.base_prompt,
+            base_code=hf_request.base_code,
+            human_feedback_tasks=hf_tasks,
+        )
+        # store completed HumanFeedbackResponse in redis
+        await redis.store_human_feedback(hf_id=hf_id, data=hf_resp)
+    except Exception as e:
+        # @dev: what happens if redis fails here
+        logger.error(f"Error generating human feedback: {hf_id} {e}")
+        await redis.store_human_feedback(hf_id=hf_id, data=None)
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def _generate_human_feedback(
-    question: str, answer: str, feedback: str
-) -> CodeAnswer:
+    base_prompt: str, base_code: str, feedback: str, miner_response_id: str
+) -> ImprovedCode:
     """
-    Generate human feedback for a given question and answer.
+    private func to generate improved code with a the base_prompt and base_code and feedback.
+
     """
     model = random.choice(ANSWER_MODELS)
     client = get_llm_api_client()
@@ -67,7 +103,7 @@ async def _generate_human_feedback(
     messages = [
         {
             "role": "system",
-            "content": get_hf_prompt(question, answer, feedback),
+            "content": get_hf_prompt(base_prompt, base_code, feedback),
         }
     ]
 
@@ -78,11 +114,11 @@ async def _generate_human_feedback(
         "max_retries": AsyncRetrying(stop=stop_after_attempt(2), reraise=True),
         "temperature": 0.0,
     }
-
+    logger.info(
+        f"generating improved output for miner_response_id: {miner_response_id}"
+    )
     try:
-        hf_id = str(uuid.uuid4())
         completion, raw_completion = await client.create_with_completion(**kwargs)
-        logger.info(f"generated human feedback: {hf_id}")
 
         # log to langfuse
         kwargs_clone = kwargs.copy()
@@ -93,16 +129,21 @@ async def _generate_human_feedback(
             output=completion.model_dump(),
             usage=_get_llm_usage(raw_completion),
             metadata={
-                "base_prompt": question,
+                "base_prompt": base_prompt,
                 **kwargs_clone,
             },
         )
         # lint and fix any errors
-        completion = await lint_and_fix_code(client, model, completion, hf_id)
+        completion = await lint_and_fix_code(
+            client, model, completion, miner_response_id
+        )
         completion = _merge_js_and_html(completion)
-        return completion
+
+        return ImprovedCode(code=completion, miner_response_id=miner_response_id)
     except Exception as e:
-        logger.error(f"Error generating human feedback: {hf_id} {e}")
+        logger.error(
+            f"Error generating human feedback miner_response_id: {miner_response_id} {e}"
+        )
         raise e
 
 
@@ -110,8 +151,6 @@ async def main():
     """
     for testing human feedback generation. Remove in prod.
     """
-    import json
-    import os
 
     from commons.human_feedback.types import MinerFeedback
 
@@ -158,18 +197,11 @@ Note:
             )
         ],
     )
+    import uuid
 
-    res = await generate_human_feedback(dummy_hf_request)
-
-    # save res to json file
-    OUTPUT_FILE = "hf-test.json"
-    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(CURRENT_DIR, OUTPUT_FILE)
-    with open(output_path, "w") as f:
-        json.dump(res.model_dump(), f, indent=2)
+    hf_id = str(uuid.uuid4())
+    _ = await generate_human_feedback(dummy_hf_request, hf_id)
 
 
 if __name__ == "__main__":
-    import asyncio
-
     asyncio.run(main())

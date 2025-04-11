@@ -1,7 +1,6 @@
 import instructor
 from dotenv import load_dotenv
 from instructor import Mode
-from loguru import logger
 from openai import AsyncOpenAI
 from strenum import StrEnum
 
@@ -52,7 +51,7 @@ def _get_llm_api_kwargs(provider: Provider) -> dict[str, str]:
     if not kwargs:
         raise ValueError(f"Unknown provider specified , provider: {provider}")
 
-    logger.debug(f"Using llm api provider: {provider}")
+    # logger.debug(f"Using llm api provider: {provider}")
     for key, value in kwargs.items():
         if value is None:
             raise ValueError(f"Missing value: {value} for {key}")
