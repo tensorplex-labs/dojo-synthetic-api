@@ -1,5 +1,13 @@
 """
 human_feedback.py implements human feedback generation.
+
+incoming HumanFeedbackRequests should trigger generation of hf tasks
+- concurrently generate hf tasks for each miner_feedback
+- store completed HumanFeedbackResponse in redis
+    key: 3 x miner_response_id + validator_task_id?
+    value: HumanFeedbackResponse
+
+
 """
 
 import random
@@ -13,9 +21,11 @@ from tenacity import (
     stop_after_attempt,
 )
 
+from commons.cache import RedisCache
 from commons.config import ANSWER_MODELS
 from commons.human_feedback.hf_prompts import get_hf_prompt
 from commons.human_feedback.types import (
+    GenerateHumanFeedbackPayload,
     HumanFeedbackRequest,
     HumanFeedbackResponse,
     HumanFeedbackTask,
@@ -35,31 +45,51 @@ async def generate_human_feedback(
     """
     Driver func to generate human feedback for a given request.
     """
+    async_tasks = [
+        _generate_human_feedback(
+            hf_request.base_prompt,
+            hf_request.base_code,
+            miner_feedback.feedback,
+            miner_feedback.miner_response_id,
+        )
+        for miner_feedback in hf_request.miner_feedbacks
+    ]
+    generated_codes = await asyncio.gather(*async_tasks)
     hf_tasks: List[HumanFeedbackTask] = []
     for miner_feedback in hf_request.miner_feedbacks:
-        generated_code = await _generate_human_feedback(
-            hf_request.base_prompt, hf_request.base_code, miner_feedback.feedback
-        )
-        hf_task = HumanFeedbackTask(
+        corresponding_code = [
+            pair.code
+            for pair in generated_codes
+            if pair.miner_response_id == miner_feedback.miner_response_id
+        ]
+        _hf_task = HumanFeedbackTask(
             miner_hotkey=miner_feedback.hotkey,
             feedback=miner_feedback.feedback,
-            generated_code=generated_code,
+            generated_code=corresponding_code[0],
         )
-        hf_tasks.append(hf_task)
+        hf_tasks.append(_hf_task)
 
-    return HumanFeedbackResponse(
+    hf_resp = HumanFeedbackResponse(
         base_prompt=hf_request.base_prompt,
         base_code=hf_request.base_code,
         human_feedback_tasks=hf_tasks,
     )
+    # store completed HumanFeedbackResponse in redis
+    cache = RedisCache()
+
+    await cache.store_human_feedback(
+        hf_request.miner_feedbacks[0].miner_response_id, hf_resp
+    )
+    return hf_resp
 
 
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def _generate_human_feedback(
-    question: str, answer: str, feedback: str
-) -> CodeAnswer:
+    question: str, answer: str, feedback: str, miner_response_id: str
+) -> GenerateHumanFeedbackPayload:
     """
     Generate human feedback for a given question and answer.
+
     """
     model = random.choice(ANSWER_MODELS)
     client = get_llm_api_client()
@@ -100,7 +130,10 @@ async def _generate_human_feedback(
         # lint and fix any errors
         completion = await lint_and_fix_code(client, model, completion, hf_id)
         completion = _merge_js_and_html(completion)
-        return completion
+
+        return GenerateHumanFeedbackPayload(
+            code=completion, miner_response_id=miner_response_id
+        )
     except Exception as e:
         logger.error(f"Error generating human feedback: {hf_id} {e}")
         raise e

@@ -176,3 +176,6 @@ class RedisCache:
                 f"Error dequeuing data from key: {current_key}, error: {exc}"
             )
             raise
+
+    async def store_human_feedback(self, key: str, data: Any):
+        pass

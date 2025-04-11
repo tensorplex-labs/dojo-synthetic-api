@@ -34,3 +34,8 @@ class HumanFeedbackResponse(BaseModel):
     base_prompt: str
     base_code: str
     human_feedback_tasks: List[HumanFeedbackTask]
+
+
+class GenerateHumanFeedbackPayload(BaseModel):
+    code: CodeAnswer
+    miner_response_id: str
