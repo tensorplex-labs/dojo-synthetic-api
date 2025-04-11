@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from openai import AuthenticationError, PermissionDeniedError
 from rich.traceback import install
 
 from commons.config import get_settings, parse_cli_args
@@ -20,12 +21,17 @@ install(show_locals=True)
 
 @asynccontextmanager
 async def _lifespan_context(app: FastAPI):  # noqa: ARG001 #pyright: ignore[reportUnusedParameter]
-    # Load persona dataset
+    # Start up tasks
     app.state.persona_dataset = load_persona_dataset()
+    # create workers to concurrently generate question-answer pairs; wrap worker.run in a task so it can be cancelled
+    worker_task = asyncio.create_task(worker.run())
+    # check that generation did not raise any fatal errors.
+    worker_task.add_done_callback(_check_fatal_errors)
     logger.info("Performed startup tasks")
-    # wrap worker.run in a task so it can be cancelled
-    asyncio.create_task(worker.run())
+
     yield
+
+    # shutdown tasks
     await worker.stop()
     await cache.close()
     logger.info("Performed shutdown tasks")
@@ -48,6 +54,29 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(synthetic_gen_router)
 app.include_router(human_feedback_router)
+
+
+def _check_fatal_errors(task: asyncio.Task):
+    """
+    checks worker response for fatal exceptions. Shuts down server if fatal error is detected.
+    """
+    try:
+        task.result()
+    except (AuthenticationError, PermissionDeniedError) as e:
+        asyncio.create_task(_fatal_shutdown(e))
+
+
+async def _fatal_shutdown(e: Exception):
+    logger.error(f"Shutting down FastAPI server due to fatal error: {e}")
+    await worker.stop()
+    await cache.close()
+
+    # Get all running tasks except current
+    tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+
+    # Cancel all tasks
+    for task in tasks:
+        task.cancel()
 
 
 async def main():

@@ -1,7 +1,6 @@
 import asyncio
 import os
 import random
-import sys
 import uuid
 from enum import Enum
 from typing import List, Tuple, cast
@@ -12,7 +11,7 @@ from dotenv import load_dotenv
 from langfuse.client import ModelUsage
 from langfuse.decorators import langfuse_context, observe
 from loguru import logger
-from openai import AuthenticationError
+from openai import AuthenticationError, PermissionDeniedError
 from pydantic import BaseModel, Field
 from tenacity import (
     AsyncRetrying,
@@ -43,7 +42,6 @@ def _get_llm_usage(completion):
         "input_cost": None,
         "output_cost": None,
     }
-
     return usage
 
 
@@ -217,7 +215,6 @@ async def generate_answer(
         "messages": messages,
         "max_retries": AsyncRetrying(stop=stop_after_attempt(2), reraise=True),
         "temperature": 0.0,
-        # "max_tokens": 8192,
         "max_tokens": 16384,
         "top_p": random.uniform(0.9, 1.0),
     }
@@ -651,20 +648,28 @@ async def build_prompt_responses_pair():
         qa_id: str,
         level: QuestionAugmentation | None = None,
     ):
-        model, result = await generate_answer(
-            client, model, question, topic=topic, qa_id=qa_id
-        )
-        if result is None:
-            raise ValueError("generate_answer() returned none")
+        try:
+            model, result = await asyncio.wait_for(
+                generate_answer(client, model, question, topic=topic, qa_id=qa_id),
+                timeout=600,
+            )
 
-        return model, result, level, qa_id
+            if result is None:
+                raise ValueError("generate_answer() returned none")
+
+            return model, result, level, qa_id
+        except asyncio.TimeoutError:
+            logger.error(f"Answer generation for {qa_id} timed out after 10 minutes")
+            raise
+        except Exception:
+            raise
 
     ##### START OF FUNCTION LOGIC #####
     # 1. get random persona from hugging face
     persona = get_random_persona()
 
     # 2. randomly select a topic. change weights accordingly to choose what topic of Tasks to generate.
-    selected_topic = random.choices(list(Topics), weights=[0.4, 0.4, 0.2], k=1)[0]
+    selected_topic = random.choices(list(Topics), weights=[0.45, 0.3, 0.25], k=1)[0]
     try:
         # 3. generate a question using the topic
         question_prompt = await generate_question(
@@ -727,9 +732,10 @@ async def build_prompt_responses_pair():
                     )
                 )
             results = await asyncio.gather(*tasks)
-    except AuthenticationError as e:
-        logger.error(f"Shutting down synthetic-API: {e}")
-        sys.exit(1)
+
+    except (AuthenticationError, PermissionDeniedError) as e:
+        logger.error(f"Fatal Error when generating question-answer pair: {e}")
+        raise e
     except Exception as e:
         raise e
     # parse QA pairs, format and return response.
@@ -772,5 +778,7 @@ async def build_prompt_responses_pair():
         "augmented_prompts": augmented_prompts,
         "topic": selected_topic.name,
         "persona": persona,
-        "augment_type": augment_strategy.name,
+        "metadata": {
+            "augment_type": augment_strategy.name,
+        },
     }

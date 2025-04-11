@@ -6,8 +6,6 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from commons.cache import RedisCache
-
-# from commons.prompt_builders import Language
 from commons.synthetic import (
     build_prompt_responses_pair,
 )

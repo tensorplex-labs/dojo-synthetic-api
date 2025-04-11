@@ -170,7 +170,6 @@ class RedisCache:
                 raise NotImplementedError("not implemented")
             elif isinstance(value_raw, bytes):
                 value = value_raw.decode(self._encoding)
-
             return value
         except Exception as exc:
             logger.opt(exception=True).error(
