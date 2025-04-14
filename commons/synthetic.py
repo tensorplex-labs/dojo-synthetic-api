@@ -95,6 +95,19 @@ class AugmentStrategy(Enum):
     CHANGE_ANSWERS = 1
 
 
+async def _timeout_wrapper(function):
+    """
+    helper function to timeout a function after 10 minutes.
+    """
+    try:
+        return await asyncio.wait_for(function, timeout=600)
+    except asyncio.TimeoutError:
+        logger.error(f"Function {function.__name__} timed out after 10 minutes")
+        raise
+    except Exception as e:
+        raise e
+
+
 @observe(as_type="generation", capture_input=True, capture_output=True)
 async def generate_question(
     client: instructor.AsyncInstructor,
@@ -185,13 +198,8 @@ async def generate_answer(
     question: str,
     topic: Topics,
     qa_id: str,
-    err: str | None = None,
-    code: str | None = None,
 ) -> Tuple[str, CodeAnswer]:
     """Generates a coding question answer for a given coding question."""
-    if bool(err) != bool(code):
-        raise ValueError("Both error and code must be provided or neither")
-
     global used_models
     used_models = set()
     # this is a hack because CodeAnswer.model_json_schema cannot be imported by prompt_builders without a ciruclar import error.add()
@@ -236,8 +244,6 @@ async def generate_answer(
             usage=_get_llm_usage(completion),
             metadata={
                 "question": question,
-                "err": err,
-                "code": code,
                 **kwargs_clone,
             },
         )
@@ -641,28 +647,34 @@ async def build_prompt_responses_pair():
     answer_models = random.choice(ANSWER_MODELS)
     tasks = []
 
-    async def _generate_response(
-        model: str,
-        question: str,
-        topic: Topics,
-        qa_id: str,
-        level: QuestionAugmentation | None = None,
-    ):
-        try:
-            model, result = await asyncio.wait_for(
-                generate_answer(client, model, question, topic=topic, qa_id=qa_id),
-                timeout=600,
-            )
+    # async def _generate_response(
+    #     model: str,
+    #     question: str,
+    #     topic: Topics,
+    #     qa_id: str,
+    #     level: QuestionAugmentation | None = None,
+    # ):
+    #     model, result = await _timeout_wrapper(
+    #         generate_answer(client, model, question, topic=topic, qa_id=qa_id)
+    #     )
+    #     if result is None:
+    #         raise ValueError("generate_answer() returned none")
+    #     return model, result, level, qa_id
+    # try:
+    #     model, result = await asyncio.wait_for(
+    #         generate_answer(client, model, question, topic=topic, qa_id=qa_id),
+    #         timeout=600,
+    #     )
 
-            if result is None:
-                raise ValueError("generate_answer() returned none")
+    #     if result is None:
+    #         raise ValueError("generate_answer() returned none")
 
-            return model, result, level, qa_id
-        except asyncio.TimeoutError:
-            logger.error(f"Answer generation for {qa_id} timed out after 10 minutes")
-            raise
-        except Exception:
-            raise
+    #     return model, result, level, qa_id
+    # except asyncio.TimeoutError:
+    #     logger.error(f"Answer generation for {qa_id} timed out after 10 minutes")
+    #     raise
+    # except Exception:
+    #     raise
 
     ##### START OF FUNCTION LOGIC #####
     # 1. get random persona from hugging face
@@ -672,8 +684,8 @@ async def build_prompt_responses_pair():
     selected_topic = random.choices(list(Topics), weights=[0.45, 0.3, 0.25], k=1)[0]
     try:
         # 3. generate a question using the topic
-        question_prompt = await generate_question(
-            client, question_model, selected_topic, persona
+        question_prompt = await _timeout_wrapper(
+            generate_question(client, question_model, selected_topic, persona)
         )
 
         if question_prompt is None:
@@ -683,11 +695,14 @@ async def build_prompt_responses_pair():
         ### Augments Answer ###
         if augment_strategy == AugmentStrategy.CHANGE_ANSWERS:
             # generate base answer
-            model, base_answer, _, qa_id = await _generate_response(
-                answer_models,
-                question_prompt,
-                selected_topic,
-                qa_id=str(uuid.uuid4()),
+            model, base_answer, _, qa_id = await _timeout_wrapper(
+                generate_answer(
+                    client,
+                    answer_models,
+                    question_prompt,
+                    selected_topic,
+                    str(uuid.uuid4()),
+                )
             )
             base_response = [(model, base_answer, AnswerAugmentation.ORIGINAL, qa_id)]
 
@@ -699,12 +714,14 @@ async def build_prompt_responses_pair():
                 if augmentation == AnswerAugmentation.ORIGINAL:
                     continue
                 tasks.append(
-                    _augment_answer(
-                        client=client,
-                        model=model,
-                        answer=base_answer,
-                        question=question_prompt,
-                        augmentation=augmentation,
+                    _timeout_wrapper(
+                        _augment_answer(
+                            client=client,
+                            model=model,
+                            answer=base_answer,
+                            question=question_prompt,
+                            augmentation=augmentation,
+                        )
                     )
                 )
             results = await asyncio.gather(*tasks)
@@ -715,20 +732,24 @@ async def build_prompt_responses_pair():
         elif augment_strategy == AugmentStrategy.CHANGE_QUESTIONS:
             # generate 3 augmented questions from base question
             for level in QuestionAugmentation:
-                augmented_question, qa_id = await augment_question(
-                    client, question_model, question_prompt, level, selected_topic
+                augmented_question, qa_id = await _timeout_wrapper(
+                    augment_question(
+                        client, question_model, question_prompt, level, selected_topic
+                    )
                 )
                 augmented_prompts.append(
                     {"level": level.name, "question": augmented_question}
                 )
                 # generate answers for all questions
                 tasks.append(
-                    _generate_response(
-                        answer_models,
-                        augmented_question,
-                        topic=selected_topic,
-                        level=level,
-                        qa_id=qa_id,
+                    _timeout_wrapper(
+                        generate_answer(
+                            client,
+                            answer_models,
+                            question_prompt,
+                            selected_topic,
+                            qa_id,
+                        )
                     )
                 )
             results = await asyncio.gather(*tasks)
