@@ -398,30 +398,6 @@ def build_single_index_html(ans: CodeAnswer) -> CodeAnswer:
     return CodeAnswer(files=new_files)
 
 
-# def _execute_rewoo():
-#     # iteration_state = await debug_initial_code(
-#     #     initial_html_code=html_file.content,
-#     # )
-
-#     # num_errors_total = sum(
-#     #     1 if iteration.error else 0 for iteration in iteration_state.iterations
-#     # )
-#     # is_final_iter_fixed = (
-#     #     True
-#     #     if iteration_state.latest_iteration
-#     #     and not iteration_state.latest_iteration.error
-#     #     else False
-#     # )
-
-#     # logger.info(
-#     #     f"Code feedback loop stats: num iterations: {len(iteration_state.iterations)}, num errors total: {num_errors_total}, is fixed ? {is_final_iter_fixed}"
-#     # )
-
-#     # final html file
-#     # final_html = iteration_state.latest_iteration.code
-#     return
-
-
 def _build_answer_augment_prompt(
     base_answer: CodeAnswer,
     base_question: str,
@@ -612,9 +588,6 @@ def _merge_js_and_html(result):
     else:
         raise ValueError("No index.html file found in the answer")
 
-    #  rewoo implementation unfinished
-    # _execute_rewoo()
-
     # replace whole CodeAnswer with a single final_html file
     result.files = [file for file in result.files if file.filename == "index.html"]
 
@@ -694,14 +667,15 @@ async def build_prompt_responses_pair():
         augmented_prompts = []
         ### Augments Answer ###
         if augment_strategy == AugmentStrategy.CHANGE_ANSWERS:
+            qa_id = str(uuid.uuid4())
             # generate base answer
-            model, base_answer, _, qa_id = await _timeout_wrapper(
+            model, base_answer = await _timeout_wrapper(
                 generate_answer(
                     client,
                     answer_models,
                     question_prompt,
                     selected_topic,
-                    str(uuid.uuid4()),
+                    qa_id,
                 )
             )
             base_response = [(model, base_answer, AnswerAugmentation.ORIGINAL, qa_id)]
