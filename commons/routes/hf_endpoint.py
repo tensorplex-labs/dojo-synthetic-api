@@ -2,6 +2,10 @@
 human_feedback.py is the route for receiving human feedback requests from dojo.
 
 It receives and returns relevant human feedback data to dojo.
+
+2 endpoints:
+1 to recieve request and start generating response
+1 to return the resposne back to dojo which will poll redis for completed tasks
 """
 
 import uuid
