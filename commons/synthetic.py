@@ -150,7 +150,7 @@ async def generate_question(
 
 async def lint_and_fix_code(
     client: instructor.AsyncInstructor, model: str, answer: CodeAnswer, id: str
-):
+) -> CodeAnswer:
     """
     @dev Executes ESlint on the input index.js file and will query LLM to fix any errors.
     @dev Will update the input answer object in-place with a fixed index.js file.
