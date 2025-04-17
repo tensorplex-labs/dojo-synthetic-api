@@ -60,18 +60,23 @@ async def generate_human_feedback(
         ]
         improved_codes: List[ImprovedCode] = await asyncio.gather(*async_tasks)
         logger.trace(f"hf generation for {hf_id} completed")
+        improved_id_to_code_map = {
+            data.miner_response_id: data.code for data in improved_codes
+        }
+
         # Create HumanFeedbackTasks from improved code
         hf_tasks: List[HumanFeedbackTask] = []
         for miner_feedback in hf_request.miner_feedbacks:
-            corresponding_code = [
-                data.code
-                for data in improved_codes
-                if data.miner_response_id == miner_feedback.miner_response_id
+            # find matching improved code for the miner_response_id
+            corresponding_code = improved_id_to_code_map[
+                miner_feedback.miner_response_id
             ]
+
             _hf_task = HumanFeedbackTask(
                 miner_hotkey=miner_feedback.hotkey,
+                miner_response_id=miner_feedback.miner_response_id,
                 feedback=miner_feedback.feedback,
-                generated_code=corresponding_code[0],
+                generated_code=corresponding_code,
             )
             hf_tasks.append(_hf_task)
 

@@ -17,6 +17,7 @@ class MinerFeedback(BaseModel):
 
 class HumanFeedbackTask(BaseModel):
     miner_hotkey: str
+    miner_response_id: str
     feedback: str
     generated_code: CodeAnswer
 
